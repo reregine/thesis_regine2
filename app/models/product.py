@@ -1,0 +1,1 @@
+# Sales record model
