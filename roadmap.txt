@@ -1,0 +1,73 @@
+atbi_marketing_system/
+│
+├── app/                             # Main application package
+│   ├── __init__.py                   # Initialize Flask app, DB, register blueprints
+│   ├── config.py                     # Configuration settings (dev/prod, DB URI)
+│   ├── extensions.py                 # Extensions (SQLAlchemy, Migrate, etc.)
+│   │
+│   ├── models/                       # Database models
+│   │   ├── __init__.py
+│   │   ├── incubate.py                # Incubate model
+│   │   ├── product.py                 # Product model (availability, stock)
+│   │   ├── reservation.py             # Reservation model
+│   │   ├── sales.py                   # Sales record model
+│   │   └── notification.py            # Notification model
+│   │
+│   ├── routes/                       # Flask blueprints (modular routes)
+│   │   ├── __init__.py
+│   │   ├── showroom.py                # Virtual showroom & product browsing
+│   │   ├── reservation.py             # Reservation endpoints
+│   │   ├── inventory.py               # Inventory management
+│   │   ├── notification.py            # Product status notifications
+│   │   └── reports.py                 # Sales reports generation
+│   │
+│   ├── services/                     # Business logic layer
+│   │   ├── __init__.py
+│   │   ├── inventory_service.py       # Stock monitoring & updates
+│   │   ├── notification_service.py    # Sending product status notifications
+│   │   ├── reservation_service.py     # Reservation handling logic
+│   │   └── report_service.py          # Report generation logic
+│   │
+│   ├── templates/                    # Jinja2 HTML templates
+│   │   ├── layouts/                   # Base layouts (header, footer)
+│   │   │   └── base.html
+│   │   ├── showroom/                  # Pages for product showroom
+│   │   │   ├── index.html
+│   │   │   └── product_detail.html
+│   │   ├── reservation/
+│   │   │   ├── form.html
+│   │   │   └── confirmation.html
+│   │   ├── inventory/
+│   │   │   └── dashboard.html
+│   │   ├── notification/
+│   │   │   └── list.html
+│   │   └── reports/
+│   │       └── sales_report.html
+│   │
+│   ├── static/                        # Static assets
+│   │   ├── css/
+│   │   │   └── styles.css
+│   │   ├── js/
+│   │   │   └── scripts.js
+│   │   └── images/
+│   │       └── logo.png
+│   │
+│   └── forms/                         # WTForms definitions
+│       ├── __init__.py
+│       ├── reservation_form.py
+│       ├── product_form.py
+│       └── inventory_form.py
+│
+├── migrations/                        # Flask-Migrate scripts for PostgreSQL
+│
+├── tests/                             # Unit and integration tests
+│   ├── __init__.py
+│   ├── test_showroom.py
+│   ├── test_reservation.py
+│   ├── test_inventory.py
+│   └── test_reports.py
+│
+├── .env                               # Environment variables (DB URI, secrets)
+├── requirements.txt                   # Python dependencies
+├── run.py                             # Entry point to run Flask app
+└── README.md                          # Project documentation
