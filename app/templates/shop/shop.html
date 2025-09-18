@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Character encoding for proper text display -->
+    <meta charset="UTF-8">
+    <!-- Responsive viewport for mobile devices -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Page title that appears in browser tab -->
+    <title>Shop - ATBI Agri-Aqua Products</title>
+    <!-- Link to external CSS file for styling -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- Additional CSS for shop page -->
+    <style>
+        /* Shop Page Specific Styles */
+        .shop-header {
+            background: linear-gradient(135deg, #f0f9ff 0%, #ecfdf5 50%, #f0fdf4 100%);
+            padding: 120px 0 60px 0;
+            text-align: center;
+            color: #1a1a1a;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shop-title {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .shop-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.8;
+            color: #4b5563;
+        }
+
+        .filters-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-bottom: 1px solid rgba(34, 197, 94, 0.1);
+        }
+
+        .filters-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            background: white;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+        }
+
+        .search-box {
+            padding: 0.5rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            width: 250px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+        }
+
+        .products-section {
+            padding: 4rem 0;
+            background: #fafafa;
+        }
+
+        .products-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .product-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .product-image {
+            height: 250px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .product-card:hover .product-image img {
+            transform: scale(1.1);
+        }
+
+        .product-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .product-info {
+            padding: 1.5rem;
+        }
+
+        .product-category {
+            color: #667eea;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .product-title {
+            font-size: 1.3rem;
+            margin-bottom: 0.8rem;
+            color: #333;
+            font-weight: 700;
+        }
+
+        .product-description {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .product-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.8rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .product-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #10b981;
+        }
+
+        .product-expiry {
+            font-size: 0.9rem;
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .add-to-cart {
+            flex: 1;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+            border: none;
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            min-width: 120px;
+        }
+
+        .reserve-btn {
+            flex: 1;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border: none;
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            min-width: 120px;
+        }
+
+        .add-to-cart:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(34, 197, 94, 0.4);
+        }
+
+        .reserve-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .wishlist-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.8rem;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wishlist-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 3rem;
+        }
+
+        .page-btn {
+            padding: 0.8rem 1.2rem;
+            border: 2px solid #e1e5e9;
+            background: white;
+            color: #333;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .page-btn:hover,
+        .page-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .back-to-home {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .back-to-home:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Responsive Design for Shop Page */
+        @media (max-width: 768px) {
+            .shop-title {
+                font-size: 2.5rem;
+            }
+
+            .filters-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                justify-content: space-between;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .products-grid {
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .product-details {
+                flex-direction: column;
+                gap: 0.5rem;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .shop-title {
+                font-size: 2rem;
+            }
+
+            .products-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .back-to-home {
+                bottom: 20px;
+                right: 20px;
+                padding: 0.8rem 1.2rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section - Fixed navigation bar at the top -->
+    <header class="header">
+        <!-- Container to center and limit the width of header content -->
+        <div class="header-container">
+            <!-- Logo section on the left side -->
+            <div class="logo">
+                <!-- Company logo image - replace logo.png with your actual logo file -->
+                <img src="logo.png" alt="Store Logo" class="logo-img">
+            </div>
+            <!-- Navigation menu on the right side -->
+            <nav class="nav-menu">
+                <!-- Unordered list containing navigation links -->
+                <ul class="nav-list">
+                    <!-- Each list item contains a navigation link -->
+                    <li><a href="index.html" class="nav-link">HOME</a></li>
+                    <li><a href="shop.html" class="nav-link">SHOP</a></li>
+                    <li><a href="#incubates" class="nav-link">INCUBATES</a></li>
+                    <li><a href="#about" class="nav-link">ABOUT</a></li>
+                                                    <li><a href="#contacts" class="nav-link">CONTACTS</a></li>
+                                <!-- Cart button with special styling -->
+                                <li><a href="#cart" class="nav-link cart-btn">🛒</a></li>
+                                <!-- Login button with special styling -->
+                                <li><a href="https://accounts.google.com/signin" target="_blank" class="nav-link login-btn">LOGIN</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Shop Header Section -->
+    <section class="shop-header">
+        <div class="container">
+            <h1 class="shop-title">Our Products</h1>
+            <p class="shop-subtitle">Discover amazing products with detailed information</p>
+        </div>
+    </section>
+
+    <!-- Filters Section -->
+    <section class="filters-section">
+        <div class="filters-container">
+            <div class="filter-group">
+                <label class="filter-label">Category:</label>
+                <select class="filter-select">
+                    <option value="">All Categories</option>
+                    <option value="smart-farming">Smart Farming</option>
+                    <option value="aquaculture">Aquaculture</option>
+                    <option value="irrigation">Irrigation Systems</option>
+                    <option value="sensors">IoT Sensors</option>
+                    <option value="equipment">Farming Equipment</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Price:</label>
+                <select class="filter-select">
+                    <option value="">All Prices</option>
+                    <option value="0-50">$0 - $50</option>
+                    <option value="50-100">$50 - $100</option>
+                    <option value="100-200">$100 - $200</option>
+                    <option value="200+">$200+</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Sort:</label>
+                <select class="filter-select">
+                    <option value="newest">Newest First</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="popularity">Most Popular</option>
+                    <option value="rating">Highest Rated</option>
+                </select>
+            </div>
+            <input type="text" class="search-box" placeholder="Search products...">
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="products-section">
+        <div class="products-container">
+            <div class="products-grid">
+                <!-- Product 1 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="https://via.placeholder.com/300x250/22c55e/ffffff?text=Smart+Irrigation" alt="Smart Irrigation Controller">
+                        <div class="product-badge">New</div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Smart Farming</div>
+                        <h3 class="product-title">Smart Irrigation Controller</h3>
+                        <p class="product-description">AI-powered irrigation system with soil moisture sensors, weather integration, and mobile app control. Optimizes water usage and crop yield.</p>
+                        <div class="product-details">
+                            <div class="product-price">$299.99</div>
+                            <div class="product-expiry">Warranty: 2 Years</div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="add-to-cart" onclick="addToCart('smart-irrigation')">Add to Cart</button>
+                            <button class="reserve-btn" onclick="reserveProduct('smart-irrigation')">Reserve</button>
+                            <button class="wishlist-btn" onclick="addToWishlist('smart-irrigation')">♥</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 2 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="https://via.placeholder.com/300x250/3b82f6/ffffff?text=Fish+Feeder" alt="Automated Fish Feeder">
+                        <div class="product-badge">Sale</div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Aquaculture</div>
+                        <h3 class="product-title">Automated Fish Feeder</h3>
+                        <p class="product-description">Smart fish feeding system with programmable schedules, portion control, and water quality monitoring. Perfect for aquaculture operations.</p>
+                        <div class="product-details">
+                            <div class="product-price">$199.99</div>
+                            <div class="product-expiry">Warranty: 1 Year</div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="add-to-cart" onclick="addToCart('fish-feeder')">Add to Cart</button>
+                            <button class="reserve-btn" onclick="reserveProduct('fish-feeder')">Reserve</button>
+                            <button class="wishlist-btn" onclick="addToWishlist('fish-feeder')">♥</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 3 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="https://via.placeholder.com/300x250/f59e0b/ffffff?text=Soil+Monitor" alt="Soil Health Monitor">
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">IoT Sensors</div>
+                        <h3 class="product-title">Soil Health Monitor</h3>
+                        <p class="product-description">Advanced soil sensor system measuring pH, moisture, temperature, and nutrient levels. Real-time data transmission and analysis for optimal crop management.</p>
+                        <div class="product-details">
+                            <div class="product-price">$149.99</div>
+                            <div class="product-expiry">Warranty: 2 Years</div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="add-to-cart" onclick="addToCart('soil-monitor')">Add to Cart</button>
+                            <button class="reserve-btn" onclick="reserveProduct('soil-monitor')">Reserve</button>
+                            <button class="wishlist-btn" onclick="addToWishlist('soil-monitor')">♥</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 4 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="https://via.placeholder.com/300x250/ef4444/ffffff?text=Water+Analyzer" alt="Water Quality Analyzer">
+                        <div class="product-badge">Limited</div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Aquaculture</div>
+                        <h3 class="product-title">Water Quality Analyzer</h3>
+                        <p class="product-description">Professional water quality testing device for aquaculture. Measures dissolved oxygen, pH, temperature, and ammonia levels with real-time alerts.</p>
+                        <div class="product-details">
+                            <div class="product-price">$399.99</div>
+                            <div class="product-expiry">Warranty: 3 Years</div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="add-to-cart" onclick="addToCart('water-analyzer')">Add to Cart</button>
+                            <button class="reserve-btn" onclick="reserveProduct('water-analyzer')">Reserve</button>
+                            <button class="wishlist-btn" onclick="addToWishlist('water-analyzer')">♥</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 5 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="https://via.placeholder.com/300x250/8b5cf6/ffffff?text=Drone+Monitor" alt="Drone Crop Monitor">
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Smart Farming</div>
+                        <h3 class="product-title">Drone Crop Monitor</h3>
+                        <p class="product-description">Agricultural drone with multispectral camera for crop health monitoring, yield estimation, and precision agriculture applications. Includes flight planning software.</p>
+                        <div class="product-details">
+                            <div class="product-price">$1,299.99</div>
+                            <div class="product-expiry">Warranty: 1 Year</div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="add-to-cart" onclick="addToCart('drone-monitor')">Add to Cart</button>
+                            <button class="reserve-btn" onclick="reserveProduct('drone-monitor')">Reserve</button>
+                            <button class="wishlist-btn" onclick="addToWishlist('drone-monitor')">♥</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 6 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="https://via.placeholder.com/300x250/06b6d4/ffffff?text=Precision+Seeder" alt="Precision Seeder">
+                        <div class="product-badge">Hot</div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Farming Equipment</div>
+                        <h3 class="product-title">Precision Seeder</h3>
+                        <p class="product-description">GPS-guided precision seeder for optimal seed placement and spacing. Reduces seed waste and improves crop uniformity. Compatible with most tractors.</p>
+                        <div class="product-details">
+                            <div class="product-price">$2,499.99</div>
+                            <div class="product-expiry">Warranty: 2 Years</div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="add-to-cart" onclick="addToCart('precision-seeder')">Add to Cart</button>
+                            <button class="reserve-btn" onclick="reserveProduct('precision-seeder')">Reserve</button>
+                            <button class="wishlist-btn" onclick="addToWishlist('precision-seeder')">♥</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 7 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="https://via.placeholder.com/300x250/84cc16/ffffff?text=Aquaponics+System" alt="Aquaponics System">
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Aquaculture</div>
+                        <h3 class="product-title">Aquaponics System</h3>
+                        <p class="product-description">Complete aquaponics starter kit combining fish farming with hydroponic plant growing. Includes tank, grow beds, pump, and starter fish/plants.</p>
+                        <div class="product-details">
+                            <div class="product-price">$599.99</div>
+                            <div class="product-expiry">Warranty: 1 Year</div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="add-to-cart" onclick="addToCart('aquaponics-system')">Add to Cart</button>
+                            <button class="reserve-btn" onclick="reserveProduct('aquaponics-system')">Reserve</button>
+                            <button class="wishlist-btn" onclick="addToWishlist('aquaponics-system')">♥</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product 8 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="https://via.placeholder.com/300x250/f97316/ffffff?text=Weather+Station" alt="Weather Station Pro">
+                        <div class="product-badge">Best Seller</div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">IoT Sensors</div>
+                        <h3 class="product-title">Weather Station Pro</h3>
+                        <p class="product-description">Professional weather monitoring station with wind speed, rainfall, humidity, and temperature sensors. Perfect for agricultural planning and crop management.</p>
+                        <div class="product-details">
+                            <div class="product-price">$199.99</div>
+                            <div class="product-expiry">Warranty: 2 Years</div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="add-to-cart" onclick="addToCart('weather-station')">Add to Cart</button>
+                            <button class="reserve-btn" onclick="reserveProduct('weather-station')">Reserve</button>
+                            <button class="wishlist-btn" onclick="addToWishlist('weather-station')">♥</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <button class="page-btn active">1</button>
+                <button class="page-btn">2</button>
+                <button class="page-btn">3</button>
+                <button class="page-btn">4</button>
+                <button class="page-btn">Next →</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Back to Home Button -->
+    <a href="index.html" class="back-to-home">← Back to Home</a>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 ATBI - Agri-Aqua Business Incubator. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript for product actions -->
+    <script>
+        // Check if user is logged in with Gmail
+        function checkLoginStatus() {
+            // This would typically check with your authentication system
+            // For demo purposes, we'll check localStorage
+            const userEmail = localStorage.getItem('userEmail');
+            return userEmail && userEmail.includes('@gmail.com');
+        }
+
+        // Show login prompt if user is not logged in
+        function requireLogin(action) {
+            if (!checkLoginStatus()) {
+                const login = confirm('Please log in with your Gmail account to ' + action + '. Would you like to log in now?');
+                if (login) {
+                    // Redirect to Gmail login
+                    window.location.href = 'https://accounts.google.com/signin';
+                }
+                return false;
+            }
+            return true;
+        }
+
+        // Add to cart function
+        function addToCart(productId) {
+            if (!requireLogin('add items to cart')) return;
+            
+            // Get product details
+            const productName = getProductName(productId);
+            const productPrice = getProductPrice(productId);
+            
+            // Add to cart (this would typically send to your backend)
+            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const existingItem = cart.find(item => item.id === productId);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    id: productId,
+                    name: productName,
+                    price: productPrice,
+                    quantity: 1,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            localStorage.setItem('cart', JSON.stringify(cart));
+            
+            // Show success message
+            showNotification('Added to cart successfully!', 'success');
+            
+            // Update cart count in header (if you have one)
+            updateCartCount();
+        }
+
+        // Reserve product function
+        function reserveProduct(productId) {
+            if (!requireLogin('reserve products')) return;
+            
+            const productName = getProductName(productId);
+            const productPrice = getProductPrice(productId);
+            
+            // Get user email
+            const userEmail = localStorage.getItem('userEmail');
+            
+            // Create reservation
+            const reservation = {
+                id: productId,
+                name: productName,
+                price: productPrice,
+                userEmail: userEmail,
+                reservedAt: new Date().toISOString(),
+                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+            };
+            
+            // Save reservation
+            let reservations = JSON.parse(localStorage.getItem('reservations') || '[]');
+            reservations.push(reservation);
+            localStorage.setItem('reservations', JSON.stringify(reservations));
+            
+            // Show success message
+            showNotification('Product reserved for 24 hours! Check your email for confirmation.', 'success');
+            
+            // Update button state
+            updateReserveButton(productId, true);
+        }
+
+        // Add to wishlist function
+        function addToWishlist(productId) {
+            if (!requireLogin('add items to wishlist')) return;
+            
+            const productName = getProductName(productId);
+            const productPrice = getProductPrice(productId);
+            
+            let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+            const existingItem = wishlist.find(item => item.id === productId);
+            
+            if (!existingItem) {
+                wishlist.push({
+                    id: productId,
+                    name: productName,
+                    price: productPrice,
+                    addedAt: new Date().toISOString()
+                });
+                
+                localStorage.setItem('wishlist', JSON.stringify(wishlist));
+                showNotification('Added to wishlist!', 'success');
+                updateWishlistButton(productId, true);
+            } else {
+                showNotification('Already in wishlist!', 'info');
+            }
+        }
+
+        // Helper function to get product name
+        function getProductName(productId) {
+            const productNames = {
+                'smart-irrigation': 'Smart Irrigation Controller',
+                'fish-feeder': 'Automated Fish Feeder',
+                'soil-monitor': 'Soil Health Monitor',
+                'water-analyzer': 'Water Quality Analyzer',
+                'drone-monitor': 'Drone Crop Monitor',
+                'precision-seeder': 'Precision Seeder',
+                'aquaponics-system': 'Aquaponics System',
+                'weather-station': 'Weather Station Pro'
+            };
+            return productNames[productId] || 'Unknown Product';
+        }
+
+        // Helper function to get product price
+        function getProductPrice(productId) {
+            const productPrices = {
+                'smart-irrigation': 299.99,
+                'fish-feeder': 199.99,
+                'soil-monitor': 149.99,
+                'water-analyzer': 399.99,
+                'drone-monitor': 1299.99,
+                'precision-seeder': 2499.99,
+                'aquaponics-system': 599.99,
+                'weather-station': 199.99
+            };
+            return productPrices[productId] || 0;
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            
+            // Style the notification
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 12px;
+                color: white;
+                font-weight: 600;
+                z-index: 10000;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                max-width: 300px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            `;
+            
+            // Set background color based on type
+            switch(type) {
+                case 'success':
+                    notification.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+                    break;
+                case 'error':
+                    notification.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                    break;
+                case 'info':
+                    notification.style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
+                    break;
+                default:
+                    notification.style.background = 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)';
+            }
+            
+            // Add to page
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Update cart count (if you have a cart counter in header)
+        function updateCartCount() {
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            
+            // Update cart button if it exists
+            const cartBtn = document.querySelector('.cart-btn');
+            if (cartBtn && totalItems > 0) {
+                cartBtn.textContent = `🛒 (${totalItems})`;
+            }
+        }
+
+        // Update reserve button state
+        function updateReserveButton(productId, isReserved) {
+            const buttons = document.querySelectorAll(`[onclick*="${productId}"]`);
+            buttons.forEach(button => {
+                if (button.classList.contains('reserve-btn')) {
+                    if (isReserved) {
+                        button.textContent = 'Reserved';
+                        button.style.background = 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)';
+                        button.disabled = true;
+                    }
+                }
+            });
+        }
+
+        // Update wishlist button state
+        function updateWishlistButton(productId, isInWishlist) {
+            const buttons = document.querySelectorAll(`[onclick*="${productId}"]`);
+            buttons.forEach(button => {
+                if (button.classList.contains('wishlist-btn')) {
+                    if (isInWishlist) {
+                        button.textContent = '♥';
+                        button.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                    }
+                }
+            });
+        }
+
+        // Login button now redirects directly to Gmail - no need to update display
+
+        // Check for existing reservations and wishlist items on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check reservations
+            const reservations = JSON.parse(localStorage.getItem('reservations') || '[]');
+            reservations.forEach(reservation => {
+                if (new Date(reservation.expiresAt) > new Date()) {
+                    updateReserveButton(reservation.id, true);
+                }
+            });
+            
+            // Check wishlist
+            const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+            wishlist.forEach(item => {
+                updateWishlistButton(item.id, true);
+            });
+            
+            // Update cart count
+            updateCartCount();
+        });
+
+        // Simulate Gmail login (for demo purposes)
+        function simulateGmailLogin() {
+            const choice = confirm('Choose login method:\n\nOK = Quick Demo Login (enter email manually)\nCancel = Redirect to Google Sign-In');
+            
+            if (choice) {
+                // Quick demo login
+                const email = prompt('Enter your Gmail address:\n\nExample: user@gmail.com');
+                if (email && email.includes('@gmail.com')) {
+                    localStorage.setItem('userEmail', email);
+                    showNotification('Successfully logged in with Gmail!', 'success');
+                    return true;
+                } else if (email) {
+                    showNotification('Please enter a valid Gmail address (must end with @gmail.com).', 'error');
+                    return false;
+                }
+                return false;
+            } else {
+                // Redirect to Google Sign-In
+                window.open('https://accounts.google.com/signin', '_blank');
+                return false;
+            }
+        }
+
+        // Login button now redirects directly to Gmail - no JavaScript interference needed
+    </script>
+</body>
+</html>
