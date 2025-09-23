@@ -9,7 +9,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 body {
-    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', 'Segoe UI Emoji', 'Noto Color Emoji', 'Arial Unicode MS', sans-serif;
     line-height: 1.6;
     color: #1a1a1a;
     overflow-x: hidden;
