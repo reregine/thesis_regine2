@@ -358,15 +358,15 @@
                 <!-- Unordered list containing navigation links -->
                 <ul class="nav-list">
                     <!-- Each list item contains a navigation link -->
-                    <li><a href="index.html" class="nav-link">HOME</a></li>
-                    <li><a href="shop.html" class="nav-link">SHOP</a></li>
+                    <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
+                    <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
                     <li><a href="incubates.html" class="nav-link">INCUBATES</a></li>
                     <li><a href="#about" class="nav-link">ABOUT</a></li>
-                                                    <li><a href="#contacts" class="nav-link">CONTACTS</a></li>
-                                <!-- Cart button with special styling -->
-                                <li><a href="#cart" class="nav-link cart-btn">🛒</a></li>
-                                <!-- Login button with special styling -->
-                                <li><a href="https://accounts.google.com/signin" target="_blank" class="nav-link login-btn">LOGIN</a></li>
+                    <li><a href="#contacts" class="nav-link">CONTACTS</a></li>
+                    <!-- Cart button with special styling -->
+                    <li><a href="#cart" class="nav-link cart-btn">🛒</a></li>
+                    <!-- Login button with special styling -->
+                    <li><a href="https://accounts.google.com/signin" target="_blank" class="nav-link login-btn">LOGIN</a></li>
                 </ul>
             </nav>
         </div>
@@ -716,7 +716,7 @@
     </section>
 
     <!-- Back to Home Button -->
-    <a href="index.html" class="back-to-home">← Back to Home</a>
+    <a href="{{ url_for('home.index') }}" class="back-to-home">← Back to Home</a>
 
     <!-- Footer -->
     <footer class="footer">
