@@ -19,7 +19,7 @@ def create_app(config_class=Config):
     app.register_blueprint(notification.bp)
     app.register_blueprint(reports.bp)
     app.register_blueprint(reservation.bp)
-    app.register_blueprint(shop.shop_bp)  # Uncomment if shop blueprint is implemented
+    app.register_blueprint(shop.shop_bp)  
     app.register_blueprint(showroom.bp)
     # app.register_blueprint(admin.bp)  # Uncomment if admin blueprint is implemented
 
