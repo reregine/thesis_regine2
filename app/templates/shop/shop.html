@@ -384,13 +384,13 @@
                     <!-- Each list item contains a navigation link -->
                     <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
                     <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
-                    <li><a href="#incubates" class="nav-link">INCUBATES</a></li>
+                    <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
                     <li><a href="#about" class="nav-link">ABOUT</a></li>
                     <li><a href="#contacts" class="nav-link">CONTACTS</a></li>
                     <!-- Cart button with special styling -->
                     <li><a href="#cart" class="nav-link cart-btn">🛒</a></li>
                     <!-- Login button with special styling -->
-                    <li><a href="https://accounts.google.com/signin" target="_blank" class="nav-link login-btn">LOGIN</a></li>
+                    <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
                 </ul>
             </nav>
         </div>
