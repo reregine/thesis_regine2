@@ -1,801 +1,280 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Character encoding for proper text display -->
-    <meta charset="UTF-8">
-    <!-- Responsive viewport for mobile devices -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Page title that appears in browser tab -->
-    <title>Incubates - ATBI</title>
-    <!-- Link to external CSS file for styling -->
-    <link rel="stylesheet" href="styles.css">
-    <!-- Additional CSS for incubates page -->
-    <style>
-        /* Incubates Page Specific Styles */
-        .incubates-header {
-            background: linear-gradient(135deg, #f0f9ff 0%, #ecfdf5 50%, #f0fdf4 100%);
-            padding: 120px 0 60px 0;
-            text-align: center;
-            color: #1a1a1a;
-            position: relative;
-            overflow: hidden;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Our Incubates - ATBI</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        .incubates-title {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      background-color: #f9f9f9;
+      color: #333;
+    }
 
-        .incubates-subtitle {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            opacity: 0.8;
-            color: #4b5563;
-        }
+    /* Navigation Bar */
+    .header {
+      width: 100%;
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
 
-        .batch-navigation {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 2rem 0;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            border-bottom: 1px solid rgba(34, 197, 94, 0.1);
-            position: sticky;
-            top: 80px;
-            z-index: 100;
-        }
+    .header-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-        .batch-nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
+    .logo img {
+      height: 52px;
+    }
 
-        .batch-btn {
-            padding: 1rem 2rem;
-            border: 2px solid #22c55e;
-            background: white;
-            color: #22c55e;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            font-size: 1rem;
-        }
+    .nav-menu .nav-list {
+      list-style: none;
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
 
-        .batch-btn:hover,
-        .batch-btn.active {
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(34, 197, 94, 0.3);
-        }
+    .nav-link {
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      color: #000;
+      transition: color 0.3s ease, border-bottom 0.3s ease;
+      padding-bottom: 4px;
+    }
 
-        .incubates-section {
-            padding: 4rem 0;
-            background: #fafafa;
-        }
+    .nav-link:hover {
+      color: #008000;
+    }
 
-        .incubates-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
+    /* Active page highlight */
+    .nav-link.active {
+      color: #008000;
+      border-bottom: 2px solid #008000;
+    }
 
-        .batch-section {
-            margin-bottom: 4rem;
-        }
+    .cart-btn {
+      font-size: 1.3rem;
+    }
 
-        .batch-title {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 3rem;
-            color: #1a1a1a;
-            position: relative;
-            font-weight: 700;
-        }
+    .login-btn {
+      background: linear-gradient(135deg, #00c853, #009624);
+      color: #fff !important;
+      padding: 8px 20px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
 
-        .batch-title::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 4px;
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            border-radius: 2px;
-        }
+    .login-btn:hover {
+      background: linear-gradient(135deg, #00e676, #00c853);
+      transform: translateY(-2px);
+    }
 
-        .incubates-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
+    /* Page Header */
+header.page-header {
+  background: linear-gradient(135deg, #a7f3d0, #6ee7b7); /* light green gradient */
+  color: #064e3b;  /* dark green text */
+  padding: 30px 20px;  /* smaller background height */
+  text-align: center;
+  border-bottom: 2px solid #059669; /* subtle accent line */
+}
 
-        .incubate-card {
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative;
-            border: 1px solid rgba(34, 197, 94, 0.1);
-        }
+header.page-header h1 {
+  font-size: 2.2rem;   /* consistent with shop titles */
+  font-weight: 700;
+  margin: 0;
+}
 
-        .incubate-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(34, 197, 94, 0.15);
-            border-color: rgba(34, 197, 94, 0.3);
-        }
 
-        .incubate-logo {
-            height: 200px;
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
+    main {
+      padding: 40px 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
 
-        .incubate-logo:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
-        }
+    /* Batch section */
+    .batch {
+      margin-bottom: 60px;
+    }
 
-        .incubate-logo:active {
-            transform: scale(0.95);
-        }
+    .batch h3 {
+      font-size: 2rem;
+      margin-bottom: 2rem;
+      color: #000;
+      text-align: center;
+      font-weight: 700;
+    }
 
-        .incubate-logo::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
+    /* Grid layout for incubates */
+    .incubates-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 1rem;
+    }
 
-        .incubate-card:hover .incubate-logo::before {
-            left: 100%;
-        }
+    .incubate-card {
+      text-align: center;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.3s ease;
+    }
 
-        .logo-placeholder {
-            width: 120px;
-            height: 120px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            color: white;
-            font-weight: bold;
-        }
+    .incubate-card:hover {
+      transform: translateY(-6px);
+    }
 
-        .incubate-info {
-            padding: 1.5rem;
-            text-align: center;
-        }
+    .incubate-card img {
+      width: 220px;
+      height: 220px;
+      object-fit: contain;
+      margin-bottom: 0.8rem;
+      transition: transform 0.3s ease;
+    }
 
-        .incubate-name {
-            font-size: 1.3rem;
-            margin-bottom: 0.5rem;
-            color: #1a1a1a;
-            font-weight: 700;
-        }
+    .incubate-card:hover img {
+      transform: scale(1.08);
+    }
 
-        .incubate-category {
-            color: #22c55e;
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            text-transform: uppercase;
-        }
+    .incubate-name {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #222;
+    }
 
-        .incubate-description {
-            color: #666;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin-bottom: 1rem;
-        }
+    footer {
+      text-align: center;
+      padding: 20px;
+      background: #333;
+      color: #fff;
+    }
 
-        .incubate-status {
-            display: inline-block;
-            padding: 0.3rem 1rem;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
+    /* Floating Buttons */
+    .floating-btn {
+      position: fixed;
+      bottom: 20px;
+      z-index: 1000;
+    }
 
-        .status-active {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-        }
+    .back-home {
+      right: 20px;
+    }
 
-        .status-pending {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-        }
+    .batch-nav {
+      left: 20px;
+    }
 
-        .status-completed {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
+    .floating-btn a {
+      display: inline-block;
+      padding: 12px 18px;
+      background: #006400;
+      color: #fff;
+      text-decoration: none;
+      font-size: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
 
-        .batch-stats {
-            background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 2rem;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #22c55e;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            color: #666;
-            font-weight: 600;
-        }
-
-        .back-to-home {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
-            transition: all 0.3s ease;
-            z-index: 1000;
-        }
-
-        .back-to-home:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
-        }
-
-        /* Responsive Design for Incubates Page */
-        @media (max-width: 768px) {
-            .incubates-title {
-                font-size: 2.5rem;
-            }
-
-            .batch-nav-container {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .batch-btn {
-                width: 200px;
-            }
-
-            .incubates-grid {
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                gap: 1.5rem;
-            }
-
-            .batch-title {
-                font-size: 2rem;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .incubates-title {
-                font-size: 2rem;
-            }
-
-            .incubates-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-
-            .batch-btn {
-                width: 100%;
-                max-width: 250px;
-            }
-
-            .back-to-home {
-                bottom: 20px;
-                right: 20px;
-                padding: 0.8rem 1.2rem;
-                font-size: 0.9rem;
-            }
-        }
-    </style>
+    .floating-btn a:hover {
+      background: #228B22;
+      transform: translateY(-2px);
+    }
+  </style>
 </head>
 <body>
-    <!-- Header Section - Fixed navigation bar at the top -->
-    <header class="header">
-        <!-- Container to center and limit the width of header content -->
-        <div class="header-container">
-            <!-- Logo section on the left side -->
-            <div class="logo">
-                <!-- Company logo image - replace logo.png with your actual logo file -->
-                <img src="images/agrilogo.png" alt="Store Logo" class="logo-img">
-            </div>
-            <!-- Navigation menu on the right side -->
-            <nav class="nav-menu">
-                <!-- Unordered list containing navigation links -->
-                <ul class="nav-list">
-                    <!-- Each list item contains a navigation link -->
-                    <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
-                    <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
-                    <li><a href="incubates.html" class="nav-link">INCUBATES</a></li>
-                    <li><a href="#about" class="nav-link">ABOUT</a></li>
-                    <li><a href="#contacts" class="nav-link">CONTACTS</a></li>
-                    <!-- Cart button with special styling -->
-                    <li><a href="#cart" class="nav-link cart-btn">🛒</a></li>
-                    <!-- Login button with special styling -->
-                    <li><a href="https://accounts.google.com/signin" target="_blank" class="nav-link login-btn">LOGIN</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
+  <!-- Navigation Bar -->
+  <header class="header">
+    <div class="header-container">
+      <div class="logo">
+        <img src="images/agrilogo.png" alt="ATBI Logo">
+      </div>
+      <nav class="nav-menu">
+        <ul class="nav-list">
+          <li><a href="index.html" class="nav-link">HOME</a></li>
+          <li><a href="shop.html" class="nav-link">SHOP</a></li>
+          <li><a href="incubates.html" class="nav-link active">INCUBATES</a></li>
+          <li><a href="about.html" class="nav-link">ABOUT</a></li>
+          <li><a href="contacts.html" class="nav-link">CONTACTS</a></li>
+          <li><a href="cart.html" class="nav-link cart-btn">🛒</a></li>
+          <li><a href="https://accounts.google.com/signin" target="_blank" class="login-btn">LOGIN</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
 
-    <!-- Incubates Header Section -->
-    <section class="incubates-header">
-        <div class="container">
-            <h1 class="incubates-title">ATBI Incubates</h1>
-            <p class="incubates-subtitle">Discover innovative startups and entrepreneurs from our incubation program</p>
-        </div>
+  <!-- Page Header -->
+  <header class="page-header">
+    <h1>Our Incubates</h1>
+  </header>
+
+  <main>
+    <!-- Batch 1 -->
+    <section class="batch" id="batch1">
+      <h3>Batch 1</h3>
+      <div class="incubates-grid">
+        <a href="details.html?id=techstart" class="incubate-card">
+          <img src="images/B1.png" alt="TechStart Logo">
+          <div class="incubate-name">TechStart</div>
+        </a>
+        <a href="details.html?id=greeneco" class="incubate-card">
+          <img src="images/B4.png" alt="GreenEco Logo">
+          <div class="incubate-name">GreenEco</div>
+        </a>
+        <a href="details.html?id=edutech" class="incubate-card">
+          <img src="images/B5.png" alt="EduTech Logo">
+          <div class="incubate-name">EduTech</div>
+        </a>
+      </div>
     </section>
 
-    <!-- Batch Navigation -->
-    <section class="batch-navigation">
-        <div class="batch-nav-container">
-            <button class="batch-btn active" onclick="showBatch('batch1')">Batch 1</button>
-            <button class="batch-btn" onclick="showBatch('batch2')">Batch 2</button>
-            <button class="batch-btn" onclick="showBatch('batch3')">Batch 3</button>
-            <button class="batch-btn" onclick="showBatch('batch4')">Batch 4</button>
-        </div>
+    <!-- Batch 2 -->
+    <section class="batch" id="batch2">
+      <h3>Batch 2</h3>
+      <div class="incubates-grid">
+        <a href="details.html?id=foodies" class="incubate-card">
+          <img src="images/B2.png" alt="Foodies Logo">
+          <div class="incubate-name">Foodies</div>
+        </a>
+        <a href="details.html?id=medilink" class="incubate-card">
+          <img src="images/B6.png" alt="MediLink Logo">
+          <div class="incubate-name">MediLink</div>
+        </a>
+      </div>
     </section>
+  </main>
 
-    <!-- Incubates Section -->
-    <section class="incubates-section">
-        <div class="incubates-container">
-            <!-- Batch 1 -->
-            <div class="batch-section" id="batch1">
-                <h2 class="batch-title">Batch 1 - 2023</h2>
-                
-                <div class="batch-stats">
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <div class="stat-number">12</div>
-                            <div class="stat-label">Total Incubates</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">8</div>
-                            <div class="stat-label">Active</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">3</div>
-                            <div class="stat-label">Completed</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">1</div>
-                            <div class="stat-label">Pending</div>
-                        </div>
-                    </div>
-                </div>
+  <footer>
+    <p>&copy; 2025 ATBI. All Rights Reserved.</p>
+  </footer>
 
-                <div class="incubates-grid">
-                    <!-- Incubate 1 -->
-                    <div class="incubate-card">
-                        <div class="incubate-logo" onclick="openIncubateDetail('techstart')">
-                            <div class="logo-placeholder">TS</div>
-                        </div>
-                        <div class="incubate-info">
-                            <h3 class="incubate-name">TechStart Solutions</h3>
-                            <div class="incubate-category">Technology</div>
-                            <p class="incubate-description">Innovative software solutions for small businesses. Specializing in automation and digital transformation.</p>
-                            <div class="incubate-status status-active">Active</div>
-                        </div>
-                    </div>
+  <!-- Floating Buttons -->
+  <div class="floating-btn back-home">
+    <a href="index.html">← Home</a>
+  </div>
 
-                    <!-- Incubate 2 -->
-                    <div class="incubate-card">
-                        <div class="incubate-logo" onclick="openIncubateDetail('greeneco')">
-                            <div class="logo-placeholder">GE</div>
-                        </div>
-                        <div class="incubate-info">
-                            <h3 class="incubate-name">GreenEco Innovations</h3>
-                            <div class="incubate-category">Sustainability</div>
-                            <p class="incubate-description">Eco-friendly products and sustainable solutions for modern living. Focus on reducing environmental impact.</p>
-                            <div class="incubate-status status-completed">Completed</div>
-                        </div>
-                    </div>
-
-                    <!-- Incubate 3 -->
-                    <div class="incubate-card">
-                        <div class="incubate-logo" onclick="openIncubateDetail('healthplus')">
-                            <div class="logo-placeholder">HP</div>
-                        </div>
-                        <div class="incubate-info">
-                            <h3 class="incubate-name">HealthPlus Mobile</h3>
-                            <div class="incubate-category">Healthcare</div>
-                            <p class="incubate-description">Mobile health applications for remote patient monitoring and telemedicine services.</p>
-                            <div class="incubate-status status-active">Active</div>
-                        </div>
-                    </div>
-
-                    <!-- Incubate 4 -->
-                    <div class="incubate-card">
-                        <div class="incubate-logo" onclick="openIncubateDetail('edutech')">
-                            <div class="logo-placeholder">ET</div>
-                        </div>
-                        <div class="incubate-info">
-                            <h3 class="incubate-name">EduTech Pro</h3>
-                            <div class="incubate-category">Education</div>
-                            <p class="incubate-description">Online learning platforms and educational technology solutions for schools and universities.</p>
-                            <div class="incubate-status status-active">Active</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Batch 2 -->
-            <div class="batch-section" id="batch2" style="display: none;">
-                <h2 class="batch-title">Batch 2 - 2023</h2>
-                
-                <div class="batch-stats">
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <div class="stat-number">15</div>
-                            <div class="stat-label">Total Incubates</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">12</div>
-                            <div class="stat-label">Active</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">2</div>
-                            <div class="stat-label">Completed</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">1</div>
-                            <div class="stat-label">Pending</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="incubates-grid">
-                    <!-- Incubate 1 -->
-                    <div class="incubate-card">
-                        <div class="incubate-logo" onclick="openIncubateDetail('fintech')">
-                            <div class="logo-placeholder">FT</div>
-                        </div>
-                        <div class="incubate-info">
-                            <h3 class="incubate-name">FinTech Solutions</h3>
-                            <div class="incubate-category">Finance</div>
-                            <p class="incubate-description">Digital payment solutions and financial technology innovations for modern banking.</p>
-                            <div class="incubate-status status-active">Active</div>
-                        </div>
-                    </div>
-
-                    <!-- Incubate 2 -->
-                    <div class="incubate-card">
-                        <div class="incubate-logo" onclick="openIncubateDetail('foodtech')">
-                            <div class="logo-placeholder">FD</div>
-                        </div>
-                        <div class="incubate-info">
-                            <h3 class="incubate-name">FoodTech Delivery</h3>
-                            <div class="incubate-category">Food & Delivery</div>
-                            <p class="incubate-description">Smart food delivery platform connecting restaurants with customers through AI-powered logistics.</p>
-                            <div class="incubate-status status-active">Active</div>
-                        </div>
-                    </div>
-
-                    <!-- Incubate 3 -->
-                    <div class="incubate-card">
-                        <div class="incubate-logo" onclick="openIncubateDetail('retailai')">
-                            <div class="logo-placeholder">RA</div>
-                        </div>
-                        <div class="incubate-info">
-                            <h3 class="incubate-name">RetailAI Systems</h3>
-                            <div class="incubate-category">Retail</div>
-                            <p class="incubate-description">AI-powered retail analytics and inventory management solutions for modern businesses.</p>
-                            <div class="incubate-status status-completed">Completed</div>
-                        </div>
-                    </div>
-
-                    <!-- Incubate 4 -->
-                    <div class="incubate-card">
-                        <div class="incubate-logo" onclick="openIncubateDetail('traveltech')">
-                            <div class="logo-placeholder">TT</div>
-                        </div>
-                        <div class="incubate-info">
-                            <h3 class="incubate-name">TravelTech Hub</h3>
-                            <div class="incubate-category">Travel</div>
-                            <p class="incubate-description">Innovative travel booking platform with personalized recommendations and smart itineraries.</p>
-                            <div class="incubate-status status-active">Active</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Batch 3 -->
-            <div class="batch-section" id="batch3" style="display: none;">
-                <h2 class="batch-title">Batch 3 - 2024</h2>
-                
-                <div class="batch-stats">
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <div class="stat-number">18</div>
-                            <div class="stat-label">Total Incubates</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">16</div>
-                            <div class="stat-label">Active</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">1</div>
-                            <div class="stat-label">Completed</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">1</div>
-                            <div class="stat-label">Pending</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="incubates-grid">
-                    <!-- Incubate 1 -->
-                    <div class="incubate-card">
-                        <div class="incubate-logo" onclick="openIncubateDetail('aihealth')">
-                            <div class="logo-placeholder">AH</div>
-                        </div>
-                        <div class="incubate-info">
-                            <h3 class="incubate-name">AI Health Diagnostics</h3>
-                            <div class="incubate-category">Healthcare AI</div>
-                            <p class="incubate-description">AI-powered medical diagnostics and health monitoring systems for early disease detection.</p>
-                            <div class="incubate-status status-active">Active</div>
-                        </div>
-                    </div>
-
-                    <!-- Incubate 2 -->
-                    <div class="incubate-card">
-                        <div class="incubate-logo" onclick="openIncubateDetail('smartcity')">
-                            <div class="logo-placeholder">SC</div>
-                        </div>
-                        <div class="incubate-info">
-                            <h3 class="incubate-name">SmartCity Solutions</h3>
-                            <div class="incubate-category">Smart Cities</div>
-                            <p class="incubate-description">IoT-based smart city infrastructure solutions for traffic management and urban planning.</p>
-                            <div class="incubate-status status-active">Active</div>
-                        </div>
-                    </div>
-
-                    <!-- Incubate 3 -->
-                    <div class="incubate-card">
-                        <div class="incubate-logo" onclick="openIncubateDetail('blockchain')">
-                            <div class="logo-placeholder">BC</div>
-                        </div>
-                        <div class="incubate-info">
-                            <h3 class="incubate-name">BlockChain Security</h3>
-                            <div class="incubate-category">Blockchain</div>
-                            <p class="incubate-description">Blockchain-based security solutions and decentralized applications for enterprise use.</p>
-                            <div class="incubate-status status-pending">Pending</div>
-                        </div>
-                    </div>
-
-                    <!-- Incubate 4 -->
-                    <div class="incubate-card">
-                        <div class="incubate-logo" onclick="openIncubateDetail('robotics')">
-                            <div class="logo-placeholder">RB</div>
-                        </div>
-                        <div class="incubate-info">
-                            <h3 class="incubate-name">Robotics Automation</h3>
-                            <div class="incubate-category">Robotics</div>
-                            <p class="incubate-description">Industrial robotics and automation solutions for manufacturing and logistics industries.</p>
-                            <div class="incubate-status status-active">Active</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Batch 4 -->
-            <div class="batch-section" id="batch4" style="display: none;">
-                <h2 class="batch-title">Batch 4 - 2024</h2>
-                
-                <div class="batch-stats">
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <div class="stat-number">20</div>
-                            <div class="stat-label">Total Incubates</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">18</div>
-                            <div class="stat-label">Active</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">1</div>
-                            <div class="stat-label">Completed</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">1</div>
-                            <div class="stat-label">Pending</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="incubates-grid">
-                    <!-- Incubate 1 -->
-                    <div class="incubate-card">
-                        <div class="incubate-logo" onclick="openIncubateDetail('metaverse')">
-                            <div class="logo-placeholder">MV</div>
-                        </div>
-                        <div class="incubate-info">
-                            <h3 class="incubate-name">MetaVerse Worlds</h3>
-                            <div class="incubate-category">Metaverse</div>
-                            <p class="incubate-description">Virtual reality platforms and metaverse experiences for entertainment and business collaboration.</p>
-                            <div class="incubate-status status-active">Active</div>
-                        </div>
-                    </div>
-
-                    <!-- Incubate 2 -->
-                    <div class="incubate-card">
-                        <div class="incubate-logo" onclick="openIncubateDetail('quantum')">
-                            <div class="logo-placeholder">QC</div>
-                        </div>
-                        <div class="incubate-info">
-                            <h3 class="incubate-name">Quantum Computing</h3>
-                            <div class="incubate-category">Quantum Tech</div>
-                            <p class="incubate-description">Quantum computing solutions and algorithms for complex problem-solving and cryptography.</p>
-                            <div class="incubate-status status-active">Active</div>
-                        </div>
-                    </div>
-
-                    <!-- Incubate 3 -->
-                    <div class="incubate-card">
-                        <div class="incubate-logo" onclick="openIncubateDetail('biotech')">
-                            <div class="logo-placeholder">BT</div>
-                        </div>
-                        <div class="incubate-info">
-                            <h3 class="incubate-name">BioTech Innovations</h3>
-                            <div class="incubate-category">Biotechnology</div>
-                            <p class="incubate-description">Biotechnology solutions for healthcare, agriculture, and environmental sustainability.</p>
-                            <div class="incubate-status status-active">Active</div>
-                        </div>
-                    </div>
-
-                    <!-- Incubate 4 -->
-                    <div class="incubate-card">
-                        <div class="incubate-logo" onclick="openIncubateDetail('nanotech')">
-                            <div class="logo-placeholder">NT</div>
-                        </div>
-                        <div class="incubate-info">
-                            <h3 class="incubate-name">NanoTech Materials</h3>
-                            <div class="incubate-category">Nanotechnology</div>
-                            <p class="incubate-description">Advanced nanomaterials and nanotechnology applications for various industries.</p>
-                            <div class="incubate-status status-pending">Pending</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Back to Home Button -->
-    <a href="{{ url_for('home.index') }}" class="back-to-home">← Back to Home</a>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 ATBI - Agri-Aqua Business Incubator. All rights reserved.</p>
-        </div>
-    </footer>
-
-    <!-- JavaScript for batch navigation and incubate interactions -->
-    <script>
-        // Function to show different batches
-        function showBatch(batchId) {
-            // Hide all batch sections
-            const batchSections = document.querySelectorAll('.batch-section');
-            batchSections.forEach(section => {
-                section.style.display = 'none';
-            });
-
-            // Show selected batch
-            document.getElementById(batchId).style.display = 'block';
-
-            // Update active button
-            const batchButtons = document.querySelectorAll('.batch-btn');
-            batchButtons.forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-        }
-
-        // Function to handle incubate logo clicks - opens detailed page
-        function openIncubateDetail(incubateId) {
-            // Create a detailed page URL for each incubate
-            const incubatePages = {
-                'techstart': 'incubate-detail.html?id=techstart&name=TechStart Solutions',
-                'greeneco': 'incubate-detail.html?id=greeneco&name=GreenEco Innovations',
-                'healthplus': 'incubate-detail.html?id=healthplus&name=HealthPlus Mobile',
-                'edutech': 'incubate-detail.html?id=edutech&name=EduTech Pro',
-                'fintech': 'incubate-detail.html?id=fintech&name=FinTech Solutions',
-                'foodtech': 'incubate-detail.html?id=foodtech&name=FoodTech Delivery',
-                'retailai': 'incubate-detail.html?id=retailai&name=RetailAI Systems',
-                'traveltech': 'incubate-detail.html?id=traveltech&name=TravelTech Hub',
-                'aihealth': 'incubate-detail.html?id=aihealth&name=AI Health Diagnostics',
-                'smartcity': 'incubate-detail.html?id=smartcity&name=SmartCity Solutions',
-                'blockchain': 'incubate-detail.html?id=blockchain&name=BlockChain Security',
-                'robotics': 'incubate-detail.html?id=robotics&name=Robotics Automation',
-                'metaverse': 'incubate-detail.html?id=metaverse&name=MetaVerse Worlds',
-                'quantum': 'incubate-detail.html?id=quantum&name=Quantum Computing',
-                'biotech': 'incubate-detail.html?id=biotech&name=BioTech Innovations',
-                'nanotech': 'incubate-detail.html?id=nanotech&name=NanoTech Materials'
-            };
-            
-            // Redirect to the incubate detail page
-            if (incubatePages[incubateId]) {
-                window.location.href = incubatePages[incubateId];
-            } else {
-                // Fallback for unknown incubate IDs
-                window.location.href = `incubate-detail.html?id=${incubateId}`;
-            }
-        }
-
-        // Function to handle incubate card clicks (legacy function for backward compatibility)
-        function openIncubate(incubateId) {
-            // Redirect to the same detail page
-            openIncubateDetail(incubateId);
-        }
-
-        // Add click event listeners to all incubate cards
-        document.addEventListener('DOMContentLoaded', function() {
-            const incubateCards = document.querySelectorAll('.incubate-card');
-            incubateCards.forEach(card => {
-                card.addEventListener('click', function() {
-                    // Add visual feedback
-                    this.style.transform = 'scale(0.95)';
-                    setTimeout(() => {
-                        this.style.transform = 'translateY(-10px)';
-                    }, 150);
-                });
-            });
-        });
-    </script>
+  <div class="floating-btn batch-nav">
+    <a href="#batch1">Batch 1</a> |
+    <a href="#batch2">Batch 2</a>
+  </div>
 </body>
 </html>
