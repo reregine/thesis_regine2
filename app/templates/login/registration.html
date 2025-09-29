@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATBI System | Registration</title>
+  <style>
+    /* Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a73e8, #34a853);
+    }
+
+    .login-card {
+      background: #fff;
+      padding: 40px 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      animation: fadeIn 0.6s ease;
+    }
+
+    .login-card h2 {
+      margin-bottom: 25px;
+      font-size: 24px;
+      color: #222;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+      text-align: left;
+      position: relative;
+    }
+
+    .input-group label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px 40px 12px 12px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+      transition: 0.3s;
+    }
+
+    .input-group input:focus {
+      border-color: #1a73e8;
+      box-shadow: 0 0 6px rgba(26, 115, 232, 0.3);
+    }
+
+    .input-group input.error {
+      border-color: #d93025;
+      box-shadow: 0 0 6px rgba(217, 48, 37, 0.3);
+    }
+
+    .toggle-password {
+      position: absolute;
+      top: 38px;
+      right: 12px;
+      cursor: pointer;
+      font-size: 18px;
+      color: #777;
+    }
+
+    .toggle-password:hover {
+      color: #1a73e8;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: #1a73e8;
+      color: #fff;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .login-btn:hover {
+      background: #1557b0;
+    }
+
+    .success-message {
+      color: #34a853;
+      font-size: 14px;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #e8f5e8;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .error-message {
+      color: #d93025;
+      font-size: 12px;
+      margin-top: 5px;
+      display: none;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h1>ATBI - Agri-Aqua Business Incubator</h1>
+    <h2>Create Account</h2>
+
+    <div id="successMessage" class="success-message"></div>
+
+    <form id="registerForm">
+      <div class="input-group">
+        <label for="username">👤 Username</label>
+        <input type="text" id="username" placeholder="Enter a username" required>
+        <div id="usernameError" class="error-message">Username is required</div>
+      </div>
+
+      <div class="input-group">
+        <label for="password">🔑 Password</label>
+        <input type="password" id="password" placeholder="Enter a password" required>
+        <span class="toggle-password" onclick="togglePassword('password')">👁</span>
+        <div id="passwordError" class="error-message">Password is required</div>
+      </div>
+
+      <div class="input-group">
+        <label for="confirm_password">🔒 Confirm Password</label>
+        <input type="password" id="confirm_password" placeholder="Re-enter password" required>
+        <span class="toggle-password" onclick="togglePassword('confirm_password')">👁</span>
+        <div id="confirmPasswordError" class="error-message">Passwords do not match</div>
+      </div>
+
+      <button type="submit" class="login-btn">Register</button>
+
+      <p class="switch-link" style="margin-top: 15px; font-size: 14px;">
+        Already have an account? <a href="{{ url_for('login.login') }}">Login here</a>
+      </p>
+    </form>
+  </div>
+
+  <script>
+    const registerForm = document.getElementById("registerForm");
+    const usernameInput = document.getElementById("username");
+    const passwordInput = document.getElementById("password");
+    const confirmPasswordInput = document.getElementById("confirm_password");
+    const successMessage = document.getElementById("successMessage");
+    const usernameError = document.getElementById("usernameError");
+    const passwordError = document.getElementById("passwordError");
+    const confirmPasswordError = document.getElementById("confirmPasswordError");
+
+    registerForm.addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value.trim();
+      const confirmPassword = confirmPasswordInput.value.trim();
+
+      // Reset errors
+      usernameError.style.display = "none";
+      passwordError.style.display = "none";
+      confirmPasswordError.style.display = "none";
+
+      let isValid = true;
+
+      if (username === "") {
+        usernameError.style.display = "block";
+        isValid = false;
+      }
+
+      if (password === "") {
+        passwordError.style.display = "block";
+        isValid = false;
+      }
+
+      if (password !== confirmPassword) {
+        confirmPasswordError.style.display = "block";
+        isValid = false;
+      }
+
+      if (!isValid) return;
+
+      // Send request to backend
+      fetch("{{ url_for('login.register') }}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          successMessage.textContent = data.message;
+          successMessage.style.display = "block";
+
+          setTimeout(() => {
+            window.location.href = "{{ url_for('login.login') }}";
+          }, 1500);
+        } else {
+          alert(data.message || "❌ Registration failed!");
+        }
+      })
+      .catch(err => {
+        console.error("Registration error:", err);
+        alert("⚠ Something went wrong during registration.");
+      });
+    });
+
+    function togglePassword(fieldId) {
+      const field = document.getElementById(fieldId);
+      field.type = field.type === "password" ? "text" : "password";
+    }
+  </script>
+</body>
+</html>

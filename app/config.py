@@ -7,8 +7,7 @@ class Config:
     # PostgreSQL connection URL
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL",
-        "postgresql://postgres:password@localhost:5432/atbi_db"
-    )
+        "postgresql+psycopg2://postgres:cyla0917@localhost:5432/atbiDB")
 
     # Disable track modifications to save memory
     SQLALCHEMY_TRACK_MODIFICATIONS = False

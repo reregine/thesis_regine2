@@ -60,14 +60,47 @@ atbi_marketing_system/
 │
 ├── migrations/                        # Flask-Migrate scripts for PostgreSQL
 │
-├── tests/                             # Unit and integration tests
-│   ├── __init__.py
-│   ├── test_showroom.py
-│   ├── test_reservation.py
-│   ├── test_inventory.py
-│   └── test_reports.py
 │
 ├── .env                               # Environment variables (DB URI, secrets)
 ├── requirements.txt                   # Python dependencies
 ├── run.py                             # Entry point to run Flask app
 └── README.md                          # Project documentation
+
+
+
+D:\programs\Postgres18\bin>initdb -D "D:\programs\Postgres18\data" -U postgres -W
+The files belonging to this database system will be owned by user "Cyla".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "English_Philippines.1252".
+The default database encoding has accordingly been set to "WIN1252".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+Enter new superuser password: cyla0917
+
+Enter it again:
+
+
+creating directory D:/programs/Postgres18/data ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... windows
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Asia/Shanghai
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+
+initdb: warning: enabling "trust" authentication for local connections
+initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D ^"D^:^\programs^\Postgres18^\data^" -l logfile start
+
+This manually start the server 
+cd D:\programs\Postgres18\bin
+pg_ctl -D "D:\programs\Postgres18\data" start
