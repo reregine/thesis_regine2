@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATBI System | Admin Login</title>
+  <style>
+    /* Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a73e8, #34a853);
+    }
+
+    .login-card {
+      background: #fff;
+      padding: 40px 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      animation: fadeIn 0.6s ease;
+    }
+
+    .login-card h2 {
+      margin-bottom: 25px;
+      font-size: 24px;
+      color: #222;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+      text-align: left;
+      position: relative;
+    }
+
+    .input-group label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px 40px 12px 12px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+      transition: 0.3s;
+    }
+
+    .input-group input:focus {
+      border-color: #1a73e8;
+      box-shadow: 0 0 6px rgba(26, 115, 232, 0.3);
+    }
+
+    .input-group input.error {
+      border-color: #d93025;
+      box-shadow: 0 0 6px rgba(217, 48, 37, 0.3);
+    }
+
+    .toggle-password {
+      position: absolute;
+      top: 38px;
+      right: 12px;
+      cursor: pointer;
+      font-size: 18px;
+      color: #777;
+    }
+
+    .toggle-password:hover {
+      color: #1a73e8;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: #1a73e8;
+      color: #fff;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .login-btn:hover {
+      background: #1557b0;
+    }
+
+    .login-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .forgot-link {
+      margin-top: 15px;
+      font-size: 14px;
+      display: block;
+      color: #1a73e8;
+      text-decoration: none;
+    }
+
+    .forgot-link:hover {
+      text-decoration: underline;
+    }
+
+    .divider {
+      margin: 20px 0;
+      display: flex;
+      align-items: center;
+      text-align: center;
+      color: #666;
+    }
+
+    .divider::before, .divider::after {
+      content: "";
+      flex: 1;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .divider:not(:empty)::before {
+      margin-right: 10px;
+    }
+
+    .divider:not(:empty)::after {
+      margin-left: 10px;
+    }
+
+    .google-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      padding: 12px;
+      width: 100%;
+      font-size: 15px;
+      font-weight: bold;
+      color: #444;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .google-btn:hover {
+      background: #f7f7f7;
+      border-color: #aaa;
+    }
+
+    .google-btn img {
+      width: 20px;
+      height: 20px;
+    }
+
+    .error-message {
+      color: #d93025;
+      font-size: 12px;
+      margin-top: 5px;
+      display: none;
+    }
+
+    .success-message {
+      color: #34a853;
+      font-size: 14px;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #e8f5e8;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .loading {
+      display: none;
+      margin-left: 10px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .login-card {
+        padding: 30px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h2>Login</h2>
+    
+    <div id="successMessage" class="success-message"></div>
+    
+    <form id="loginForm">
+      <div class="input-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="Enter your username" required>
+        <div id="usernameError" class="error-message">Username is required</div>
+      </div>
+      
+      <div class="input-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Enter your password" required>
+        <span class="toggle-password" onclick="togglePassword()">👁</span>
+        <div id="passwordError" class="error-message">Password is required</div>
+      </div>
+      
+      <button type="submit" class="login-btn" id="loginButton">
+        Login
+        <span class="loading" id="loadingSpinner">⏳</span>
+      </button>
+      
+      <div id="loginError" class="error-message" style="text-align: center; margin-top: 10px;">
+        Invalid username or password
+      </div>
+      
+      <a href="#" class="forgot-link">Forgot Password?</a>
+    </form>
+
+    <div class="divider">or</div>
+
+    <!-- Google Login Button -->
+    <button class="google-btn" onclick="loginWithGoogle()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo">
+      Login with Google
+    </button>
+  </div>
+
+  <script>
+    // Form elements
+    const loginForm = document.getElementById("loginForm");
+    const usernameInput = document.getElementById("username");
+    const passwordInput = document.getElementById("password");
+    const loginButton = document.getElementById("loginButton");
+    const loadingSpinner = document.getElementById("loadingSpinner");
+    const successMessage = document.getElementById("successMessage");
+    const loginError = document.getElementById("loginError");
+    const usernameError = document.getElementById("usernameError");
+    const passwordError = document.getElementById("passwordError");
+
+    // Admin credentials
+    const ADMIN_USERNAME = "admin";
+    const ADMIN_PASSWORD = "Admin2025_atbi";
+
+    // Clear error messages when user starts typing
+    usernameInput.addEventListener("input", function() {
+      clearFieldError(usernameInput, usernameError);
+      hideLoginError();
+    });
+
+    passwordInput.addEventListener("input", function() {
+      clearFieldError(passwordInput, passwordError);
+      hideLoginError();
+    });
+
+    // Form submission handler
+    loginForm.addEventListener("submit", function(event) {
+      event.preventDefault();
+      
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value.trim();
+      
+      // Reset all error states
+      clearAllErrors();
+      
+      // Validate fields
+      let isValid = true;
+      
+      if (username === "") {
+        showFieldError(usernameInput, usernameError);
+        isValid = false;
+      }
+      
+      if (password === "") {
+        showFieldError(passwordInput, passwordError);
+        isValid = false;
+      }
+      
+      if (!isValid) {
+        return;
+      }
+      
+      // Show loading state
+      showLoading();
+      
+      // Send login request to Flask backend
+      fetch('/login/authenticate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        hideLoading();
+        
+        if (data.success) {
+          showSuccess(data.message);
+          
+          // Redirect after success
+          setTimeout(() => {
+            window.location.href = data.redirect_url;
+          }, 1500);
+        } else {
+          showLoginError();
+        }
+      })
+      .catch(error => {
+        hideLoading();
+        console.error('Login error:', error);
+        showLoginError();
+      });
+    });
+
+    // Show/Hide Password Toggle
+    function togglePassword() {
+      const passwordField = document.getElementById("password");
+      const toggleIcon = document.querySelector(".toggle-password");
+      
+      if (passwordField.type === "password") {
+        passwordField.type = "text";
+        toggleIcon.textContent = "👁";
+      } else {
+        passwordField.type = "password";
+        toggleIcon.textContent = "👁‍🗨️";
+      }
+    }
+
+    // Google login placeholder
+    function loginWithGoogle() {
+      alert("🌐 Google login integration needed.");
+    }
+
+    // Helper functions
+    function showFieldError(input, errorElement) {
+      input.classList.add("error");
+      errorElement.style.display = "block";
+    }
+
+    function clearFieldError(input, errorElement) {
+      input.classList.remove("error");
+      errorElement.style.display = "none";
+    }
+
+    function showLoginError() {
+      loginError.style.display = "block";
+    }
+
+    function hideLoginError() {
+      loginError.style.display = "none";
+    }
+
+    function clearAllErrors() {
+      clearFieldError(usernameInput, usernameError);
+      clearFieldError(passwordInput, passwordError);
+      hideLoginError();
+      successMessage.style.display = "none";
+    }
+
+    function showLoading() {
+      loginButton.disabled = true;
+      loadingSpinner.style.display = "inline";
+    }
+
+    function hideLoading() {
+      loginButton.disabled = false;
+      loadingSpinner.style.display = "none";
+    }
+
+    function showSuccess(message) {
+      successMessage.textContent = message;
+      successMessage.style.display = "block";
+      
+      // Clear form
+      usernameInput.value = "";
+      passwordInput.value = "";
+    }
+  </script>
+</body>
+</html>

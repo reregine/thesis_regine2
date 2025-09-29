@@ -1,22 +1,24 @@
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
 
-admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+login_bp = Blueprint("login", __name__, url_prefix="/login")
 
 # Admin credentials (in production, use environment variables or database)
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "Admin2025_atbi"
 
-@admin_bp.route("/")
-def admin_dashboard():
-    """Admin dashboard - protected route"""
-    # Check if user is logged in
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('login.login'))  # Redirect to your login route
+@login_bp.route("/")
+def login():
+    """Login page - serves the login form"""
+    # If already logged in, redirect to admin dashboard
+    if session.get('admin_logged_in'):
+        return redirect(url_for('admin.admin_dashboard'))
     
-    return render_template("admin/admin.html")
+    # Get error message from URL params if any
+    error = request.args.get('error')
+    return render_template("login/login.html", error=error)
 
-@admin_bp.route("/login", methods=["POST"])
-def admin_login_post():
+@login_bp.route("/authenticate", methods=["POST"])
+def authenticate():
     """Handle login form submission"""
     try:
         data = request.get_json() if request.is_json else request.form
@@ -43,7 +45,6 @@ def admin_login_post():
                     'message': '❌ Invalid username or password'
                 }), 401
             else:
-                # Redirect back to login with error
                 return redirect(url_for('login.login', error="Invalid credentials"))
                 
     except Exception as e:
@@ -55,18 +56,9 @@ def admin_login_post():
         else:
             return redirect(url_for('login.login', error="Login error occurred"))
 
-@admin_bp.route("/logout")
-def admin_logout():
-    """Admin logout"""
+@login_bp.route("/logout")
+def logout():
+    """Logout functionality"""
     session.pop('admin_logged_in', None)
     session.pop('admin_username', None)
-    return redirect(url_for('admin.admin_login'))
-
-# Optional: API endpoint for checking login status
-@admin_bp.route("/check-auth")
-def check_auth():
-    """Check if admin is authenticated (for AJAX calls)"""
-    return jsonify({
-        'authenticated': session.get('admin_logged_in', False),
-        'username': session.get('admin_username', None)
-    })
+    return redirect(url_for('login.login'))

@@ -3,9 +3,9 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from ..extension import db
 from ..models import Reservation, Product
 
-bp = Blueprint("reservation", __name__, url_prefix="/reservation")
+reserve_bp = Blueprint("reservation", __name__, url_prefix="/reservation")
 
-@bp.route("/new/<int:product_id>", methods=["GET", "POST"])
+@reserve_bp.route("/new/<int:product_id>", methods=["GET", "POST"])
 def new_reservation(product_id):
     product = Product.query.get_or_404(product_id)
 

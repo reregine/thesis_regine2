@@ -1,7 +1,7 @@
 from flask import Flask
 from .config import Config
 from .extension import db, migrate
-from .routes import home, inventory, incubatee_showroom, layouts, reservation, shop,notification, reports, showroom
+from .routes import home, inventory, incubatee_showroom, layouts, reservation, shop,notification, reports, showroom, login, admin
 
 def create_app(config_class=Config):
     app = Flask(__name__, template_folder="templates", static_folder="static")
@@ -12,15 +12,16 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
 
     # Register blueprints
-    app.register_blueprint(home.bp)  
-    app.register_blueprint(inventory.bp)
+    app.register_blueprint(home.home_bp)  
+    app.register_blueprint(inventory.inventory_bp)
     app.register_blueprint(incubatee_showroom.incubatee_bp)  
     app.register_blueprint(layouts.layouts_bp)  
-    app.register_blueprint(notification.bp)
-    app.register_blueprint(reports.bp)
-    app.register_blueprint(reservation.bp)
+    app.register_blueprint(login.login_bp)
+    app.register_blueprint(notification.notif_bp)
+    app.register_blueprint(reports.report_bp)
+    app.register_blueprint(reservation.reserve_bp)
     app.register_blueprint(shop.shop_bp)  
-    app.register_blueprint(showroom.bp)
-    # app.register_blueprint(admin.bp)  # Uncomment if admin blueprint is implemented
+    app.register_blueprint(showroom.showroom_bp)
+    app.register_blueprint(admin.admin_bp)
 
     return app

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<<<<<<< HEAD
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Our Incubates - ATBI</title>
@@ -10,6 +11,27 @@
       padding: 0;
       box-sizing: border-box;
     }
+=======
+    <!-- Character encoding for proper text display -->
+    <meta charset="UTF-8">
+    <!-- Responsive viewport for mobile devices -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Page title that appears in browser tab -->
+    <title>Incubates - ATBI</title>
+    <!-- Link to external CSS file for styling -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- Additional CSS for incubates page -->
+    <style>
+        /* Incubates Page Specific Styles */
+        .incubates-header {
+            background: linear-gradient(135deg, #f0f9ff 0%, #ecfdf5 50%, #f0fdf4 100%);
+            padding: 120px 0 60px 0;
+            text-align: center;
+            color: #1a1a1a;
+            position: relative;
+            overflow: hidden;
+        }
+>>>>>>> 7b342df77f29a436bcf1332faaf1e946009f0d73
 
     body {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -202,6 +224,7 @@ header.page-header h1 {
   </style>
 </head>
 <body>
+<<<<<<< HEAD
   <!-- Navigation Bar -->
   <header class="header">
     <div class="header-container">
@@ -221,6 +244,35 @@ header.page-header h1 {
       </nav>
     </div>
   </header>
+=======
+    <!-- Header Section - Fixed navigation bar at the top -->
+    <header class="header">
+        <!-- Container to center and limit the width of header content -->
+        <div class="header-container">
+            <!-- Logo section on the left side -->
+            <div class="logo">
+                <!-- Company logo image - replace logo.png with your actual logo file -->
+                <img src="images/agrilogo.png" alt="Store Logo" class="logo-img">
+            </div>
+            <!-- Navigation menu on the right side -->
+            <nav class="nav-menu">
+                <!-- Unordered list containing navigation links -->
+                <ul class="nav-list">
+                    <!-- Each list item contains a navigation link -->
+                    <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
+                    <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
+                    <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
+                    <li><a href="#about" class="nav-link">ABOUT</a></li>
+                    <li><a href="#contacts" class="nav-link">CONTACTS</a></li>
+                    <!-- Cart button with special styling -->
+                    <li><a href="#cart" class="nav-link cart-btn">🛒</a></li>
+                    <!-- Login button with special styling -->
+                    <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+>>>>>>> 7b342df77f29a436bcf1332faaf1e946009f0d73
 
   <!-- Page Header -->
   <header class="page-header">

@@ -11,7 +11,7 @@ class Incubate(db.Model):
     contact_email = db.Column(db.String(120), nullable=True)
     contact_phone = db.Column(db.String(50), nullable=True)
     date_joined = db.Column(db.DateTime, default=datetime.utcnow)
-
+    #get the table structure to regine in messenger
     # Relationships
     products = db.relationship("Product", backref="incubate", lazy=True)
 
