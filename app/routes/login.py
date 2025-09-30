@@ -40,13 +40,12 @@ def authenticate():
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
             session['user_logged_in'] = True
-            session['user_id'] = user.id
+            session['user_id'] = user.id_no
             session['username'] = user.username
             return jsonify({
                 'success': True,
                 'message': f'✅ Welcome back, {user.username}!',
-                'redirect_url': url_for('home.homepage')
-            })
+                'redirect_url': url_for('home.index')})
 
         return jsonify({'success': False, 'message': '❌ Invalid username or password'}), 401
 
@@ -60,32 +59,38 @@ def register_page():
     """Show registration page"""
     return render_template("login/registration.html")
 
-@login_bp.route("/register", methods=["POST"])
-def register():
-    """User registration"""
+@login_bp.route("/register_api", methods=["POST"])
+def register_api():
+    """Receive username, password, confirm password from frontend and save to DB"""
     try:
         data = request.get_json() if request.is_json else request.form
-        username = data.get('username', '').strip()
-        password = data.get('password', '').strip()
+        username = data.get("username", "").strip()
+        password = data.get("password", "").strip()
+        confirm_password = data.get("confirm_password", "").strip()
 
-        if not username or not password:
-            return jsonify({'success': False, 'message': '⚠ Username and password required'}), 400
+        # Validate required fields
+        if not username or not password or not confirm_password:
+            return jsonify({"success": False, "message": "⚠ All fields are required"}), 400
+
+        # Validate confirm password
+        if password != confirm_password:
+            return jsonify({"success": False, "message": "⚠ Passwords do not match"}), 400
 
         # Check if username exists
         if User.query.filter_by(username=username).first():
-            return jsonify({'success': False, 'message': '⚠ Username already exists'}), 409
+            return jsonify({"success": False, "message": "⚠ Username already exists"}), 409
 
-        # Create new user
+        # Create and save new user
         new_user = User(username=username)
-        new_user.set_password(password)
+        new_user.set_password(password)  # this will hash + salt the password
         db.session.add(new_user)
         db.session.commit()
 
-        return jsonify({'success': True, 'message': '✅ Registration successful! Please log in.'})
+        return jsonify({"success": True, "message": "✅ Registration successful! Please log in."})
 
     except Exception as e:
         print("Registration error:", e)
-        return jsonify({'success': False, 'message': '❌ Registration failed'}), 500
+        return jsonify({"success": False, "message": "❌ Registration failed"}), 500
 
 
 @login_bp.route("/logout")

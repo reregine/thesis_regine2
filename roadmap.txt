@@ -104,3 +104,7 @@ Success. You can now start the database server using:
 This manually start the server 
 cd D:\programs\Postgres18\bin
 pg_ctl -D "D:\programs\Postgres18\data" start
+
+Databases Table
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+

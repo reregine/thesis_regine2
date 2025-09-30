@@ -1,15 +1,17 @@
 from app.extension import db
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.sql import func
 
 class User(db.Model):
     __tablename__ = "users"
 
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    password_hash = db.Column(db.String(200), nullable=False)
+    id_no = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    password_hash = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
     def set_password(self, password):
-        """Hashes password with salt"""
+        """Hashes password securely with salt (Werkzeug handles salting)"""
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):

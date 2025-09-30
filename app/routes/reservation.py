@@ -1,5 +1,5 @@
 # Reservation endpoints
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from ..extension import db
 from ..models import Reservation, Product
 
@@ -7,6 +7,10 @@ reserve_bp = Blueprint("reservation", __name__, url_prefix="/reservation")
 
 @reserve_bp.route("/new/<int:product_id>", methods=["GET", "POST"])
 def new_reservation(product_id):
+    # ✅ Check if user is logged in
+    if not session.get("user_logged_in") and not session.get("admin_logged_in"):
+        return redirect(url_for("login.login"))  # back to login page
+    
     product = Product.query.get_or_404(product_id)
 
     if request.method == "POST":

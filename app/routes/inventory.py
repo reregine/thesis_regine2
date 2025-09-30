@@ -1,5 +1,5 @@
 # Inventory management
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from ..extension import db
 from ..models import Product
 
@@ -7,6 +7,9 @@ inventory_bp = Blueprint("inventory", __name__, url_prefix="/inventory")
 
 @inventory_bp.route("/")
 def dashboard():
+    # ✅ Check if user is logged in
+    if not session.get("user_logged_in") and not session.get("admin_logged_in"):
+        return redirect(url_for("login.login"))  # back to login page
     products = Product.query.all()
     return render_template("inventory/dashboard.html", products=products)
 
