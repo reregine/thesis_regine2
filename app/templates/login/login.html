@@ -217,6 +217,7 @@
 </head>
 <body>
   <div class="login-card">
+    <h1>ATBI - Agri-Aqua Business Incubator</h1>
     <h2>Login</h2>
     
     <div id="successMessage" class="success-message"></div>
@@ -245,6 +246,9 @@
       </div>
       
       <a href="#" class="forgot-link">Forgot Password?</a>
+      <p class="switch-link">
+        Don’t have an account? <a href="{{ url_for('login.register_page') }}">Register here</a>
+      </p>
     </form>
 
     <div class="divider">or</div>
