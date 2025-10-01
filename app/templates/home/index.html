@@ -17,8 +17,7 @@
         <div class="header-container">
             <!-- Logo section on the left side -->
             <div class="logo">
-                <!-- Company logo image - replace logo.png with your actual logo file -->
-                <img src="images/agrilogo.png" alt="ATBI logo" class="logo-img">
+                <img src="{{ url_for('static', filename='images/agrilogo.png') }}" alt="ATBI logo" class="logo-img">
             </div>
             <!-- Navigation menu on the right side -->
             <nav class="nav-menu">
@@ -64,7 +63,7 @@
                     <!-- Container for product image -->
                     <div class="product-image">
                         <!-- Product image - replace with actual product images -->
-                        <img src="https://via.placeholder.com/300x300/4ade80/ffffff?text=Smart+Irrigation+System" alt="Smart Irrigation System">
+                        <img src="{{ url_for('static', filename='images/smart_irrigation.png') }}" alt="Smart Irrigation System">
                     </div>
                     <!-- Container for product details -->
                     <div class="product-info">
@@ -79,7 +78,7 @@
                 <!-- Product Card 2 -->
                 <div class="product-card">
                     <div class="product-image">
-                        <img src="https://via.placeholder.com/300x300/3b82f6/ffffff?text=Aquaponics+Kit" alt="Aquaponics Kit">
+                        <img src="{{ url_for('static', filename='images/aquaponics_kit.png') }}" alt="Aquaponics Kit">
                     </div>
                     <div class="product-info">
                         <h3 class="product-title">Aquaponics Starter Kit</h3>
@@ -90,7 +89,7 @@
                 <!-- Product Card 3 -->
                 <div class="product-card">
                     <div class="product-image">
-                        <img src="https://via.placeholder.com/300x300/f59e0b/ffffff?text=Soil+Sensor" alt="Soil Sensor">
+                        <img src="{{ url_for('static', filename='images/soil_IoT.png') }}" alt="Soil Sensor">
                     </div>
                     <div class="product-info">
                         <h3 class="product-title">IoT Soil Sensor</h3>
@@ -101,7 +100,7 @@
                 <!-- Product Card 4 -->
                 <div class="product-card">
                     <div class="product-image">
-                        <img src="https://via.placeholder.com/300x300/ef4444/ffffff?text=Fish+Feed+Optimizer" alt="Fish Feed Optimizer">
+                        <img src="{{ url_for('static', filename='images/smart_fish.png') }}" alt="Fish Feed Optimizer">
                     </div>
                     <div class="product-info">
                         <h3 class="product-title">Smart Fish Feed Optimizer</h3>

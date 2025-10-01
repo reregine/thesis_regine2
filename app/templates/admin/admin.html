@@ -310,111 +310,126 @@
     </div>
   </div>
 
-  <script>
-    // Auto display today's date
-    const today = new Date();
-    const formattedDate = today.toISOString().split('T')[0]; 
-    document.getElementById("current-date").innerText = formattedDate;
+<script>
+  // Auto display today's date
+  const today = new Date();
+  const formattedDate = today.toISOString().split('T')[0]; 
+  document.getElementById("current-date").innerText = formattedDate;
 
-    // Validation: Stock Number → Only numbers and dash
-    document.getElementById("stock_no").addEventListener("input", function() {
-      this.value = this.value.replace(/[^0-9-]/g, "");
-    });
+  // Validation: Stock Number → Only numbers and dash
+  document.getElementById("stock_no").addEventListener("input", function() {
+    this.value = this.value.replace(/[^0-9-]/g, "");
+  });
 
-    // Validation: Offered Services → Only letters and spaces
-    document.getElementById("products").addEventListener("input", function() {
-      this.value = this.value.replace(/[^a-zA-Z\s]/g, "");
-    });
+  // Validation: Offered Services → Only letters and spaces
+  document.getElementById("products").addEventListener("input", function() {
+    this.value = this.value.replace(/[^a-zA-Z\s]/g, "");
+  });
 
-    // Handle form submission
-    document.getElementById("incubateeForm").addEventListener("submit", function(event) {
-      event.preventDefault();
+  // Handle form submission
+  document.getElementById("incubateeForm").addEventListener("submit", function(event) {
+    event.preventDefault();
 
-      if (!this.checkValidity()) {
-        this.reportValidity();
-        return;
-      }
-
-      const formData = {
-        name: document.getElementById("name").value,
-        stock_no: document.getElementById("stock_no").value,
-        products: document.getElementById("products").value,
-        stock_amount: document.getElementById("stock_amount").value,
-        price_per_stocks: document.getElementById("price_per_stocks").value,
-        details: document.getElementById("details").value,
-        expiration_date: document.getElementById("expiration_date").value,
-        added_on: formattedDate
-      };
-
-      console.log("Captured Incubatee Data:", formData);
-
-      // Insert into table
-      const tableBody = document.getElementById("product-list");
-      if (tableBody.children[0] && tableBody.children[0].children.length === 1) {
-        tableBody.innerHTML = "";
-      }
-
-      const row = `
-        <tr>
-          <td>${formData.name}</td>
-          <td>${formData.stock_no}</td>
-          <td>${formData.products}</td>
-          <td>${formData.stock_amount}</td>
-          <td>$${formData.price_per_stocks}</td>
-          <td>${formData.added_on}</td>
-        </tr>
-      `;
-      tableBody.insertAdjacentHTML("beforeend", row);
-
-      this.reset();
-    });
-
-    // Show modal instead of confirm()
-    function logout() {
-      document.getElementById("logout-modal").classList.remove("hidden");
+    if (!this.checkValidity()) {
+      this.reportValidity();
+      return;
     }
 
-    // Handle confirmation
-    document.getElementById("confirm-logout").addEventListener("click", function() {
-      fetch('/login/logout', {
-        method: 'GET',
-        credentials: 'include' // Include cookies for session
-      })
-      .then(response => {
-        window.location.href = '/login/';
-      })
-      .catch(error => {
-        console.error('Logout error:', error);
-        window.location.href = '/login/';
-      });
-    });
+    const formData = {
+      name: document.getElementById("name").value,
+      stock_no: document.getElementById("stock_no").value,
+      products: document.getElementById("products").value,
+      stock_amount: document.getElementById("stock_amount").value,
+      price_per_stocks: document.getElementById("price_per_stocks").value,
+      details: document.getElementById("details").value,
+      expiration_date: document.getElementById("expiration_date").value,
+      added_on: formattedDate
+    };
 
-    // Handle cancel
-    document.getElementById("cancel-logout").addEventListener("click", function() {
-      document.getElementById("logout-modal").classList.add("hidden");
-    });
+    console.log("Captured Incubatee Data:", formData);
 
-
-    // Optional: Auto-logout on session expiry
-    function checkSession() {
-      fetch('/login/check-session', {
-        method: 'GET',
-        credentials: 'include'
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (!data.authenticated) {
-          alert("⚠️ Session expired. Please login again.");
-          window.location.href = '/login/';
+    // Send to backend (login.py route)
+    fetch("/admin/add-product", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Insert into table visually
+        const tableBody = document.getElementById("product-list");
+        if (tableBody.children[0] && tableBody.children[0].children.length === 1) {
+          tableBody.innerHTML = "";
         }
-      })
-      .catch(error => {
-        console.error('Session check error:', error);
-      });
-    }
 
-    // Check session every 5 minutes (optional)
-    // setInterval(checkSession, 5 * 60 * 1000);
-  </script>
+        const row = `
+          <tr>
+            <td>${formData.name}</td>
+            <td>${formData.stock_no}</td>
+            <td>${formData.products}</td>
+            <td>${formData.stock_amount}</td>
+            <td>$${formData.price_per_stocks}</td>
+            <td>${formData.added_on}</td>
+          </tr>
+        `;
+        tableBody.insertAdjacentHTML("beforeend", row);
+
+        this.reset();
+      } else {
+        alert("⚠️ Error saving incubatee product.");
+      }
+    })
+    .catch(error => {
+      console.error("Error:", error);
+      alert("⚠️ Failed to connect to server.");
+    });
+  });
+
+  // Show modal instead of confirm()
+  function logout() {
+    document.getElementById("logout-modal").classList.remove("hidden");
+  }
+
+  // Handle confirmation
+  document.getElementById("confirm-logout").addEventListener("click", function() {
+    fetch('/login/logout', {
+      method: 'GET',
+      credentials: 'include'
+    })
+    .then(response => {
+      window.location.href = '/login/';
+    })
+    .catch(error => {
+      console.error('Logout error:', error);
+      window.location.href = '/login/';
+    });
+  });
+
+  // Handle cancel
+  document.getElementById("cancel-logout").addEventListener("click", function() {
+    document.getElementById("logout-modal").classList.add("hidden");
+  });
+
+  // Optional: Auto-logout on session expiry
+  function checkSession() {
+    fetch('/login/check-session', {
+      method: 'GET',
+      credentials: 'include'
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (!data.authenticated) {
+        alert("⚠️ Session expired. Please login again.");
+        window.location.href = '/login/';
+      }
+    })
+    .catch(error => {
+      console.error('Session check error:', error);
+    });
+  }
+</script>
 </body>
 </html>

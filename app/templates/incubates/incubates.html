@@ -4,105 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Our Incubates - ATBI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      line-height: 1.6;
-      background-color: #f9f9f9;
-      color: #333;
-    }
-
-    /* Navigation Bar */
-    .header {
-      width: 100%;
-      background: #fff;
-      border-bottom: 1px solid #e5e7eb;
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    }
-
-    .header-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 16px 40px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .logo img {
-      height: 52px;
-    }
-
-    .nav-menu .nav-list {
-      list-style: none;
-      display: flex;
-      gap: 2rem;
-      align-items: center;
-    }
-
-    .nav-link {
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 1rem;
-      color: #000;
-      transition: color 0.3s ease, border-bottom 0.3s ease;
-      padding-bottom: 4px;
-    }
-
-    .nav-link:hover {
-      color: #008000;
-    }
-
-    /* Active page highlight */
-    .nav-link.active {
-      color: #008000;
-      border-bottom: 2px solid #008000;
-    }
-
-    .cart-btn {
-      font-size: 1.3rem;
-    }
-
-    .login-btn {
-      background: linear-gradient(135deg, #00c853, #009624);
-      color: #fff !important;
-      padding: 8px 20px;
-      border-radius: 10px;
-      text-decoration: none;
-      font-weight: 600;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-      transition: background 0.3s ease, transform 0.2s ease;
-    }
-
-    .login-btn:hover {
-      background: linear-gradient(135deg, #00e676, #00c853);
-      transform: translateY(-2px);
-    }
-
     /* Page Header */
-header.page-header {
-  background: linear-gradient(135deg, #a7f3d0, #6ee7b7); /* light green gradient */
-  color: #064e3b;  /* dark green text */
-  padding: 30px 20px;  /* smaller background height */
-  text-align: center;
-  border-bottom: 2px solid #059669; /* subtle accent line */
-}
+    header.page-header {
+      background: linear-gradient(135deg, #a7f3d0, #6ee7b7); /* light green gradient */
+      color: #064e3b;  /* dark green text */
+      padding: 30px 20px;  /* smaller background height */
+      text-align: center;
+      border-bottom: 2px solid #059669; /* subtle accent line */
+    }
 
-header.page-header h1 {
-  font-size: 2.2rem;   /* consistent with shop titles */
-  font-weight: 700;
-  margin: 0;
-}
-
+    header.page-header h1 {
+      font-size: 2.2rem;   /* consistent with shop titles */
+      font-weight: 700;
+      margin: 0;
+    }
 
     main {
       padding: 40px 20px;
@@ -206,17 +123,20 @@ header.page-header h1 {
   <header class="header">
     <div class="header-container">
       <div class="logo">
-        <img src="images/agrilogo.png" alt="ATBI Logo">
+        <img src="{{ url_for('static', filename='images/agrilogo.png') }}" alt="ATBI logo" class="logo-img">
       </div>
       <nav class="nav-menu">
         <ul class="nav-list">
-          <li><a href="index.html" class="nav-link">HOME</a></li>
-          <li><a href="shop.html" class="nav-link">SHOP</a></li>
-          <li><a href="incubates.html" class="nav-link active">INCUBATES</a></li>
-          <li><a href="about.html" class="nav-link">ABOUT</a></li>
-          <li><a href="contacts.html" class="nav-link">CONTACTS</a></li>
-          <li><a href="cart.html" class="nav-link cart-btn">🛒</a></li>
-          <li><a href="https://accounts.google.com/signin" target="_blank" class="login-btn">LOGIN</a></li>
+        <!-- Each list item contains a navigation link -->
+        <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
+        <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
+        <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
+        <li><a href="{{ url_for('home.index') }}#about" class="nav-link">ABOUT</a></li>
+        <li><a href="{{ url_for('home.index') }}#contacts" class="nav-link">CONTACTS</a></li>
+        <!-- Cart button with special styling -->
+        <li><a href="#cart" class="nav-link cart-btn">🛒</a></li>
+        <!-- Login button with special styling -->
+        <li> <a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
         </ul>
       </nav>
     </div>
@@ -233,15 +153,15 @@ header.page-header h1 {
       <h3>Batch 1</h3>
       <div class="incubates-grid">
         <a href="details.html?id=techstart" class="incubate-card">
-          <img src="images/B1.png" alt="TechStart Logo">
+          <img src="{{ url_for('static', filename='images/B1.png') }}" alt="TechStart Logo">
           <div class="incubate-name">TechStart</div>
         </a>
         <a href="details.html?id=greeneco" class="incubate-card">
-          <img src="images/B4.png" alt="GreenEco Logo">
+          <img src="{{ url_for('static', filename='images/B4.png') }}" alt="GreenEco Logo">
           <div class="incubate-name">GreenEco</div>
         </a>
         <a href="details.html?id=edutech" class="incubate-card">
-          <img src="images/B5.png" alt="EduTech Logo">
+          <img src="{{ url_for('static', filename='images/B5.png') }}" alt="EduTech Logo">
           <div class="incubate-name">EduTech</div>
         </a>
       </div>
@@ -252,11 +172,11 @@ header.page-header h1 {
       <h3>Batch 2</h3>
       <div class="incubates-grid">
         <a href="details.html?id=foodies" class="incubate-card">
-          <img src="images/B2.png" alt="Foodies Logo">
+          <img src="{{ url_for('static', filename='images/B2.png') }}" alt="Foodies Logo">
           <div class="incubate-name">Foodies</div>
         </a>
         <a href="details.html?id=medilink" class="incubate-card">
-          <img src="images/B6.png" alt="MediLink Logo">
+          <img src="{{ url_for('static', filename='images/B6.png') }}" alt="MediLink Logo">
           <div class="incubate-name">MediLink</div>
         </a>
       </div>
@@ -269,7 +189,7 @@ header.page-header h1 {
 
   <!-- Floating Buttons -->
   <div class="floating-btn back-home">
-    <a href="index.html">← Home</a>
+    <a href="{{ url_for('home.index') }}" class="back-to-home">← Home</a>
   </div>
 
   <div class="floating-btn batch-nav">

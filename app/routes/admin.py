@@ -1,4 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
+from models.admin import db, IncubateeProduct
+from datetime import datetime
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -68,5 +70,28 @@ def check_auth():
     """Check if admin is authenticated (for AJAX calls)"""
     return jsonify({
         'authenticated': session.get('admin_logged_in', False),
-        'username': session.get('admin_username', None)
-    })
+        'username': session.get('admin_username', None)})
+    
+@admin_bp.route("/admin/add-product", methods=["POST"])
+def add_product():
+    data = request.get_json()
+
+    try:
+        product = IncubateeProduct(
+            name=data.get("name"),
+            stock_no=data.get("stock_no"),
+            products=data.get("products"),
+            stock_amount=int(data.get("stock_amount")),
+            price_per_stocks=float(data.get("price_per_stocks")),
+            details=data.get("details"),
+            expiration_date=datetime.strptime(data.get("expiration_date"), "%Y-%m-%d").date(),
+            added_on=datetime.strptime(data.get("added_on"), "%Y-%m-%d").date()
+        )
+
+        db.session.add(product)
+        db.session.commit()
+
+        return jsonify({"success": True, "message": "Product saved successfully!"}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 400

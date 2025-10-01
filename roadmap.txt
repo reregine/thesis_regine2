@@ -108,3 +108,14 @@ pg_ctl -D "D:\programs\Postgres18\data" start
 Databases Table
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+CREATE TABLE incubatee_products (
+    incubatee_id SERIAL PRIMARY KEY,      -- unique incubatee product ID
+    name VARCHAR(150) NOT NULL,           -- incubatee name
+    stock_no VARCHAR(50) NOT NULL,        -- stock number (only numbers and dash)
+    products VARCHAR(150) NOT NULL,       -- offered service
+    stock_amount INTEGER NOT NULL,        -- stock amount
+    price_per_stocks NUMERIC(8,2) NOT NULL CHECK (price_per_stocks <= 999999.99), -- price per stock (max 999,999.99)
+    details TEXT NOT NULL,                -- product description
+    expiration_date DATE NOT NULL,        -- expiration date
+    added_on DATE NOT NULL DEFAULT CURRENT_DATE -- date added
+);
