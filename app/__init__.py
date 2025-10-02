@@ -1,7 +1,7 @@
 from flask import Flask
 from .config import Config
 from .extension import db, migrate
-from .routes import home, inventory, incubatee_showroom, layouts, reservation, shop,notification, reports, showroom, login, admin
+from .routes import home, inventory, incubatee_showroom, layouts, reservation, shop, notification, reports, showroom, login, admin, contact
 
 def create_app(config_class=Config):
     app = Flask(__name__, template_folder="templates", static_folder="static")
@@ -23,5 +23,6 @@ def create_app(config_class=Config):
     app.register_blueprint(shop.shop_bp)  
     app.register_blueprint(showroom.showroom_bp)
     app.register_blueprint(admin.admin_bp)
+    app.register_blueprint(contact.contact_bp)  # Register the contact blueprint
 
     return app

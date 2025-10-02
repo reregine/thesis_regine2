@@ -132,7 +132,7 @@
         <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
         <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
         <li><a href="{{ url_for('home.index') }}#about" class="nav-link">ABOUT</a></li>
-        <li><a href="{{ url_for('home.index') }}#contacts" class="nav-link">CONTACTS</a></li>
+        <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
         <!-- Cart button with special styling -->
         <li><a href="#cart" class="nav-link cart-btn">🛒</a></li>
         <!-- Login button with special styling -->
@@ -153,7 +153,7 @@
       <h3>Batch 1</h3>
       <div class="incubates-grid">
         <a href="details.html?id=techstart" class="incubate-card">
-          <img src="images/B1.png" alt="TechStart Logo">
+        <img src="{{ url_for('static', filename='images/B1.png') }}" alt="TechStart Logo">
           <div class="incubate-name">TechStart</div>
         </a>
         <a href="details.html?id=greeneco" class="incubate-card">
