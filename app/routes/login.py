@@ -11,9 +11,9 @@ ADMIN_PASSWORD = "Admin2025_atbi"
 
 @login_bp.route("/")
 def login():
-    """Login page"""
-    if session.get('admin_logged_in') or session.get('user_logged_in'):
-        return redirect(url_for('home.homepage'))  # redirect users to home
+    """Login page
+        if session.get('admin_logged_in') or session.get('user_logged_in'):
+            return redirect(url_for('home.index'))  # redirect users to home"""
     error = request.args.get('error')
     return render_template("login/login.html", error=error)
 

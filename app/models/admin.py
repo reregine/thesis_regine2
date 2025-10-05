@@ -1,8 +1,7 @@
 # models/admin.py
-from flask_sqlalchemy import SQLAlchemy
+from app.extension import db
 from datetime import date
 
-db = SQLAlchemy()
 
 class IncubateeProduct(db.Model):
     __tablename__ = "incubatee_products"
@@ -16,6 +15,8 @@ class IncubateeProduct(db.Model):
     details = db.Column(db.Text, nullable=False)
     expiration_date = db.Column(db.Date, nullable=False)
     added_on = db.Column(db.Date, nullable=False, default=date.today)
+    image_path = db.Column(db.String(255), nullable=True) 
 
     def __repr__(self):
         return f"<IncubateeProduct {self.name}>"
+

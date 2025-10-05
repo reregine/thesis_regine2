@@ -189,6 +189,29 @@
       background: linear-gradient(90deg, #16a34a, #15803d);
       transform: translateY(-2px);
     }
+    .btn-loading {
+      position: relative;
+      pointer-events: none;
+      opacity: 0.8;
+    }
+
+    .btn-loading::after {
+      content: "";
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.6);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      100% { transform: translateY(-50%) rotate(360deg); }
+    }
 
     table {
       width: 100%;
@@ -269,6 +292,21 @@
           <label for="details">Product Description <span class="required-star">*</span></label>
           <textarea id="details" name="details" rows="3" placeholder="Enter product details" required></textarea>
         </div>
+                <!-- New Image Upload -->
+        <div class="form-group">
+          <label for="product_image">Product Image <span class="required-star">*</span></label>
+          <input 
+            type="file" 
+            id="product_image" 
+            name="product_image" 
+            accept="image/*" 
+            required
+          >
+          <!-- Preview -->
+          <div id="image-preview" style="margin-top:10px;">
+            <img id="preview-img" src="" alt="Preview" style="max-width:150px; display:none; border:1px solid #ccc; padding:5px; border-radius:6px;">
+          </div>
+        </div>
         <div class="form-group">
           <label for="expiration_date">Expiration Date <span class="required-star">*</span></label>
           <input type="date" id="expiration_date" name="expiration_date" required>
@@ -288,6 +326,7 @@
             <th>Service</th>
             <th>Stock</th>
             <th>Price</th>
+            <th>Image</th>
             <th>Date Added</th>
           </tr>
         </thead>
@@ -326,6 +365,20 @@
     this.value = this.value.replace(/[^a-zA-Z\s]/g, "");
   });
 
+  // Preview uploaded image
+  document.getElementById("product_image").addEventListener("change", function(event) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const preview = document.getElementById("preview-img");
+        preview.src = e.target.result;
+        preview.style.display = "block";
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
   // Handle form submission
   document.getElementById("incubateeForm").addEventListener("submit", function(event) {
     event.preventDefault();
@@ -334,27 +387,32 @@
       this.reportValidity();
       return;
     }
+    const saveBtn = this.querySelector(".btn");
+    saveBtn.classList.add("btn-loading");
+    saveBtn.textContent = "Saving...";
+    
+    const formData = new FormData();
+    formData.append("name", document.getElementById("name").value);
+    formData.append("stock_no", document.getElementById("stock_no").value);
+    formData.append("products", document.getElementById("products").value);
+    formData.append("stock_amount", document.getElementById("stock_amount").value);
+    formData.append("price_per_stocks", document.getElementById("price_per_stocks").value);
+    formData.append("details", document.getElementById("details").value);
+    formData.append("expiration_date", document.getElementById("expiration_date").value);
+    formData.append("added_on", formattedDate);
 
-    const formData = {
-      name: document.getElementById("name").value,
-      stock_no: document.getElementById("stock_no").value,
-      products: document.getElementById("products").value,
-      stock_amount: document.getElementById("stock_amount").value,
-      price_per_stocks: document.getElementById("price_per_stocks").value,
-      details: document.getElementById("details").value,
-      expiration_date: document.getElementById("expiration_date").value,
-      added_on: formattedDate
-    };
+    // ✅ Append the image file (fixed ID)
+    const imageFile = document.getElementById("product_image").files[0];
+    if (imageFile) {
+      formData.append("product_image", imageFile);
+    }
 
-    console.log("Captured Incubatee Data:", formData);
+    console.log("Captured Incubatee Data:", Object.fromEntries(formData));
 
-    // Send to backend (login.py route)
+    // Send to backend
     fetch("/admin/add-product", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(formData)
+      body: formData // FormData handles headers automatically
     })
     .then(response => response.json())
     .then(data => {
@@ -367,17 +425,20 @@
 
         const row = `
           <tr>
-            <td>${formData.name}</td>
-            <td>${formData.stock_no}</td>
-            <td>${formData.products}</td>
-            <td>${formData.stock_amount}</td>
-            <td>$${formData.price_per_stocks}</td>
-            <td>${formData.added_on}</td>
+            <td>${formData.get("name")}</td>
+            <td>${formData.get("stock_no")}</td>
+            <td>${formData.get("products")}</td>
+            <td>${formData.get("stock_amount")}</td>
+            <td>$${formData.get("price_per_stocks")}</td>
+            <td><img src="/static/uploads/${data.filename}" width="60" style="border-radius:6px;" /></td>
+            <td>${formData.get("added_on")}</td>
           </tr>
         `;
+
         tableBody.insertAdjacentHTML("beforeend", row);
 
         this.reset();
+        document.getElementById("preview-img").style.display = "none"; // hide preview after reset
       } else {
         alert("⚠️ Error saving incubatee product.");
       }
@@ -385,8 +446,13 @@
     .catch(error => {
       console.error("Error:", error);
       alert("⚠️ Failed to connect to server.");
-    });
+    })
+      .finally(() => {
+    saveBtn.classList.remove("btn-loading");
+    saveBtn.textContent = "Save Product";
   });
+  });
+
 
   // Show modal instead of confirm()
   function logout() {

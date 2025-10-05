@@ -119,3 +119,94 @@ CREATE TABLE incubatee_products (
     expiration_date DATE NOT NULL,        -- expiration date
     added_on DATE NOT NULL DEFAULT CURRENT_DATE -- date added
 );
+
+
+1. Incubatee Name: GreenLeaf Organics
+   Stock Number: 2024-001
+   Offered Services: Organic Farming Consultation
+   Stock Amount: 150
+   Price per Stock: ₱450.00
+   Product Description: Premium organic vegetable seeds and sustainable farming guidance for urban gardeners and small-scale farmers.
+   Product Image: organic-vegetables.jpg
+   Expiration Date: 2025-12-31
+
+2. Incubatee Name: TechStart Solutions
+   Stock Number: 2024-002
+   Offered Services: Software Development
+   Stock Amount: 200
+   Price per Stock: ₱850.00
+   Product Description: Custom mobile and web application development services tailored for small and medium enterprises.
+   Product Image: software-development.jpg
+   Expiration Date: 2026-06-30
+
+3. Incubatee Name: Kakanin Delights
+   Stock Number: 2024-003
+   Offered Services: Traditional Filipino Delicacies
+   Stock Amount: 300
+   Price per Stock: ₱125.00
+   Product Description: Handcrafted Filipino rice cakes and native delicacies made from locally-sourced ingredients. Perfect for merienda.
+   Product Image: filipino-kakanin.jpg
+   Expiration Date: 2025-03-15
+
+4. Incubatee Name: EcoBottle PH
+   Stock Number: 2024-004
+   Offered Services: Sustainable Packaging
+   Stock Amount: 500
+   Price per Stock: ₱75.00
+   Product Description: Biodegradable water bottles made from plant-based materials. Eco-friendly alternative to plastic bottles.
+   Product Image: eco-water-bottle.jpg
+   Expiration Date: 2027-01-20
+
+5. Incubatee Name: Craftisan Weavers
+   Stock Number: 2024-005
+   Offered Services: Handwoven Textiles
+   Stock Amount: 80
+   Price per Stock: ₱1250.00
+   Product Description: Authentic handwoven bags, mats, and home decor items made by local artisans using traditional weaving techniques.
+   Product Image: handwoven-bags.jpg
+   Expiration Date: 2026-09-10
+
+6. Incubatee Name: FreshCatch Aquaculture
+   Stock Number: 2024-006
+   Offered Services: Sustainable Fish Farming
+   Stock Amount: 400
+   Price per Stock: ₱320.00
+   Product Description: Live tilapia and bangus fingerlings for aquaculture. Sustainably raised using organic feed and clean water systems.
+   Product Image: tilapia-fish.jpg
+   Expiration Date: 2025-08-25
+
+7. Incubatee Name: BrightMinds Tutorial
+   Stock Number: 2024-007
+   Offered Services: Educational Services
+   Stock Amount: 100
+   Price per Stock: ₱600.00
+   Product Description: Online and in-person tutoring services for Math, Science, and English. Specialized programs for K-12 students.
+   Product Image: online-tutoring.jpg
+   Expiration Date: 2026-12-31
+
+8. Incubatee Name: Herbal Wellness Co
+   Stock Number: 2024-008
+   Offered Services: Natural Health Products
+   Stock Amount: 250
+   Price per Stock: ₱180.00
+   Product Description: Organic herbal teas and wellness supplements made from Philippine medicinal plants. FDA-approved and laboratory-tested.
+   Product Image: herbal-tea.jpg
+   Expiration Date: 2025-11-30
+
+9. Incubatee Name: Solar Power Innovate
+   Stock Number: 2024-009
+   Offered Services: Renewable Energy Solutions
+   Stock Amount: 50
+   Price per Stock: ₱2500.00
+   Product Description: Portable solar panel kits for homes and small businesses. Easy installation with complete technical support and warranty.
+   Product Image: solar-panels.jpg
+   Expiration Date: 2028-04-15
+
+10. Incubatee Name: CoffeeLab Roasters
+    Stock Number: 2024-010
+    Offered Services: Specialty Coffee
+    Stock Amount: 350
+    Price per Stock: ₱280.00
+    Product Description: Freshly roasted Arabica coffee beans from Benguet and Batangas. Single-origin varieties with tasting notes of chocolate and caramel.
+    Product Image: coffee-beans.jpg
+    Expiration Date: 2025-07-20
