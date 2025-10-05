@@ -143,3 +143,52 @@ def add_product():
         db.session.rollback()
         current_app.logger.error(f"Error in add_product: {e}")  #log actual error
         return jsonify({"success": False, "error": str(e)}), 400
+
+@admin_bp.route("/get-products", methods=["GET"])
+def get_products():
+    try:
+        products = IncubateeProduct.query.order_by(IncubateeProduct.added_on.desc()).all()
+        
+        products_list = []
+        for product in products:
+            products_list.append({
+                "incubatee_id": product.incubatee_id,
+                "name": product.name,
+                "stock_no": product.stock_no,
+                "products": product.products,
+                "stock_amount": product.stock_amount,
+                "price_per_stocks": float(product.price_per_stocks),  # Convert Decimal to float for JSON
+                "details": product.details,
+                "expiration_date": product.expiration_date.strftime("%Y-%m-%d"),
+                "added_on": product.added_on.strftime("%Y-%m-%d"),
+                "image_path": product.image_path})
+        
+        return jsonify({"success": True, "products": products_list})
+    
+    except Exception as e:
+        current_app.logger.error(f"Error fetching products: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@admin_bp.route("/delete-product/<int:product_id>", methods=["DELETE"])
+def delete_product(product_id):
+    try:
+        product = IncubateeProduct.query.get_or_404(product_id)
+        
+        # Delete associated image file if exists
+        if product.image_path:
+            try:
+                image_path = os.path.join(current_app.root_path, 'static', product.image_path)
+                if os.path.exists(image_path):
+                    os.remove(image_path)
+            except Exception as e:
+                current_app.logger.error(f"Error deleting image file: {e}")
+        
+        db.session.delete(product)
+        db.session.commit()
+        
+        return jsonify({"success": True, "message": "Product deleted successfully"})
+    
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting product: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
