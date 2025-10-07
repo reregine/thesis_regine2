@@ -5,7 +5,9 @@ class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev_secret_key")
 
     # PostgreSQL connection URL
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "postgresql+psycopg2://postgres:cyla0917@localhost:5432/atbi_db")
+    #SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "postgresql+psycopg2://postgres:cyla0917@localhost:5432/atbi_db")
+    # regine connection url for thesis
+    SQLALCHEMY_DATABASE_URI= os.environ.get("DATABASE_URL" , "postgresql+psycopg2://postgres:thesisregine@localhost:5432/atbi_db")
 
     # Disable track modifications to save memory
     SQLALCHEMY_TRACK_MODIFICATIONS = False

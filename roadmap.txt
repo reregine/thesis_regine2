@@ -120,7 +120,12 @@ CREATE TABLE incubatee_products (
     added_on DATE NOT NULL DEFAULT CURRENT_DATE -- date added
 );
 
+Manually start the PostgreSQL if wala sa process ka laptop insigida mag run imo database
 
+cd C:\Program Files\PostgreSQL\18\bin  unahon mo ni enter sa Command prompt 
+pg_ctl start -D "C:\Program Files\PostgreSQL\18\data" dayun ini sya para mag start ang database mo 
+
+This is a sample data to be enter on incubate
 1. Incubatee Name: GreenLeaf Organics
    Stock Number: 2024-001
    Offered Services: Organic Farming Consultation
