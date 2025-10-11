@@ -11,34 +11,65 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <!-- Additional CSS for shop page -->
     <style>
+        
         /* Shop Page Specific Styles */
         .shop-header {
-            background: linear-gradient(135deg, #f0f9ff 0%, #ecfdf5 50%, #f0fdf4 100%);
-            padding: 120px 0 60px 0;
-            text-align: center;
-            color: #1a1a1a;
-            position: relative;
-            overflow: hidden;
-        }
+    background: white !important;
+    padding: 40px 0;
+}
+.shop-title, .shop-subtitle {
+    display: none !important;
+}
 
-        .shop-title {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+.products-section {
+    background: #ffffff;
+    padding-top: 2rem;
+}
 
-        .shop-subtitle {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            opacity: 0.8;
-            color: #4b5563;
-        }
+.product-card {
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
 
-        .filters-section {
+.product-details {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+}
+
+.product-expiry {
+    color: #16a34a;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.add-to-cart {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.add-to-cart:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(34, 197, 94, 0.4);
+}
+
+
+
+
+
+
+        
+
+      
+
+.filters-section {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             padding: 2rem 0;
@@ -98,10 +129,6 @@
             box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
         }
 
-        .products-section {
-            padding: 4rem 0;
-            background: #fafafa;
-        }
 
         .products-container {
             max-width: 1200px;
@@ -116,15 +143,7 @@
             margin-top: 2rem;
         }
 
-        .product-card {
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
+       
         .product-card:hover {
             transform: translateY(-10px);
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
@@ -185,15 +204,7 @@
             margin-bottom: 1rem;
         }
 
-        .product-details {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding: 0.8rem;
-            background: #f8f9fa;
-            border-radius: 10px;
-        }
+        
 
         .product-price {
             font-size: 1.5rem;
@@ -201,11 +212,6 @@
             color: #10b981;
         }
 
-        .product-expiry {
-            font-size: 0.9rem;
-            color: #ef4444;
-            font-weight: 600;
-        }
 
         .product-actions {
             display: flex;
@@ -213,19 +219,7 @@
             flex-wrap: wrap;
         }
 
-        .add-to-cart {
-            flex: 1;
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            color: white;
-            border: none;
-            padding: 0.8rem 1rem;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-            min-width: 120px;
-        }
+
 
         .reserve-btn {
             flex: 1;
@@ -241,10 +235,7 @@
             min-width: 120px;
         }
 
-        .add-to-cart:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(34, 197, 94, 0.4);
-        }
+        
 
         .reserve-btn:hover {
             transform: translateY(-2px);
@@ -375,7 +366,7 @@
             <!-- Logo section on the left side -->
             <div class="logo">
                 <!-- Company logo image - replace logo.png with your actual logo file -->
-                <img src="images/agrilogo.png" alt="Store Logo" class="logo-img">
+                <img src="" alt="Store Logo" class="logo-img">
             </div>
             <!-- Navigation menu on the right side -->
             <nav class="nav-menu">
@@ -396,13 +387,9 @@
         </div>
     </header>
 
-    <!-- Shop Header Section -->
-    <section class="shop-header">
-        <div class="container">
-            <h1 class="shop-title">Our Products</h1>
-            <p class="shop-subtitle">Discover amazing products with detailed information</p>
-        </div>
-    </section>
+   <!-- Simplified Header Section -->
+<section class="shop-header"></section>
+
 
     <!-- Filters Section -->
     <section class="filters-section">
@@ -449,7 +436,7 @@
                 <!-- Product 1 -->
                 <div class="product-card">
                     <div class="product-image">
-                        <img src="images/Pr1.webp" alt="Smart Irrigation Controller">
+                        <img src="{{ url_for('static', filename='images/Pr1.webp') }}" alt="Smart Irrigation Controller">
                         <div class="product-badge">New</div>
                     </div>
                     <div class="product-info">
@@ -458,7 +445,8 @@
                         <p class="product-description">AI-powered irrigation system with soil moisture sensors, weather integration, and mobile app control. Optimizes water usage and crop yield.</p>
                         <div class="product-details">
                             <div class="product-price">$299.99</div>
-                            <div class="product-expiry">Warranty: 2 Years</div>
+                            <div class="product-expiry">Expiration: Dec 2026</div>
+
                         </div>
                         <div class="product-actions">
                             <button class="add-to-cart" onclick="addToCart('smart-irrigation')">Add to Cart</button>
@@ -471,7 +459,7 @@
                 <!-- Product 2 -->
                 <div class="product-card">
                     <div class="product-image">
-                        <img src="images/Pr2.jfif" alt="Automated Fish Feeder">
+                        <img src="{{ url_for('static', filename='images/Pr2.jfif') }}" alt="Automated Fish Feeder">
                         <div class="product-badge">Sale</div>
                     </div>
                     <div class="product-info">
@@ -480,7 +468,8 @@
                         <p class="product-description">Smart fish feeding system with programmable schedules, portion control, and water quality monitoring. Perfect for aquaculture operations.</p>
                         <div class="product-details">
                             <div class="product-price">$199.99</div>
-                            <div class="product-expiry">Warranty: 1 Year</div>
+                            <div class="product-expiry">Expiration: Dec 2026</div>
+
                         </div>
                         <div class="product-actions">
                             <button class="add-to-cart" onclick="addToCart('fish-feeder')">Add to Cart</button>
@@ -493,7 +482,7 @@
                 <!-- Product 3 -->
                 <div class="product-card">
                     <div class="product-image">
-                        <img src="images/Pr3.jfif" alt="Soil Health Monitor">
+                        <img src="{{ url_for('static', filename='images/Pr3.jfif') }}" alt="Soil Health Monitor">
                     </div>
                     <div class="product-info">
                         <div class="product-category">IoT Sensors</div>
@@ -501,7 +490,8 @@
                         <p class="product-description">Advanced soil sensor system measuring pH, moisture, temperature, and nutrient levels. Real-time data transmission and analysis for optimal crop management.</p>
                         <div class="product-details">
                             <div class="product-price">$149.99</div>
-                            <div class="product-expiry">Warranty: 2 Years</div>
+                           <div class="product-expiry">Expiration: Dec 2026</div>
+
                         </div>
                         <div class="product-actions">
                             <button class="add-to-cart" onclick="addToCart('soil-monitor')">Add to Cart</button>
@@ -514,7 +504,7 @@
                 <!-- Product 4 -->
                 <div class="product-card">
                     <div class="product-image">
-                        <img src="images/Pr4.jfif" alt="Water Quality Analyzer">
+                        <img src="{{ url_for('static', filename='images/Pr4.jfif') }}" alt="Water Quality Analyzer">
                         <div class="product-badge">Limited</div>
                     </div>
                     <div class="product-info">
@@ -523,7 +513,8 @@
                         <p class="product-description">Professional water quality testing device for aquaculture. Measures dissolved oxygen, pH, temperature, and ammonia levels with real-time alerts.</p>
                         <div class="product-details">
                             <div class="product-price">$399.99</div>
-                            <div class="product-expiry">Warranty: 3 Years</div>
+                            <div class="product-expiry">Expiration: Dec 2026</div>
+
                         </div>
                         <div class="product-actions">
                             <button class="add-to-cart" onclick="addToCart('water-analyzer')">Add to Cart</button>
@@ -536,7 +527,7 @@
                 <!-- Product 5 -->
                 <div class="product-card">
                     <div class="product-image">
-                        <img src="images/Pr5.jfif" alt="Drone Crop Monitor">
+                        <img src="{{ url_for('static', filename='images/Pr5.jfif') }}" alt="Drone Crop Monitor">
                     </div>
                     <div class="product-info">
                         <div class="product-category">Smart Farming</div>
@@ -544,7 +535,8 @@
                         <p class="product-description">Agricultural drone with multispectral camera for crop health monitoring, yield estimation, and precision agriculture applications. Includes flight planning software.</p>
                         <div class="product-details">
                             <div class="product-price">$1,299.99</div>
-                            <div class="product-expiry">Warranty: 1 Year</div>
+                         <div class="product-expiry">Expiration: Dec 2026</div>
+
                         </div>
                         <div class="product-actions">
                             <button class="add-to-cart" onclick="addToCart('drone-monitor')">Add to Cart</button>
@@ -557,7 +549,7 @@
                 <!-- Product 6 -->
                 <div class="product-card">
                     <div class="product-image">
-                        <img src="images/Pr6.jfif" alt="Precision Seeder">
+                        <img src="{{ url_for('static', filename='images/Pr6.jfif') }}" alt="Precision Seeder">
                         <div class="product-badge">Hot</div>
                     </div>
                     <div class="product-info">
@@ -566,7 +558,8 @@
                         <p class="product-description">GPS-guided precision seeder for optimal seed placement and spacing. Reduces seed waste and improves crop uniformity. Compatible with most tractors.</p>
                         <div class="product-details">
                             <div class="product-price">$2,499.99</div>
-                            <div class="product-expiry">Warranty: 2 Years</div>
+                          <div class="product-expiry">Expiration: Dec 2026</div>
+
                         </div>
                         <div class="product-actions">
                             <button class="add-to-cart" onclick="addToCart('precision-seeder')">Add to Cart</button>
@@ -579,7 +572,7 @@
                 <!-- Product 7 -->
                 <div class="product-card">
                     <div class="product-image">
-                        <img src="images/Pr7.jfif" alt="Aquaponics System">
+                        <img src="{{ url_for('static', filename='images/Pr7.jfif') }}" alt="Aquaponics System">
                     </div>
                     <div class="product-info">
                         <div class="product-category">Aquaculture</div>
@@ -587,7 +580,8 @@
                         <p class="product-description">Complete aquaponics starter kit combining fish farming with hydroponic plant growing. Includes tank, grow beds, pump, and starter fish/plants.</p>
                         <div class="product-details">
                             <div class="product-price">$599.99</div>
-                            <div class="product-expiry">Warranty: 1 Year</div>
+                           <div class="product-expiry">Expiration: Dec 2026</div>
+
                         </div>
                         <div class="product-actions">
                             <button class="add-to-cart" onclick="addToCart('aquaponics-system')">Add to Cart</button>
@@ -600,7 +594,7 @@
                 <!-- Product 8 -->
                 <div class="product-card">
                     <div class="product-image">
-                        <img src="images/Pr8.jfif" alt="Weather Station Pro">
+                        <img src="{{ url_for('static', filename='images/Pr8.jfif') }}" alt="Weather Station Pro">
                         <div class="product-badge">Best Seller</div>
                     </div>
                     <div class="product-info">
@@ -609,7 +603,8 @@
                         <p class="product-description">Professional weather monitoring station with wind speed, rainfall, humidity, and temperature sensors. Perfect for agricultural planning and crop management.</p>
                         <div class="product-details">
                             <div class="product-price">$199.99</div>
-                            <div class="product-expiry">Warranty: 2 Years</div>
+                           <div class="product-expiry">Expiration: Dec 2026</div>
+
                         </div>
                         <div class="product-actions">
                             <button class="add-to-cart" onclick="addToCart('weather-station')">Add to Cart</button>
