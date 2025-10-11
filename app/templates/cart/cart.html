@@ -1,313 +1,300 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ATBI Cart Sidebar</title>
+<!-- ===== MODERN CART SIDEBAR ===== -->
+<style>
+  :root {
+    --green: #16a34a;
+    --green-dark: #15803d;
+    --gray-bg: #f8fafc;
+    --text-dark: #14532d;
+    --text-light: #6b7280;
+    --border-light: #e5e7eb;
+  }
 
-  <style>
-    /* ===== GLOBAL RESET ===== */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+  .cart-sidebar {
+    width: 100%;
+    max-width: 420px;
+    height: 100%;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--border-light);
+    box-shadow: -5px 0 25px rgba(0, 0, 0, 0.08);
+    border-radius: 0 16px 16px 0;
+    overflow: hidden;
+    animation: slideIn 0.4s ease forwards;
+  }
 
-    body {
-      font-family: "Segoe UI", sans-serif;
-      background-color: #f8fafc; /* soft gray background */
-    }
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
 
-    /* ===== CART BUTTON (floating top-right) ===== */
-    .cart-btn {
-      position: fixed;
-      top: 20px;
-      right: 30px;
-      background-color: #16a34a; /* main modern green */
-      border: none;
-      color: white;
-      padding: 10px 15px;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-      transition: background 0.3s ease;
-      z-index: 999;
-    }
+  /* HEADER */
+  .cart-header {
+    background: var(--green);
+    color: white;
+    padding: 20px 24px;
+    font-size: 22px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    letter-spacing: 0.5px;
+  }
 
-    .cart-btn:hover {
-      background-color: #15803d; /* darker green on hover */
-    }
+  .close-cart {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 26px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+  }
 
-    /* ===== SIDEBAR CART ===== */
+  .close-cart:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: scale(1.15);
+  }
+
+  /* BODY */
+  .cart-items {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px;
+    background: var(--gray-bg);
+  }
+
+  .cart-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #fff;
+    border: 1px solid var(--border-light);
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .cart-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  }
+
+  .cart-item img {
+    width: 70px;
+    height: 70px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 2px solid var(--border-light);
+  }
+
+  .item-info {
+    flex: 1;
+  }
+
+  .item-name {
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 15px;
+  }
+
+  .item-price {
+    color: var(--green);
+    font-weight: 600;
+    margin-top: 4px;
+    font-size: 14px;
+  }
+
+  .stock-info {
+    font-size: 12px;
+    color: #dc2626;
+    margin-top: 3px;
+    font-weight: 500;
+  }
+
+  /* QUANTITY CONTROLS */
+  .quantity {
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
+    gap: 8px;
+  }
+
+  .quantity button {
+    background: var(--green);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    font-size: 18px;
+    line-height: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  .quantity button:hover {
+    background: var(--green-dark);
+  }
+
+  .quantity .qty {
+    min-width: 20px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-dark);
+  }
+
+  /* FOOTER */
+  .cart-footer {
+    padding: 18px;
+    border-top: 1px solid var(--border-light);
+    background: #ffffff;
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.04);
+  }
+
+  .select-all {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-light);
+  }
+
+  .total {
+    font-weight: 700;
+    color: var(--text-dark);
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+
+  .reserve-btn {
+    width: 100%;
+    background: var(--green);
+    color: white;
+    border: none;
+    padding: 13px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+  }
+
+  .reserve-btn:hover {
+    background: var(--green-dark);
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 600px) {
     .cart-sidebar {
-      position: fixed;
-      top: 0;
-      right: -400px; /* hidden by default */
-      width: 400px;
-      height: 100%;
-      background: #ffffff;
-      box-shadow: -3px 0 8px rgba(0,0,0,0.15);
-      transition: right 0.4s ease;
-      z-index: 998;
-      display: flex;
-      flex-direction: column;
+      max-width: 100%;
+      border-radius: 0;
     }
-
-    .cart-sidebar.active {
-      right: 0; /* visible when active */
-    }
-
-    /* ===== CART HEADER ===== */
-    .cart-header {
-      background: #16a34a; /* header green */
-      color: white;
-      padding: 18px;
-      font-size: 20px;
-      font-weight: bold;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .close-cart {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 24px;
-      cursor: pointer;
-    }
-
-    /* ===== CART BODY ===== */
-    .cart-items {
-      flex: 1;
-      overflow-y: auto;
-      padding: 15px;
-    }
-
     .cart-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      border-bottom: 1px solid #e5e7eb;
-      padding: 12px 0;
+      flex-direction: column;
+      align-items: flex-start;
     }
+  }
+</style>
 
-    .cart-item img {
-      width: 70px;
-      height: 70px;
-      border-radius: 8px;
-      object-fit: cover;
-    }
+<!-- ===== CART SIDEBAR CONTENT ===== -->
+<div class="cart-sidebar active" id="cartSidebar">
 
-    .item-info {
-      flex: 1;
-    }
+  <div class="cart-header">
+    <span>My Cart</span>
+    <button class="close-cart" id="closeCart">&times;</button>
+  </div>
 
-    .item-name {
-      font-weight: 600;
-      color: #14532d;
-    }
-
-    .item-price {
-      color: #16a34a;
-      font-weight: 500;
-      margin-top: 4px;
-    }
-
-    /* ===== STOCK MESSAGE ===== */
-    .stock-info {
-      font-size: 13px;
-      color: #dc2626; /* red for low stock */
-      margin-top: 3px;
-      font-weight: 500;
-    }
-
-    /* ===== QUANTITY BUTTONS ===== */
-    .quantity {
-      display: flex;
-      align-items: center;
-      margin-top: 6px;
-      gap: 6px;
-    }
-
-    .quantity button {
-      background: #16a34a;
-      border: none;
-      color: white;
-      padding: 3px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    .quantity button:hover {
-      background: #15803d;
-    }
-
-    /* ===== CART FOOTER ===== */
-    .cart-footer {
-      padding: 15px;
-      border-top: 1px solid #e5e7eb;
-      background: #f9fafb;
-    }
-
-    .select-all {
-      display: flex;
-      align-items: center;
-      margin-bottom: 10px;
-      gap: 8px;
-    }
-
-    .total {
-      font-weight: bold;
-      color: #14532d;
-      margin-bottom: 15px;
-    }
-
-    .reserve-btn {
-      width: 100%;
-      background: #16a34a;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    .reserve-btn:hover {
-      background: #15803d;
-    }
-
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 500px) {
-      .cart-sidebar {
-        width: 100%;
-      }
-    }
-  </style>
-</head>
-<body>
-
-  <!-- ===== CART BUTTON ===== -->
-  <button class="cart-btn" id="cartBtn">🛒 Cart</button>
-
-  <!-- ===== CART SIDEBAR ===== -->
-  <div class="cart-sidebar" id="cartSidebar">
-
-    <!-- Header -->
-    <div class="cart-header">
-      Your Cart
-      <button class="close-cart" id="closeCart">&times;</button>
-    </div>
-
-    <!-- Cart Items -->
-    <div class="cart-items" id="cartItems">
-      <!-- Example item 1 -->
-      <div class="cart-item">
-        <input type="checkbox" class="item-checkbox">
-        <img src="https://via.placeholder.com/70" alt="Product Image">
-        <div class="item-info">
-          <div class="item-name">Organic Lettuce</div>
-          <div class="item-price">₱50</div>
-          <div class="stock-info">Only 3 left!</div> <!-- stock indicator -->
-          <div class="quantity">
-            <button class="decrease">−</button>
-            <span class="qty">1</span>
-            <button class="increase">+</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Example item 2 -->
-      <div class="cart-item">
-        <input type="checkbox" class="item-checkbox">
-        <img src="https://via.placeholder.com/70" alt="Product Image">
-        <div class="item-info">
-          <div class="item-name">Tilapia Fish (1kg)</div>
-          <div class="item-price">₱120</div>
-          <div class="stock-info">Low stock (5 remaining)</div>
-          <div class="quantity">
-            <button class="decrease">−</button>
-            <span class="qty">2</span>
-            <button class="increase">+</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Example item 3 -->
-      <div class="cart-item">
-        <input type="checkbox" class="item-checkbox">
-        <img src="https://via.placeholder.com/70" alt="Product Image">
-        <div class="item-info">
-          <div class="item-name">Mango Jam (Jar)</div>
-          <div class="item-price">₱80</div>
-          <div class="stock-info" style="color:#16a34a;">In stock</div>
-          <div class="quantity">
-            <button class="decrease">−</button>
-            <span class="qty">1</span>
-            <button class="increase">+</button>
-          </div>
+  <div class="cart-items" id="cartItems">
+    <!-- Example items -->
+    <div class="cart-item">
+      <input type="checkbox" class="item-checkbox">
+      <img src="https://via.placeholder.com/70" alt="Product Image">
+      <div class="item-info">
+        <div class="item-name">Organic Lettuce</div>
+        <div class="item-price">₱50</div>
+        <div class="stock-info">Only 3 left!</div>
+        <div class="quantity">
+          <button class="decrease">−</button>
+          <span class="qty">1</span>
+          <button class="increase">+</button>
         </div>
       </div>
     </div>
 
-    <!-- Footer -->
-    <div class="cart-footer">
-      <div class="select-all">
-        <input type="checkbox" id="selectAll">
-        <label for="selectAll">Select All Items</label>
+    <div class="cart-item">
+      <input type="checkbox" class="item-checkbox">
+      <img src="https://via.placeholder.com/70" alt="Product Image">
+      <div class="item-info">
+        <div class="item-name">Tilapia Fish (1kg)</div>
+        <div class="item-price">₱120</div>
+        <div class="stock-info">Low stock (5 remaining)</div>
+        <div class="quantity">
+          <button class="decrease">−</button>
+          <span class="qty">2</span>
+          <button class="increase">+</button>
+        </div>
       </div>
-      <div class="total" id="totalAmount">Total: ₱250</div>
-      <button class="reserve-btn">Reserve Selected</button>
+    </div>
+
+    <div class="cart-item">
+      <input type="checkbox" class="item-checkbox">
+      <img src="https://via.placeholder.com/70" alt="Product Image">
+      <div class="item-info">
+        <div class="item-name">Mango Jam (Jar)</div>
+        <div class="item-price">₱80</div>
+        <div class="stock-info" style="color:var(--green);">In stock</div>
+        <div class="quantity">
+          <button class="decrease">−</button>
+          <span class="qty">1</span>
+          <button class="increase">+</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ===== SCRIPT SECTION ===== -->
-  <script>
-    // Get elements
-    const cartBtn = document.getElementById("cartBtn");
-    const cartSidebar = document.getElementById("cartSidebar");
-    const closeCart = document.getElementById("closeCart");
-    const selectAll = document.getElementById("selectAll");
+  <div class="cart-footer">
+    <div class="select-all">
+      <input type="checkbox" id="selectAll">
+      <label for="selectAll">Select All Items</label>
+    </div>
+    <div class="total" id="totalAmount">Total: ₱250</div>
+    <button class="reserve-btn">Reserve Selected</button>
+  </div>
+</div>
 
-    // Open the cart when button is clicked
-    cartBtn.addEventListener("click", () => {
-      cartSidebar.classList.add("active");
-    });
+<!-- ===== SCRIPT ===== -->
+<script>
+  // Close button event
+  document.addEventListener("click", (e) => {
+    if (e.target && e.target.id === "closeCart") {
+      const modal = document.getElementById("cartModal");
+      if (modal) modal.classList.remove("active");
+    }
+  });
 
-    // Close the cart when "×" is clicked
-    closeCart.addEventListener("click", () => {
-      cartSidebar.classList.remove("active");
-    });
+  // Select all items
+  document.addEventListener("change", (e) => {
+    if (e.target && e.target.id === "selectAll") {
+      const checked = e.target.checked;
+      document.querySelectorAll(".item-checkbox").forEach(box => box.checked = checked);
+    }
+  });
 
-    // Select all items checkbox
-    selectAll.addEventListener("change", (e) => {
-      const checkboxes = document.querySelectorAll(".item-checkbox");
-      checkboxes.forEach(box => box.checked = e.target.checked);
-    });
-
-    // Quantity increase buttons
-    document.querySelectorAll(".increase").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const qty = btn.previousElementSibling;
-        qty.textContent = parseInt(qty.textContent) + 1;
-      });
-    });
-
-    // Quantity decrease buttons
-    document.querySelectorAll(".decrease").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const qty = btn.nextElementSibling;
-        const current = parseInt(qty.textContent);
-        if (current > 1) qty.textContent = current - 1;
-      });
-    });
-  </script>
-</body>
-</html>
+  // Quantity control
+  document.addEventListener("click", (e) => {
+    if (e.target.classList.contains("increase")) {
+      const qty = e.target.previousElementSibling;
+      qty.textContent = parseInt(qty.textContent) + 1;
+    }
+    if (e.target.classList.contains("decrease")) {
+      const qty = e.target.nextElementSibling;
+      const current = parseInt(qty.textContent);
+      if (current > 1) qty.textContent = current - 1;
+    }
+  });
+</script>

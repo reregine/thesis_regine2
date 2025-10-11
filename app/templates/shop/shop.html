@@ -12,8 +12,8 @@
     <!-- Additional CSS for shop page -->
     <style>
         
-        /* Shop Page Specific Styles */
-        .shop-header {
+/* Shop Page Specific Styles */
+.shop-header {
     background: white !important;
     padding: 40px 0;
 }
@@ -60,14 +60,6 @@
     box-shadow: 0 6px 15px rgba(34, 197, 94, 0.4);
 }
 
-
-
-
-
-
-        
-
-      
 
 .filters-section {
             background: rgba(255, 255, 255, 0.95);
@@ -366,7 +358,7 @@
             <!-- Logo section on the left side -->
             <div class="logo">
                 <!-- Company logo image - replace logo.png with your actual logo file -->
-                <img src="" alt="Store Logo" class="logo-img">
+                <img src="{{ url_for('static', filename='images/agrilogo.png') }}" alt="Store Logo" class="logo-img">
             </div>
             <!-- Navigation menu on the right side -->
             <nav class="nav-menu">
@@ -379,7 +371,7 @@
                     <li><a href="{{ url_for('home.index') }}#about" class="nav-link">ABOUT</a></li>
                     <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
                     <!-- Cart button with special styling -->
-                    <li><a href="{{ url_for('cart.cart_page')}}" class="nav-link cart-btn">🛒</a></li>
+                    <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒</a></li>
                     <!-- Login button with special styling -->
                     <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
                 </ul>
@@ -625,7 +617,12 @@
             </div>
         </div>
     </section>
-
+    <!-- 🛒 CART MODAL CONTAINER -->
+    <div id="cartModal" class="cart-modal">
+    <div class="cart-modal-content">
+        <div id="cartContent"></div> <!-- cart.html will load here -->
+    </div>
+    </div>
     <!-- Back to Home Button -->
     <a href="{{ url_for('home.index') }}" class="back-to-home">← Back to Home</a>
 
@@ -920,6 +917,57 @@
         }
 
         // Login button now redirects directly to Gmail - no JavaScript interference needed
+    </script>
+    <script>
+    const openCartBtn = document.getElementById("openCartBtn");
+    const cartModal = document.getElementById("cartModal");
+    const closeCartBtn = document.getElementById("closeCartBtn");
+    const cartContent = document.getElementById("cartContent");
+
+    // 🛒 Open modal and load cart.html from Flask
+    openCartBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        cartModal.classList.add("active");
+
+        fetch("/cart/")  // loads your cart.html content
+        .then(response => response.text())
+        .then(html => {
+            cartContent.innerHTML = html;
+
+            // 🧠 After loading the cart.html, attach the close button inside it
+            const internalClose = cartContent.querySelector("#closeCart");
+            if (internalClose) {
+            internalClose.addEventListener("click", () => {
+                cartModal.classList.remove("active");
+            });
+            }
+        })
+        .catch(err => {
+            cartContent.innerHTML = "<p style='padding:20px;color:red;'>Failed to load cart.</p>";
+            console.error("Error loading cart:", err);
+        });
+    });
+
+    // ✖️ Close modal via outer close button (if exists)
+    if (closeCartBtn) {
+        closeCartBtn.addEventListener("click", () => {
+        cartModal.classList.remove("active");
+        });
+    }
+
+    // ✖️ Close modal when clicking outside cart content
+    cartModal.addEventListener("click", (e) => {
+        if (e.target === cartModal) {
+        cartModal.classList.remove("active");
+        }
+    });
+
+    // ⎋ Optional: Close with ESC key
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+        cartModal.classList.remove("active");
+        }
+    });
     </script>
 </body>
 </html>

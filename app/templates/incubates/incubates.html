@@ -134,7 +134,7 @@
         <li><a href="{{ url_for('home.index') }}#about" class="nav-link">ABOUT</a></li>
         <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
         <!-- Cart button with special styling -->
-        <li><a href="{{ url_for('cart.cart_page')}}" class="nav-link cart-btn">🛒</a></li>
+        <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒</a></li>
         <!-- Login button with special styling -->
         <li> <a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
         </ul>
@@ -196,5 +196,62 @@
     <a href="#batch1">Batch 1</a> |
     <a href="#batch2">Batch 2</a>
   </div>
+      <!-- 🛒 CART MODAL CONTAINER -->
+    <div id="cartModal" class="cart-modal">
+    <div class="cart-modal-content">
+        <div id="cartContent"></div> <!-- cart.html will load here -->
+    </div>
+    </div>
+    <script>
+  const openCartBtn = document.getElementById("openCartBtn");
+  const cartModal = document.getElementById("cartModal");
+  const closeCartBtn = document.getElementById("closeCartBtn");
+  const cartContent = document.getElementById("cartContent");
+
+  // 🛒 Open modal and load cart.html from Flask
+  openCartBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    cartModal.classList.add("active");
+
+    fetch("/cart/")  // loads your cart.html content
+      .then(response => response.text())
+      .then(html => {
+        cartContent.innerHTML = html;
+
+        // 🧠 After loading the cart.html, attach the close button inside it
+        const internalClose = cartContent.querySelector("#closeCart");
+        if (internalClose) {
+          internalClose.addEventListener("click", () => {
+            cartModal.classList.remove("active");
+          });
+        }
+      })
+      .catch(err => {
+        cartContent.innerHTML = "<p style='padding:20px;color:red;'>Failed to load cart.</p>";
+        console.error("Error loading cart:", err);
+      });
+  });
+
+  // ✖️ Close modal via outer close button (if exists)
+  if (closeCartBtn) {
+    closeCartBtn.addEventListener("click", () => {
+      cartModal.classList.remove("active");
+    });
+  }
+
+  // ✖️ Close modal when clicking outside cart content
+  cartModal.addEventListener("click", (e) => {
+    if (e.target === cartModal) {
+      cartModal.classList.remove("active");
+    }
+  });
+
+  // ⎋ Optional: Close with ESC key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      cartModal.classList.remove("active");
+    }
+  });
+</script>
 </body>
 </html>
