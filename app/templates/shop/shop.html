@@ -388,7 +388,7 @@
                     <li><a href="{{ url_for('home.index') }}#about" class="nav-link">ABOUT</a></li>
                     <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
                     <!-- Cart button with special styling -->
-                    <li><a href="#cart" class="nav-link cart-btn">🛒</a></li>
+                    <li><a href="{{ url_for('cart.cart_page')}}" class="nav-link cart-btn">🛒</a></li>
                     <!-- Login button with special styling -->
                     <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
                 </ul>
