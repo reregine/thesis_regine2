@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About ATBI - Agri-Aqua Business Incubator</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+  <style>
+    /* Page-specific about section styles */
+    .about-section {
+      background-color: #f8fafc;
+      padding: 60px 20px;
+    }
+
+    .about-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      padding: 40px 50px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      border: 1px solid #e5e7eb;
+      animation: fadeIn 0.6s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .about-container h1 {
+      color: #15803d;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .about-container p {
+      color: #14532d;
+      line-height: 1.7;
+      text-align: justify;
+      margin-bottom: 20px;
+    }
+
+    .about-section h2 {
+      color: #16a34a;
+      font-size: 1.4rem;
+      margin-top: 1.5rem;
+    }
+
+    .about-icon {
+      color: #16a34a;
+      margin-right: 8px;
+    }
+
+    footer {
+      background: #15803d;
+      color: white;
+      text-align: center;
+      padding: 15px;
+      margin-top: 40px;
+      font-size: 14px;
+    }
+
+    /* Minimal modal styles (only if we create modal dynamically) */
+    .cart-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.35);
+      z-index: 9999;
+    }
+    .cart-modal.active { display: flex; }
+    .cart-modal .cart-modal-content {
+      width: 100%;
+      max-width: 1000px;
+      max-height: 90vh;
+      background: transparent; /* the cart content brings its own white background */
+      overflow: auto;
+    }
+
+    @media (max-width: 768px) {
+      .about-container {
+        padding: 30px 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- HEADER (keeps same structure as your index) -->
+  <header class="header">
+    <div class="header-container">
+      <div class="logo">
+        <img src="{{ url_for('static', filename='images/agrilogo.png') }}" alt="ATBI logo" class="logo-img">
+      </div>
+      <nav class="nav-menu">
+        <ul class="nav-list">
+          <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
+          <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
+          <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
+          <li><a href="{{ url_for('about.about_page') }}" class="nav-link active">ABOUT</a></li>
+          <li><a href="{{ url_for('contact.contact_page') }}" class="nav-link">CONTACTS</a></li>
+          <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒</a></li>
+          <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ABOUT SECTION -->
+  <section class="about-section" id="about">
+    <div class="about-container">
+      <h1>About ATBI</h1>
+      <p>
+        The <strong>Agri-Aqua Technology Business Incubator (ATBI)</strong> bridges innovation and entrepreneurship — empowering farmers, fishers, and agri-preneurs to transform their creative ideas into viable, sustainable businesses.
+      </p>
+
+      <h2><i class="fas fa-seedling about-icon"></i>Our Mission</h2>
+      <p>
+        ATBI’s mission is to cultivate the growth of agribusiness startups by providing essential incubation services such as mentorship, product development, and access to research and funding opportunities. We aim to strengthen local enterprises that uplift communities.
+      </p>
+
+      <h2><i class="fas fa-lightbulb about-icon"></i>Our Vision</h2>
+      <p>
+        We envision a future where technology-driven agripreneurs lead a sustainable and innovative agriculture sector — contributing to food security, livelihood improvement, and national development.
+      </p>
+
+      <h2><i class="fas fa-hand-holding-seedling about-icon"></i>What We Offer</h2>
+      <p>
+        ATBI supports startups with business development guidance, technical assistance, training programs, and market linkages. Our programs help innovators turn research-based technologies into commercially viable products.
+      </p>
+
+      <h2><i class="fas fa-users about-icon"></i>Our Commitment</h2>
+      <p>
+        We are committed to fostering a culture of innovation and collaboration, ensuring every idea has the potential to grow — from seed to success.
+      </p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    © 2025 Agri-Aqua Technology Business Incubator | All Rights Reserved
+  </footer>
+
+  <!-- JS: robust cart modal connection (works with index.html modal or creates its own) -->
+  <script>
+    (function () {
+      const openCartBtn = document.getElementById("openCartBtn");
+      if (!openCartBtn) return; // no cart button on page
+
+      // Try to find existing modal elements (from index.html)
+      let existingModal = document.getElementById("cartModal");
+      let existingContent = document.getElementById("cartContent");
+
+      // Helper: create a modal structure if not present
+      function createModal() {
+        const modal = document.createElement("div");
+        modal.id = "cartModal";
+        modal.className = "cart-modal active";
+
+        const modalInner = document.createElement("div");
+        modalInner.className = "cart-modal-content";
+
+        // placeholder content container (so fetched cart HTML will be inserted here)
+        const content = document.createElement("div");
+        content.id = "cartContent";
+        modalInner.appendChild(content);
+        modal.appendChild(modalInner);
+
+        // click outside content closes modal
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) {
+            modal.classList.remove("active");
+            // remove from DOM to keep pages clean
+            modal.remove();
+          }
+        });
+
+        document.body.appendChild(modal);
+        return { modal, content };
+      }
+
+      // Fetch and insert cart HTML into a content container
+      function loadCartInto(contentEl, modalEl) {
+        fetch("/cart/")
+          .then((r) => {
+            if (!r.ok) throw new Error("Network response was not ok");
+            return r.text();
+          })
+          .then((html) => {
+            contentEl.innerHTML = html;
+
+            // Attach internal close behavior if cart has a #closeCart button
+            const internalClose = contentEl.querySelector("#closeCart");
+            if (internalClose) {
+              internalClose.addEventListener("click", () => {
+                if (modalEl) {
+                  // if modal is shared (from index), just hide it
+                  modalEl.classList.remove("active");
+                } else {
+                  // if it was a dynamically created modal, remove it entirely
+                  const topModal = document.getElementById("cartModal");
+                  if (topModal) topModal.remove();
+                }
+              });
+            }
+
+            // If there are scripts inside the cart HTML that need to run,
+            // they are part of the inserted HTML; to be safe, re-execute inline scripts:
+            contentEl.querySelectorAll("script").forEach(oldScript => {
+              const newScript = document.createElement("script");
+              if (oldScript.src) {
+                newScript.src = oldScript.src;
+              } else {
+                newScript.textContent = oldScript.textContent;
+              }
+              document.body.appendChild(newScript);
+              // remove the appended script tag after execution (cleanup)
+              setTimeout(() => document.body.removeChild(newScript), 0);
+            });
+          })
+          .catch((err) => {
+            contentEl.innerHTML = "<p style='padding:20px;color:red;'>Failed to load cart.</p>";
+            console.error("Error loading cart:", err);
+          });
+      }
+
+      openCartBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        // If existing modal & content nodes exist on page (provided by index.html), use them
+        if (existingModal && existingContent) {
+          existingModal.classList.add("active");
+          loadCartInto(existingContent, existingModal);
+
+          // close on outside click (if not already handled)
+          existingModal.addEventListener("click", (ev) => {
+            if (ev.target === existingModal) {
+              existingModal.classList.remove("active");
+            }
+          });
+
+          return;
+        }
+
+        // Otherwise create a modal dynamically and use that
+        const { modal, content } = createModal();
+        loadCartInto(content, null);
+      });
+
+      // Optional: allow ESC to close the modal (checks both existing or dynamic)
+      document.addEventListener("keydown", (ev) => {
+        if (ev.key === "Escape") {
+          const m = document.getElementById("cartModal");
+          if (m) {
+            m.classList.remove("active");
+            // if modal was dynamically created, remove it completely for a clean page
+            // (we detect dynamic by checking if it contains a cartContent that wasn't on page initially)
+            if (!existingModal) m.remove();
+          }
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
