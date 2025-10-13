@@ -84,11 +84,11 @@ def check_auth():
 @admin_bp.route("/add-product", methods=["POST"])
 def add_product():
     try:
-        # Required text fields
         name = request.form.get("name")
         stock_no = request.form.get("stock_no")
         products = request.form.get("products")
         details = request.form.get("details")
+        warranty = request.form.get("warranty")  # ✅ optional
 
         # Validate numbers
         try:
@@ -101,12 +101,19 @@ def add_product():
         except (TypeError, ValueError):
             return jsonify({"success": False, "error": "Invalid price per stock"}), 400
 
-        # Validate dates
+        # Handle optional expiration date
+        expiration_date = None
+        if request.form.get("expiration_date"):
+            try:
+                expiration_date = datetime.strptime(request.form.get("expiration_date"), "%Y-%m-%d").date()
+            except Exception:
+                return jsonify({"success": False, "error": "Invalid expiration date"}), 400
+
+        # Added on date
         try:
-            expiration_date = datetime.strptime(request.form.get("expiration_date"), "%Y-%m-%d").date()
             added_on = datetime.strptime(request.form.get("added_on"), "%Y-%m-%d").date()
         except Exception:
-            return jsonify({"success": False, "error": "Invalid date format"}), 400
+            return jsonify({"success": False, "error": "Invalid added_on date"}), 400
 
         # Handle image
         image = request.files.get("product_image")
@@ -117,32 +124,22 @@ def add_product():
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             image.save(save_path)
 
-        # Create product object
-        product = IncubateeProduct(
-            name=name,
-            stock_no=stock_no,
-            products=products,
-            stock_amount=stock_amount,
-            price_per_stocks=price_per_stocks,
-            details=details,
-            expiration_date=expiration_date,
-            added_on=added_on,
-            image_path=f"{UPLOAD_FOLDER}/{filename}" if filename else None
-        )
+        # Create product
+        product = IncubateeProduct(name=name, stock_no=stock_no, products=products,
+            stock_amount=stock_amount, price_per_stocks=price_per_stocks, details=details,
+            expiration_date=expiration_date, warranty=warranty, added_on=added_on,
+            image_path=f"{UPLOAD_FOLDER}/{filename}" if filename else None)
 
         db.session.add(product)
         db.session.commit()
 
-        return jsonify({
-            "success": True,
-            "message": "Product saved successfully!",
-            "filename": filename
-        }), 201
+        return jsonify({"success": True, "message": "Product saved successfully!"}), 201
 
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error in add_product: {e}")  #log actual error
+        current_app.logger.error(f"Error in add_product: {e}")
         return jsonify({"success": False, "error": str(e)}), 400
+
 
 @admin_bp.route("/get-products", methods=["GET"])
 def get_products():
@@ -160,6 +157,7 @@ def get_products():
                 "price_per_stocks": float(product.price_per_stocks),  # Convert Decimal to float for JSON
                 "details": product.details,
                 "expiration_date": product.expiration_date.strftime("%Y-%m-%d"),
+                "warranty": product.warranty,
                 "added_on": product.added_on.strftime("%Y-%m-%d"),
                 "image_path": product.image_path})
         

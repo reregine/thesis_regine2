@@ -208,7 +208,7 @@
   const closeCartBtn = document.getElementById("closeCartBtn");
   const cartContent = document.getElementById("cartContent");
 
-  // 🛒 Open modal and load cart.html from Flask
+  //Open modal and load cart.html from Flask
   openCartBtn.addEventListener("click", (e) => {
     e.preventDefault();
     cartModal.classList.add("active");
@@ -218,7 +218,7 @@
       .then(html => {
         cartContent.innerHTML = html;
 
-        // 🧠 After loading the cart.html, attach the close button inside it
+        //After loading the cart.html, attach the close button inside it
         const internalClose = cartContent.querySelector("#closeCart");
         if (internalClose) {
           internalClose.addEventListener("click", () => {
@@ -232,21 +232,21 @@
       });
   });
 
-  // ✖️ Close modal via outer close button (if exists)
+  //close modal via outer close button (if exists)
   if (closeCartBtn) {
     closeCartBtn.addEventListener("click", () => {
       cartModal.classList.remove("active");
     });
   }
 
-  // ✖️ Close modal when clicking outside cart content
+  //close modal when clicking outside cart content
   cartModal.addEventListener("click", (e) => {
     if (e.target === cartModal) {
       cartModal.classList.remove("active");
     }
   });
 
-  // ⎋ Optional: Close with ESC key
+  //Optional: Close with ESC key
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       cartModal.classList.remove("active");
