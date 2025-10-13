@@ -420,6 +420,10 @@
           <label for="expiration_date">Expiration Date <span class="required-star">*</span></label>
           <input type="date" id="expiration_date" name="expiration_date" required>
         </div>
+        <div class="form-group">
+          <label for="warranty">Warranty (Optional)</label>
+          <input type="text" id="warranty" name="warranty" placeholder="e.g., 6 months, 1 year, or none">
+        </div>
         <button type="submit" class="btn">Save Product</button>
       </form>
     </div>
@@ -437,6 +441,7 @@
             <th>Price</th>
             <th>Image</th>
             <th>Expiration</th>
+            <th>Warranty</th>
             <th>Date Added</th>
             <th>Actions</th>
           </tr>
@@ -504,11 +509,12 @@
         <td>$${product.price_per_stocks.toFixed(2)}</td>
         <td>
           ${product.image_path ? 
-            `<img src="/static/${product.image_path}" width="60" style="border-radius:6px;" alt="${escapeHtml(product.name)}">` : 
+            `<img src="/${product.image_path}" width="60" style="border-radius:6px;" alt="${escapeHtml(product.name)}">` : 
             'No Image'
           }
         </td>
         <td>${product.expiration_date}</td>
+        <td>${product.warranty ? product.warranty : "—"}</td>
         <td>${product.added_on}</td>
         <td>
           <button class="btn-delete" onclick="deleteProduct(${product.incubatee_id})" title="Delete product">
@@ -586,6 +592,7 @@
     formData.append("stock_amount", document.getElementById("stock_amount").value);
     formData.append("price_per_stocks", document.getElementById("price_per_stocks").value);
     formData.append("details", document.getElementById("details").value);
+    formData.append("warranty", document.getElementById("warranty").value);
     formData.append("expiration_date", document.getElementById("expiration_date").value);
     formData.append("added_on", formattedDate);
 
