@@ -1,300 +1,316 @@
-<!-- ===== MODERN CART SIDEBAR ===== -->
-<style>
-  :root {
-    --green: #16a34a;
-    --green-dark: #15803d;
-    --gray-bg: #f8fafc;
-    --text-dark: #14532d;
-    --text-light: #6b7280;
-    --border-light: #e5e7eb;
-  }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cart with Status Tabs</title>
 
-  .cart-sidebar {
-    width: 100%;
-    max-width: 420px;
-    height: 100%;
-    background: #fff;
-    display: flex;
-    flex-direction: column;
-    border-left: 1px solid var(--border-light);
-    box-shadow: -5px 0 25px rgba(0, 0, 0, 0.08);
-    border-radius: 0 16px 16px 0;
-    overflow: hidden;
-    animation: slideIn 0.4s ease forwards;
-  }
+  <style>
+    :root {
+      --green: #16a34a;
+      --green-dark: #15803d;
+      --gray-bg: #f8fafc;
+      --text-dark: #14532d;
+      --text-light: #6b7280;
+      --border-light: #e5e7eb;
+      --pending: #facc15;
+      --approved: #22c55e;
+      --completed: #0ea5e9;
+      --rejected: #ef4444;
+    }
 
-  @keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
+    body {
+      background: var(--gray-bg);
+      font-family: "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 0;
+    }
 
-  /* HEADER */
-  .cart-header {
-    background: var(--green);
-    color: white;
-    padding: 20px 24px;
-    font-size: 22px;
-    font-weight: 600;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    letter-spacing: 0.5px;
-  }
-
-  .close-cart {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    font-size: 26px;
-    padding: 4px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.3s ease, transform 0.2s ease;
-  }
-
-  .close-cart:hover {
-    background: rgba(255, 255, 255, 0.35);
-    transform: scale(1.15);
-  }
-
-  /* BODY */
-  .cart-items {
-    flex: 1;
-    overflow-y: auto;
-    padding: 18px;
-    background: var(--gray-bg);
-  }
-
-  .cart-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    background: #fff;
-    border: 1px solid var(--border-light);
-    padding: 12px;
-    border-radius: 12px;
-    margin-bottom: 14px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .cart-item:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-  }
-
-  .cart-item img {
-    width: 70px;
-    height: 70px;
-    border-radius: 10px;
-    object-fit: cover;
-    border: 2px solid var(--border-light);
-  }
-
-  .item-info {
-    flex: 1;
-  }
-
-  .item-name {
-    font-weight: 600;
-    color: var(--text-dark);
-    font-size: 15px;
-  }
-
-  .item-price {
-    color: var(--green);
-    font-weight: 600;
-    margin-top: 4px;
-    font-size: 14px;
-  }
-
-  .stock-info {
-    font-size: 12px;
-    color: #dc2626;
-    margin-top: 3px;
-    font-weight: 500;
-  }
-
-  /* QUANTITY CONTROLS */
-  .quantity {
-    display: flex;
-    align-items: center;
-    margin-top: 8px;
-    gap: 8px;
-  }
-
-  .quantity button {
-    background: var(--green);
-    border: none;
-    color: white;
-    width: 28px;
-    height: 28px;
-    font-size: 18px;
-    line-height: 0;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.3s ease;
-  }
-
-  .quantity button:hover {
-    background: var(--green-dark);
-  }
-
-  .quantity .qty {
-    min-width: 20px;
-    text-align: center;
-    font-weight: 600;
-    color: var(--text-dark);
-  }
-
-  /* FOOTER */
-  .cart-footer {
-    padding: 18px;
-    border-top: 1px solid var(--border-light);
-    background: #ffffff;
-    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.04);
-  }
-
-  .select-all {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-    gap: 8px;
-    font-size: 14px;
-    color: var(--text-light);
-  }
-
-  .total {
-    font-weight: 700;
-    color: var(--text-dark);
-    font-size: 16px;
-    margin-bottom: 16px;
-  }
-
-  .reserve-btn {
-    width: 100%;
-    background: var(--green);
-    color: white;
-    border: none;
-    padding: 13px;
-    border-radius: 10px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.3s ease, transform 0.2s ease;
-  }
-
-  .reserve-btn:hover {
-    background: var(--green-dark);
-    transform: translateY(-1px);
-  }
-
-  @media (max-width: 600px) {
+    /* ===== CART SIDEBAR ===== */
     .cart-sidebar {
-      max-width: 100%;
-      border-radius: 0;
-    }
-    .cart-item {
+      width: 100%;
+      max-width: 450px;
+      height: 100vh;
+      background: #fff;
+      display: flex;
       flex-direction: column;
-      align-items: flex-start;
+      border-left: 1px solid var(--border-light);
+      box-shadow: -5px 0 25px rgba(0, 0, 0, 0.08);
+      border-radius: 0 16px 16px 0;
+      overflow: hidden;
+      animation: slideIn 0.4s ease forwards;
     }
-  }
-</style>
 
-<!-- ===== CART SIDEBAR CONTENT ===== -->
-<div class="cart-sidebar active" id="cartSidebar">
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
 
-  <div class="cart-header">
-    <span>My Cart</span>
-    <button class="close-cart" id="closeCart">&times;</button>
-  </div>
+    /* ===== HEADER ===== */
+    .cart-header {
+      background: var(--green);
+      color: white;
+      padding: 20px 24px;
+      font-size: 22px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      letter-spacing: 0.5px;
+    }
 
-  <div class="cart-items" id="cartItems">
-    <!-- Example items -->
-    <div class="cart-item">
-      <input type="checkbox" class="item-checkbox">
-      <img src="https://via.placeholder.com/70" alt="Product Image">
-      <div class="item-info">
-        <div class="item-name">Organic Lettuce</div>
-        <div class="item-price">₱50</div>
-        <div class="stock-info">Only 3 left!</div>
-        <div class="quantity">
-          <button class="decrease">−</button>
-          <span class="qty">1</span>
-          <button class="increase">+</button>
+    .close-cart {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      font-size: 26px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    .close-cart:hover {
+      background: rgba(255, 255, 255, 0.35);
+      transform: scale(1.15);
+    }
+
+    /* ===== STATUS TABS ===== */
+    .status-tabs {
+      display: flex;
+      background: #fff;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .status-tab {
+      flex: 1;
+      text-align: center;
+      padding: 14px 0;
+      font-weight: 600;
+      color: var(--text-light);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-bottom: 3px solid transparent;
+      position: relative;
+    }
+
+    .status-tab.active {
+      color: var(--green-dark);
+      border-bottom: 3px solid var(--green);
+      background: var(--gray-bg);
+    }
+
+    .tab-count {
+      display: inline-block;
+      background: var(--green);
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 5px;
+    }
+
+    /* ===== CART ITEMS ===== */
+    .cart-items {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px;
+      background: var(--gray-bg);
+    }
+
+    .cart-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #fff;
+      border: 1px solid var(--border-light);
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .cart-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    .cart-item img {
+      width: 70px;
+      height: 70px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 2px solid var(--border-light);
+    }
+
+    .item-info { flex: 1; }
+    .item-name { font-weight: 600; color: var(--text-dark); font-size: 15px; }
+    .item-price { color: var(--green); font-weight: 600; margin-top: 4px; font-size: 14px; }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 6px;
+      color: white;
+    }
+
+    .status-pending { background: var(--pending); color: #854d0e; }
+    .status-approved { background: var(--approved); }
+    .status-completed { background: var(--completed); }
+    .status-rejected { background: var(--rejected); }
+
+    /* ===== FOOTER ===== */
+    .cart-footer {
+      padding: 18px;
+      border-top: 1px solid var(--border-light);
+      background: #ffffff;
+      box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.04);
+    }
+
+    .total {
+      font-weight: 700;
+      color: var(--text-dark);
+      font-size: 16px;
+      margin-bottom: 16px;
+    }
+
+    .reserve-btn {
+      width: 100%;
+      background: var(--green);
+      color: white;
+      border: none;
+      padding: 13px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    .reserve-btn:hover {
+      background: var(--green-dark);
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 600px) {
+      .cart-sidebar { max-width: 100%; border-radius: 0; }
+      .cart-item { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="cart-sidebar active" id="cartSidebar">
+    <div class="cart-header">
+      <span>My Cart</span>
+      <button class="close-cart" id="closeCart">&times;</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="status-tabs">
+      <div class="status-tab active" data-tab="pending">Pending <span class="tab-count">0</span></div>
+      <div class="status-tab" data-tab="approved">Approved <span class="tab-count">0</span></div>
+      <div class="status-tab" data-tab="completed">Completed <span class="tab-count">0</span></div>
+      <div class="status-tab" data-tab="rejected">Rejected <span class="tab-count">0</span></div>
+    </div>
+
+    <!-- Pending Items -->
+    <div class="cart-items" id="pending" style="display: block;">
+      <div class="cart-item">
+        <img src="https://via.placeholder.com/70" alt="Product Image">
+        <div class="item-info">
+          <div class="item-name">Organic Lettuce</div>
+          <div class="item-price">₱50</div>
+          <div class="status-badge status-pending">Pending</div>
+        </div>
+      </div>
+      <div class="cart-item">
+        <img src="https://via.placeholder.com/70" alt="Product Image">
+        <div class="item-info">
+          <div class="item-name">Tilapia Fish</div>
+          <div class="item-price">₱120</div>
+          <div class="status-badge status-pending">Pending</div>
         </div>
       </div>
     </div>
 
-    <div class="cart-item">
-      <input type="checkbox" class="item-checkbox">
-      <img src="https://via.placeholder.com/70" alt="Product Image">
-      <div class="item-info">
-        <div class="item-name">Tilapia Fish (1kg)</div>
-        <div class="item-price">₱120</div>
-        <div class="stock-info">Low stock (5 remaining)</div>
-        <div class="quantity">
-          <button class="decrease">−</button>
-          <span class="qty">2</span>
-          <button class="increase">+</button>
+    <!-- Approved Items -->
+    <div class="cart-items" id="approved" style="display: none;">
+      <div class="cart-item">
+        <img src="https://via.placeholder.com/70" alt="Product Image">
+        <div class="item-info">
+          <div class="item-name">Mango Jam (Jar)</div>
+          <div class="item-price">₱80</div>
+          <div class="status-badge status-approved">Approved</div>
         </div>
       </div>
     </div>
 
-    <div class="cart-item">
-      <input type="checkbox" class="item-checkbox">
-      <img src="https://via.placeholder.com/70" alt="Product Image">
-      <div class="item-info">
-        <div class="item-name">Mango Jam (Jar)</div>
-        <div class="item-price">₱80</div>
-        <div class="stock-info" style="color:var(--green);">In stock</div>
-        <div class="quantity">
-          <button class="decrease">−</button>
-          <span class="qty">1</span>
-          <button class="increase">+</button>
+    <!-- Completed Items -->
+    <div class="cart-items" id="completed" style="display: none;">
+      <div class="cart-item">
+        <img src="https://via.placeholder.com/70" alt="Product Image">
+        <div class="item-info">
+          <div class="item-name">Banana Chips</div>
+          <div class="item-price">₱60</div>
+          <div class="status-badge status-completed">Completed</div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="cart-footer">
-    <div class="select-all">
-      <input type="checkbox" id="selectAll">
-      <label for="selectAll">Select All Items</label>
+    <!-- Rejected Items -->
+    <div class="cart-items" id="rejected" style="display: none;">
+      <div class="cart-item">
+        <img src="https://via.placeholder.com/70" alt="Product Image">
+        <div class="item-info">
+          <div class="item-name">Tomato Ketchup</div>
+          <div class="item-price">₱75</div>
+          <div class="status-badge status-rejected">Rejected</div>
+        </div>
+      </div>
     </div>
-    <div class="total" id="totalAmount">Total: ₱250</div>
-    <button class="reserve-btn">Reserve Selected</button>
+
+    <!-- Footer -->
+    <div class="cart-footer">
+      <div class="total" id="totalAmount">Total: ₱385</div>
+      <button class="reserve-btn">Checkout</button>
+    </div>
   </div>
-</div>
 
-<!-- ===== SCRIPT ===== -->
-<script>
-  // Close button event
-  document.addEventListener("click", (e) => {
-    if (e.target && e.target.id === "closeCart") {
-      const modal = document.getElementById("cartModal");
-      if (modal) modal.classList.remove("active");
-    }
-  });
+  <script>
+    // Tab switching
+    const tabs = document.querySelectorAll(".status-tab");
+    const sections = document.querySelectorAll(".cart-items");
 
-  // Select all items
-  document.addEventListener("change", (e) => {
-    if (e.target && e.target.id === "selectAll") {
-      const checked = e.target.checked;
-      document.querySelectorAll(".item-checkbox").forEach(box => box.checked = checked);
-    }
-  });
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("active"));
+        sections.forEach(s => s.style.display = "none");
+        tab.classList.add("active");
+        document.getElementById(tab.dataset.tab).style.display = "block";
+      });
+    });
 
-  // Quantity control
-  document.addEventListener("click", (e) => {
-    if (e.target.classList.contains("increase")) {
-      const qty = e.target.previousElementSibling;
-      qty.textContent = parseInt(qty.textContent) + 1;
+    // Close cart
+    document.getElementById("closeCart").addEventListener("click", () => {
+      document.getElementById("cartSidebar").style.display = "none";
+    });
+
+    // Count update
+    function updateCounts() {
+      tabs.forEach(tab => {
+        const tabId = tab.dataset.tab;
+        const count = document.querySelectorAll(`#${tabId} .cart-item`).length;
+        tab.querySelector(".tab-count").textContent = count;
+      });
     }
-    if (e.target.classList.contains("decrease")) {
-      const qty = e.target.nextElementSibling;
-      const current = parseInt(qty.textContent);
-      if (current > 1) qty.textContent = current - 1;
-    }
-  });
-</script>
+    updateCounts();
+  </script>
+</body>
+</html>

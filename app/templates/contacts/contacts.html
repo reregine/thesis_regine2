@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Contact Us - ATBI</title>
+
   <style>
+    /* ======== GLOBAL RESET ======== */
     * {
       margin: 0;
       padding: 0;
@@ -13,99 +15,127 @@
 
     body {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      line-height: 1.6;
-      background-color: #f9f9f9;
+      background-color: #f4f7f4;
       color: #333;
+      line-height: 1.6;
     }
 
+    /* ======== HEADER ======== */
     header {
-      background: #006400;
-      color: #fff;
-      padding: 20px;
+      background-color: #006400;
+      color: white;
       text-align: center;
+      padding: 1.5rem 1rem;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     }
 
     header h1 {
-      font-size: 2.2rem;
+      font-size: 2rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
     }
 
+    /* ======== MAIN CONTENT ======== */
     main {
       max-width: 1000px;
       margin: 40px auto;
       padding: 20px;
     }
 
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #006400;
-    }
-
     .contact-info {
+      background: white;
+      border-radius: 10px;
+      padding: 25px;
       text-align: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
       margin-bottom: 40px;
     }
 
-    .contact-info p {
-      margin: 8px 0;
-      font-size: 1.1rem;
+    .contact-info h2 {
+      color: #006400;
+      margin-bottom: 15px;
+      font-size: 1.5rem;
     }
 
+    .contact-info p {
+      font-size: 1.05rem;
+      margin-bottom: 8px;
+    }
+
+    /* ======== CONTACT FORM ======== */
     .contact-form {
-      background: #fff;
-      padding: 25px;
+      background: white;
+      padding: 30px;
       border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
       max-width: 600px;
       margin: 0 auto;
     }
 
+    .contact-form h2 {
+      color: #006400;
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+    }
+
     .contact-form label {
       display: block;
-      font-weight: bold;
+      font-weight: 600;
       margin-bottom: 6px;
+      color: #333;
     }
 
     .contact-form input,
     .contact-form textarea {
       width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
+      padding: 12px;
       border: 1px solid #ccc;
-      border-radius: 6px;
+      border-radius: 8px;
       font-size: 1rem;
+      margin-bottom: 15px;
+      transition: border-color 0.3s ease;
+    }
+
+    .contact-form input:focus,
+    .contact-form textarea:focus {
+      border-color: #006400;
+      outline: none;
     }
 
     .contact-form textarea {
-      height: 120px;
+      height: 130px;
       resize: none;
     }
 
     .contact-form button {
-      display: inline-block;
-      background: #006400;
-      color: #fff;
+      width: 100%;
+      padding: 12px;
+      background-color: #006400;
+      color: white;
       border: none;
-      padding: 12px 20px;
-      border-radius: 6px;
+      border-radius: 8px;
       font-size: 1rem;
       cursor: pointer;
-      transition: background 0.3s ease;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
     }
 
     .contact-form button:hover {
-      background: #228B22;
+      background-color: #228B22;
     }
 
+    /* ======== FOOTER ======== */
     footer {
+      background-color: #333;
+      color: #fff;
       text-align: center;
       padding: 20px;
-      background: #333;
-      color: #fff;
       margin-top: 50px;
+      font-size: 0.95rem;
     }
 
-    /* Floating Back to Home Button */
+    /* ======== BACK TO HOME BUTTON ======== */
     .back-home {
       position: fixed;
       bottom: 20px;
@@ -115,22 +145,54 @@
 
     .back-home a {
       display: inline-block;
-      padding: 12px 18px;
-      background: #006400;
+      background-color: #006400;
       color: #fff;
       text-decoration: none;
-      font-size: 1rem;
+      padding: 12px 18px;
       border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      font-size: 0.95rem;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
       transition: background 0.3s ease, transform 0.2s ease;
     }
 
     .back-home a:hover {
-      background: #228B22;
+      background-color: #228B22;
       transform: translateY(-2px);
+    }
+
+    /* ======== RESPONSIVENESS ======== */
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 1.8rem;
+      }
+
+      main {
+        margin: 20px auto;
+        padding: 15px;
+      }
+
+      .contact-info, .contact-form {
+        padding: 20px;
+      }
+
+      .contact-form button {
+        font-size: 0.95rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .contact-info h2, .contact-form h2 {
+        font-size: 1.3rem;
+      }
+
+      .contact-form input,
+      .contact-form textarea {
+        font-size: 0.95rem;
+      }
     }
   </style>
 </head>
+
 <body>
   <header>
     <h1>Contact Us</h1>
@@ -167,8 +229,7 @@
 
   <!-- Floating Back to Home Button -->
   <div class="back-home">
-    <!-- Back to Home Button -->
-    <a href="{{ url_for('home.index') }}" class="back-to-home">← Back to Home</a>
+    <a href="{{ url_for('home.index') }}">← Back to Home</a>
   </div>
 </body>
 </html>
