@@ -12,6 +12,7 @@ class IncubateeProduct(db.Model):
     stock_amount = db.Column(db.Integer, nullable=False)
     price_per_stocks = db.Column(db.Numeric(8, 2), nullable=False)
     details = db.Column(db.Text, nullable=False)
+    category = db.Column(db.String(100), nullable=True)
     expiration_date = db.Column(db.Date, nullable=True)  # changed to optional
     warranty = db.Column(db.String(100), nullable=True)  #new column (e.g. “6 months”, “1 year”)
     added_on = db.Column(db.Date, nullable=False, default=date.today)

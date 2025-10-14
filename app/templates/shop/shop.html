@@ -10,345 +10,8 @@
     <!-- Link to external CSS file for styling -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <!-- Additional CSS for shop page -->
-    <style>
-        
-/* Shop Page Specific Styles */
-.shop-header {
-    background: white !important;
-    padding: 40px 0;
-}
-.shop-title, .shop-subtitle {
-    display: none !important;
-}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css') }}">
 
-.products-section {
-    background: #ffffff;
-    padding-top: 2rem;
-}
-
-.product-card {
-    border-radius: 16px;
-    background: #fff;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
-}
-
-.product-details {
-    background: #f9fafb;
-    border-radius: 8px;
-    padding: 0.6rem 1rem;
-}
-
-.product-expiry {
-    color: #16a34a;
-    font-weight: 600;
-    font-size: 0.95rem;
-}
-
-.add-to-cart {
-    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.add-to-cart:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 15px rgba(34, 197, 94, 0.4);
-}
-
-
-.filters-section {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 2rem 0;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            border-bottom: 1px solid rgba(34, 197, 94, 0.1);
-        }
-
-        .filters-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .filter-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .filter-label {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .filter-select {
-            padding: 0.5rem 1rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            background: white;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: #22c55e;
-            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
-        }
-
-        .search-box {
-            padding: 0.5rem 1rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            width: 250px;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-
-        .search-box:focus {
-            outline: none;
-            border-color: #22c55e;
-            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
-        }
-
-
-        .products-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 2rem;
-            margin-top: 2rem;
-        }
-
-       
-        .product-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .product-image {
-            height: 250px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .product-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-
-        .product-card:hover .product-image img {
-            transform: scale(1.1);
-        }
-
-        .product-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-            padding: 0.3rem 0.8rem;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .product-info {
-            padding: 1.5rem;
-        }
-
-        .product-category {
-            color: #667eea;
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-        }
-
-        .product-title {
-            font-size: 1.3rem;
-            margin-bottom: 0.8rem;
-            color: #333;
-            font-weight: 700;
-        }
-
-        .product-description {
-            color: #666;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin-bottom: 1rem;
-        }
-
-        
-
-        .product-price {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #10b981;
-        }
-
-
-        .product-actions {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-
-
-        .reserve-btn {
-            flex: 1;
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-            border: none;
-            padding: 0.8rem 1rem;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-            min-width: 120px;
-        }
-
-        
-
-        .reserve-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
-        }
-
-        .wishlist-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 0.8rem;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            width: 45px;
-            height: 45px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .wishlist-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 3rem;
-        }
-
-        .page-btn {
-            padding: 0.8rem 1.2rem;
-            border: 2px solid #e1e5e9;
-            background: white;
-            color: #333;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-        }
-
-        .page-btn:hover,
-        .page-btn.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-color: #667eea;
-        }
-
-        .back-to-home {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-            transition: all 0.3s ease;
-            z-index: 1000;
-        }
-
-        .back-to-home:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-        }
-
-        /* Responsive Design for Shop Page */
-        @media (max-width: 768px) {
-            .shop-title {
-                font-size: 2.5rem;
-            }
-
-            .filters-container {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .filter-group {
-                justify-content: space-between;
-            }
-
-            .search-box {
-                width: 100%;
-            }
-
-            .products-grid {
-                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-                gap: 1.5rem;
-            }
-
-            .product-details {
-                flex-direction: column;
-                gap: 0.5rem;
-                text-align: center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .shop-title {
-                font-size: 2rem;
-            }
-
-            .products-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-
-            .back-to-home {
-                bottom: 20px;
-                right: 20px;
-                padding: 0.8rem 1.2rem;
-                font-size: 0.9rem;
-            }
-        }
-    </style>
 </head>
 <body>
     <!-- Header Section - Fixed navigation bar at the top -->
@@ -386,26 +49,18 @@
     <!-- Filters Section -->
     <section class="filters-section">
         <div class="filters-container">
-            <div class="filter-group">
-                <label class="filter-label">Category:</label>
-                <select class="filter-select">
-                    <option value="">All Categories</option>
-                    <option value="smart-farming">Smart Farming</option>
-                    <option value="aquaculture">Aquaculture</option>
-                    <option value="irrigation">Irrigation Systems</option>
-                    <option value="sensors">IoT Sensors</option>
-                    <option value="equipment">Farming Equipment</option>
-                </select>
+            <!-- 🧭 Category Filter -->
+            <div class="category-filter">
+            <label for="categorySelect">Filter by Category:</label>
+            <select id="categorySelect" class="category-select">
+                <option value="all" selected>All Categories</option>
+            </select>
             </div>
             <div class="filter-group">
-                <label class="filter-label">Price:</label>
-                <select class="filter-select">
-                    <option value="">All Prices</option>
-                    <option value="0-50">$0 - $50</option>
-                    <option value="50-100">$50 - $100</option>
-                    <option value="100-200">$100 - $200</option>
-                    <option value="200+">$200+</option>
-                </select>
+            <label class="filter-label" for="priceSelect">Price Range:</label>
+            <select id="priceSelect" class="filter-select">
+                <option value="all" selected>All Prices</option>
+            </select>
             </div>
             <div class="filter-group">
                 <label class="filter-label">Sort:</label>
@@ -423,200 +78,11 @@
 
     <!-- Products Section -->
     <section class="products-section">
-        <div class="products-container">
-            <div class="products-grid">
-                <!-- Product 1 -->
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="{{ url_for('static', filename='images/Pr1.webp') }}" alt="Smart Irrigation Controller">
-                        <div class="product-badge">New</div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-category">Smart Farming</div>
-                        <h3 class="product-title">Smart Irrigation Controller</h3>
-                        <p class="product-description">AI-powered irrigation system with soil moisture sensors, weather integration, and mobile app control. Optimizes water usage and crop yield.</p>
-                        <div class="product-details">
-                            <div class="product-price">$299.99</div>
-                            <div class="product-expiry">Expiration: Dec 2026</div>
-
-                        </div>
-                        <div class="product-actions">
-                            <button class="add-to-cart" onclick="addToCart('smart-irrigation')">Add to Cart</button>
-                            <button class="reserve-btn" onclick="reserveProduct('smart-irrigation')">Reserve</button>
-                            <button class="wishlist-btn" onclick="addToWishlist('smart-irrigation')">♥</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Product 2 -->
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="{{ url_for('static', filename='images/Pr2.jfif') }}" alt="Automated Fish Feeder">
-                        <div class="product-badge">Sale</div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-category">Aquaculture</div>
-                        <h3 class="product-title">Automated Fish Feeder</h3>
-                        <p class="product-description">Smart fish feeding system with programmable schedules, portion control, and water quality monitoring. Perfect for aquaculture operations.</p>
-                        <div class="product-details">
-                            <div class="product-price">$199.99</div>
-                            <div class="product-expiry">Expiration: Dec 2026</div>
-
-                        </div>
-                        <div class="product-actions">
-                            <button class="add-to-cart" onclick="addToCart('fish-feeder')">Add to Cart</button>
-                            <button class="reserve-btn" onclick="reserveProduct('fish-feeder')">Reserve</button>
-                            <button class="wishlist-btn" onclick="addToWishlist('fish-feeder')">♥</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Product 3 -->
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="{{ url_for('static', filename='images/Pr3.jfif') }}" alt="Soil Health Monitor">
-                    </div>
-                    <div class="product-info">
-                        <div class="product-category">IoT Sensors</div>
-                        <h3 class="product-title">Soil Health Monitor</h3>
-                        <p class="product-description">Advanced soil sensor system measuring pH, moisture, temperature, and nutrient levels. Real-time data transmission and analysis for optimal crop management.</p>
-                        <div class="product-details">
-                            <div class="product-price">$149.99</div>
-                           <div class="product-expiry">Expiration: Dec 2026</div>
-
-                        </div>
-                        <div class="product-actions">
-                            <button class="add-to-cart" onclick="addToCart('soil-monitor')">Add to Cart</button>
-                            <button class="reserve-btn" onclick="reserveProduct('soil-monitor')">Reserve</button>
-                            <button class="wishlist-btn" onclick="addToWishlist('soil-monitor')">♥</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Product 4 -->
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="{{ url_for('static', filename='images/Pr4.jfif') }}" alt="Water Quality Analyzer">
-                        <div class="product-badge">Limited</div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-category">Aquaculture</div>
-                        <h3 class="product-title">Water Quality Analyzer</h3>
-                        <p class="product-description">Professional water quality testing device for aquaculture. Measures dissolved oxygen, pH, temperature, and ammonia levels with real-time alerts.</p>
-                        <div class="product-details">
-                            <div class="product-price">$399.99</div>
-                            <div class="product-expiry">Expiration: Dec 2026</div>
-
-                        </div>
-                        <div class="product-actions">
-                            <button class="add-to-cart" onclick="addToCart('water-analyzer')">Add to Cart</button>
-                            <button class="reserve-btn" onclick="reserveProduct('water-analyzer')">Reserve</button>
-                            <button class="wishlist-btn" onclick="addToWishlist('water-analyzer')">♥</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Product 5 -->
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="{{ url_for('static', filename='images/Pr5.jfif') }}" alt="Drone Crop Monitor">
-                    </div>
-                    <div class="product-info">
-                        <div class="product-category">Smart Farming</div>
-                        <h3 class="product-title">Drone Crop Monitor</h3>
-                        <p class="product-description">Agricultural drone with multispectral camera for crop health monitoring, yield estimation, and precision agriculture applications. Includes flight planning software.</p>
-                        <div class="product-details">
-                            <div class="product-price">$1,299.99</div>
-                         <div class="product-expiry">Expiration: Dec 2026</div>
-
-                        </div>
-                        <div class="product-actions">
-                            <button class="add-to-cart" onclick="addToCart('drone-monitor')">Add to Cart</button>
-                            <button class="reserve-btn" onclick="reserveProduct('drone-monitor')">Reserve</button>
-                            <button class="wishlist-btn" onclick="addToWishlist('drone-monitor')">♥</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Product 6 -->
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="{{ url_for('static', filename='images/Pr6.jfif') }}" alt="Precision Seeder">
-                        <div class="product-badge">Hot</div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-category">Farming Equipment</div>
-                        <h3 class="product-title">Precision Seeder</h3>
-                        <p class="product-description">GPS-guided precision seeder for optimal seed placement and spacing. Reduces seed waste and improves crop uniformity. Compatible with most tractors.</p>
-                        <div class="product-details">
-                            <div class="product-price">$2,499.99</div>
-                          <div class="product-expiry">Expiration: Dec 2026</div>
-
-                        </div>
-                        <div class="product-actions">
-                            <button class="add-to-cart" onclick="addToCart('precision-seeder')">Add to Cart</button>
-                            <button class="reserve-btn" onclick="reserveProduct('precision-seeder')">Reserve</button>
-                            <button class="wishlist-btn" onclick="addToWishlist('precision-seeder')">♥</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Product 7 -->
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="{{ url_for('static', filename='images/Pr7.jfif') }}" alt="Aquaponics System">
-                    </div>
-                    <div class="product-info">
-                        <div class="product-category">Aquaculture</div>
-                        <h3 class="product-title">Aquaponics System</h3>
-                        <p class="product-description">Complete aquaponics starter kit combining fish farming with hydroponic plant growing. Includes tank, grow beds, pump, and starter fish/plants.</p>
-                        <div class="product-details">
-                            <div class="product-price">$599.99</div>
-                           <div class="product-expiry">Expiration: Dec 2026</div>
-
-                        </div>
-                        <div class="product-actions">
-                            <button class="add-to-cart" onclick="addToCart('aquaponics-system')">Add to Cart</button>
-                            <button class="reserve-btn" onclick="reserveProduct('aquaponics-system')">Reserve</button>
-                            <button class="wishlist-btn" onclick="addToWishlist('aquaponics-system')">♥</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Product 8 -->
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="{{ url_for('static', filename='images/Pr8.jfif') }}" alt="Weather Station Pro">
-                        <div class="product-badge">Best Seller</div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-category">IoT Sensors</div>
-                        <h3 class="product-title">Weather Station Pro</h3>
-                        <p class="product-description">Professional weather monitoring station with wind speed, rainfall, humidity, and temperature sensors. Perfect for agricultural planning and crop management.</p>
-                        <div class="product-details">
-                            <div class="product-price">$199.99</div>
-                           <div class="product-expiry">Expiration: Dec 2026</div>
-
-                        </div>
-                        <div class="product-actions">
-                            <button class="add-to-cart" onclick="addToCart('weather-station')">Add to Cart</button>
-                            <button class="reserve-btn" onclick="reserveProduct('weather-station')">Reserve</button>
-                            <button class="wishlist-btn" onclick="addToWishlist('weather-station')">♥</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pagination -->
-            <div class="pagination">
-                <button class="page-btn active">1</button>
-                <button class="page-btn">2</button>
-                <button class="page-btn">3</button>
-                <button class="page-btn">4</button>
-                <button class="page-btn">Next →</button>
-            </div>
-        </div>
+    <div class="products-container">
+        <div class="products-grid" id="productGrid"></div>
+    </div>
     </section>
+
     <!-- 🛒 CART MODAL CONTAINER -->
     <div id="cartModal" class="cart-modal">
     <div class="cart-modal-content">
@@ -635,289 +101,183 @@
 
     <!-- JavaScript for product actions -->
     <script>
-        // Check if user is logged in with Gmail
-        function checkLoginStatus() {
-            // This would typically check with your authentication system
-            // For demo purposes, we'll check localStorage
-            const userEmail = localStorage.getItem('userEmail');
-            return userEmail && userEmail.includes('@gmail.com');
+    //Check if user is logged in (mock Gmail login)
+    function checkLoginStatus() {
+        const userEmail = localStorage.getItem('userEmail');
+        return userEmail && userEmail.includes('@gmail.com');
+    }
+
+    //Require login before any restricted action
+    function requireLogin(action) {
+        if (!checkLoginStatus()) {
+        const login = confirm(`Please log in with your Gmail account to ${action}. Would you like to log in now?`);
+        if (login) window.location.href = 'https://accounts.google.com/signin';
+        return false;
+        }
+        return true;
+    }
+
+    //Add to cart (works with dynamic product data)
+    function addToCart(productId) {
+        if (!requireLogin('add items to cart')) return;
+
+        const card = document.querySelector(`[data-id="${productId}"]`);
+        if (!card) return;
+
+        const productName = card.querySelector('.product-title').textContent;
+        const productPrice = parseFloat(card.querySelector('.product-price').textContent.replace('₱', ''));
+        const productImg = card.querySelector('img').src;
+
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const existingItem = cart.find(item => item.id === productId);
+
+        if (existingItem) {
+        existingItem.quantity += 1;
+        } else {
+        cart.push({
+            id: productId,
+            name: productName,
+            price: productPrice,
+            image: productImg,
+            quantity: 1,
+            timestamp: new Date().toISOString()
+        });
         }
 
-        // Show login prompt if user is not logged in
-        function requireLogin(action) {
-            if (!checkLoginStatus()) {
-                const login = confirm('Please log in with your Gmail account to ' + action + '. Would you like to log in now?');
-                if (login) {
-                    // Redirect to Gmail login
-                    window.location.href = 'https://accounts.google.com/signin';
-                }
-                return false;
-            }
-            return true;
-        }
+        localStorage.setItem('cart', JSON.stringify(cart));
+        showNotification('Added to cart successfully!', 'success');
+        updateCartCount();
+    }
 
-        // Add to cart function
-        function addToCart(productId) {
-            if (!requireLogin('add items to cart')) return;
-            
-            // Get product details
-            const productName = getProductName(productId);
-            const productPrice = getProductPrice(productId);
-            
-            // Add to cart (this would typically send to your backend)
-            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-            const existingItem = cart.find(item => item.id === productId);
-            
-            if (existingItem) {
-                existingItem.quantity += 1;
-            } else {
-                cart.push({
-                    id: productId,
-                    name: productName,
-                    price: productPrice,
-                    quantity: 1,
-                    timestamp: new Date().toISOString()
-                });
-            }
-            
-            localStorage.setItem('cart', JSON.stringify(cart));
-            
-            // Show success message
-            showNotification('Added to cart successfully!', 'success');
-            
-            // Update cart count in header (if you have one)
-            updateCartCount();
-        }
+    //Reserve product
+    function reserveProduct(productId) {
+        if (!requireLogin('reserve products')) return;
 
-        // Reserve product function
-        function reserveProduct(productId) {
-            if (!requireLogin('reserve products')) return;
-            
-            const productName = getProductName(productId);
-            const productPrice = getProductPrice(productId);
-            
-            // Get user email
-            const userEmail = localStorage.getItem('userEmail');
-            
-            // Create reservation
-            const reservation = {
-                id: productId,
-                name: productName,
-                price: productPrice,
-                userEmail: userEmail,
-                reservedAt: new Date().toISOString(),
-                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
-            };
-            
-            // Save reservation
-            let reservations = JSON.parse(localStorage.getItem('reservations') || '[]');
-            reservations.push(reservation);
-            localStorage.setItem('reservations', JSON.stringify(reservations));
-            
-            // Show success message
-            showNotification('Product reserved for 24 hours! Check your email for confirmation.', 'success');
-            
-            // Update button state
-            updateReserveButton(productId, true);
-        }
+        const card = document.querySelector(`[data-id="${productId}"]`);
+        const productName = card.querySelector('.product-title').textContent;
+        const productPrice = parseFloat(card.querySelector('.product-price').textContent.replace('₱', ''));
+        const userEmail = localStorage.getItem('userEmail');
 
-        // Add to wishlist function
-        function addToWishlist(productId) {
-            if (!requireLogin('add items to wishlist')) return;
-            
-            const productName = getProductName(productId);
-            const productPrice = getProductPrice(productId);
-            
-            let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-            const existingItem = wishlist.find(item => item.id === productId);
-            
-            if (!existingItem) {
-                wishlist.push({
-                    id: productId,
-                    name: productName,
-                    price: productPrice,
-                    addedAt: new Date().toISOString()
-                });
-                
-                localStorage.setItem('wishlist', JSON.stringify(wishlist));
-                showNotification('Added to wishlist!', 'success');
-                updateWishlistButton(productId, true);
-            } else {
-                showNotification('Already in wishlist!', 'info');
-            }
-        }
+        const reservation = {
+        id: productId,
+        name: productName,
+        price: productPrice,
+        userEmail: userEmail,
+        reservedAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24h
+        };
 
-        // Helper function to get product name
-        function getProductName(productId) {
-            const productNames = {
-                'smart-irrigation': 'Smart Irrigation Controller',
-                'fish-feeder': 'Automated Fish Feeder',
-                'soil-monitor': 'Soil Health Monitor',
-                'water-analyzer': 'Water Quality Analyzer',
-                'drone-monitor': 'Drone Crop Monitor',
-                'precision-seeder': 'Precision Seeder',
-                'aquaponics-system': 'Aquaponics System',
-                'weather-station': 'Weather Station Pro'
-            };
-            return productNames[productId] || 'Unknown Product';
-        }
+        let reservations = JSON.parse(localStorage.getItem('reservations') || '[]');
+        reservations.push(reservation);
+        localStorage.setItem('reservations', JSON.stringify(reservations));
 
-        // Helper function to get product price
-        function getProductPrice(productId) {
-            const productPrices = {
-                'smart-irrigation': 299.99,
-                'fish-feeder': 199.99,
-                'soil-monitor': 149.99,
-                'water-analyzer': 399.99,
-                'drone-monitor': 1299.99,
-                'precision-seeder': 2499.99,
-                'aquaponics-system': 599.99,
-                'weather-station': 199.99
-            };
-            return productPrices[productId] || 0;
-        }
+        showNotification('Product reserved for 24 hours! Check your email for confirmation.', 'success');
+        updateReserveButton(productId, true);
+    }
 
-        // Show notification
-        function showNotification(message, type = 'info') {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
-            notification.textContent = message;
-            
-            // Style the notification
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 1rem 1.5rem;
-                border-radius: 12px;
-                color: white;
-                font-weight: 600;
-                z-index: 10000;
-                transform: translateX(100%);
-                transition: transform 0.3s ease;
-                max-width: 300px;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            `;
-            
-            // Set background color based on type
-            switch(type) {
-                case 'success':
-                    notification.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
-                    break;
-                case 'error':
-                    notification.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
-                    break;
-                case 'info':
-                    notification.style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
-                    break;
-                default:
-                    notification.style.background = 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)';
-            }
-            
-            // Add to page
-            document.body.appendChild(notification);
-            
-            // Animate in
-            setTimeout(() => {
-                notification.style.transform = 'translateX(0)';
-            }, 100);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                notification.style.transform = 'translateX(100%)';
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 3000);
-        }
+    //Add to wishlist
+    function addToWishlist(productId) {
+        if (!requireLogin('add items to wishlist')) return;
 
-        // Update cart count (if you have a cart counter in header)
-        function updateCartCount() {
-            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-            
-            // Update cart button if it exists
-            const cartBtn = document.querySelector('.cart-btn');
-            if (cartBtn && totalItems > 0) {
-                cartBtn.textContent = `🛒 (${totalItems})`;
-            }
-        }
+        const card = document.querySelector(`[data-id="${productId}"]`);
+        const productName = card.querySelector('.product-title').textContent;
+        const productPrice = parseFloat(card.querySelector('.product-price').textContent.replace('₱', ''));
 
-        // Update reserve button state
-        function updateReserveButton(productId, isReserved) {
-            const buttons = document.querySelectorAll(`[onclick*="${productId}"]`);
-            buttons.forEach(button => {
-                if (button.classList.contains('reserve-btn')) {
-                    if (isReserved) {
-                        button.textContent = 'Reserved';
-                        button.style.background = 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)';
-                        button.disabled = true;
-                    }
-                }
-            });
-        }
+        let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        const existingItem = wishlist.find(item => item.id === productId);
 
-        // Update wishlist button state
-        function updateWishlistButton(productId, isInWishlist) {
-            const buttons = document.querySelectorAll(`[onclick*="${productId}"]`);
-            buttons.forEach(button => {
-                if (button.classList.contains('wishlist-btn')) {
-                    if (isInWishlist) {
-                        button.textContent = '♥';
-                        button.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
-                    }
-                }
-            });
-        }
-
-        // Login button now redirects directly to Gmail - no need to update display
-
-        // Check for existing reservations and wishlist items on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check reservations
-            const reservations = JSON.parse(localStorage.getItem('reservations') || '[]');
-            reservations.forEach(reservation => {
-                if (new Date(reservation.expiresAt) > new Date()) {
-                    updateReserveButton(reservation.id, true);
-                }
-            });
-            
-            // Check wishlist
-            const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-            wishlist.forEach(item => {
-                updateWishlistButton(item.id, true);
-            });
-            
-            // Update cart count
-            updateCartCount();
+        if (!existingItem) {
+        wishlist.push({
+            id: productId,
+            name: productName,
+            price: productPrice,
+            addedAt: new Date().toISOString()
         });
 
-        // Simulate Gmail login (for demo purposes)
-        function simulateGmailLogin() {
-            const choice = confirm('Choose login method:\n\nOK = Quick Demo Login (enter email manually)\nCancel = Redirect to Google Sign-In');
-            
-            if (choice) {
-                // Quick demo login
-                const email = prompt('Enter your Gmail address:\n\nExample: user@gmail.com');
-                if (email && email.includes('@gmail.com')) {
-                    localStorage.setItem('userEmail', email);
-                    showNotification('Successfully logged in with Gmail!', 'success');
-                    return true;
-                } else if (email) {
-                    showNotification('Please enter a valid Gmail address (must end with @gmail.com).', 'error');
-                    return false;
-                }
-                return false;
-            } else {
-                // Redirect to Google Sign-In
-                window.open('https://accounts.google.com/signin', '_blank');
-                return false;
-            }
+        localStorage.setItem('wishlist', JSON.stringify(wishlist));
+        showNotification('Added to wishlist!', 'success');
+        updateWishlistButton(productId, true);
+        } else {
+        showNotification('Already in wishlist!', 'info');
         }
+    }
 
-        // Login button now redirects directly to Gmail - no JavaScript interference needed
+    //Modern notification popup
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        color: white;
+        font-weight: 600;
+        z-index: 10000;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        max-width: 300px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        `;
+
+        const colors = {
+        success: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+        error: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+        info: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+        default: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)'
+        };
+        notification.style.background = colors[type] || colors.default;
+
+        document.body.appendChild(notification);
+        setTimeout(() => notification.style.transform = 'translateX(0)', 100);
+        setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    //Update cart count in header
+    function updateCartCount() {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const cartBtn = document.querySelector('.cart-btn');
+        if (cartBtn) cartBtn.textContent = totalItems > 0 ? `🛒 (${totalItems})` : '🛒';
+    }
+
+    //Update reserve/wishlist button states
+    function updateReserveButton(productId, isReserved) {
+        const button = document.querySelector(`[data-id="${productId}"] .reserve-btn`);
+        if (button && isReserved) {
+        button.textContent = 'Reserved';
+        button.style.background = 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)';
+        button.disabled = true;
+        }
+    }
+
+    function updateWishlistButton(productId, isInWishlist) {
+        const button = document.querySelector(`[data-id="${productId}"] .wishlist-btn`);
+        if (button && isInWishlist) {
+        button.textContent = '♥';
+        button.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+        }
+    }
+
+    //On page load
+    document.addEventListener('DOMContentLoaded', () => {
+        const reservations = JSON.parse(localStorage.getItem('reservations') || '[]');
+        reservations.forEach(r => {
+        if (new Date(r.expiresAt) > new Date()) updateReserveButton(r.id, true);
+        });
+
+        const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        wishlist.forEach(w => updateWishlistButton(w.id, true));
+
+        updateCartCount();
+    });
     </script>
+
     <script>
     const openCartBtn = document.getElementById("openCartBtn");
     const cartModal = document.getElementById("cartModal");
@@ -969,5 +329,150 @@
         }
     });
     </script>
+    <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+    const categorySelect = document.getElementById("categorySelect");
+    const priceSelect = document.getElementById("priceSelect");
+    const productGrid = document.getElementById("productGrid");
+
+    let products = [];
+
+    try {
+        const response = await fetch("/admin/get-products");
+        const data = await response.json();
+        if (!data.success) throw new Error("Failed to fetch products");
+
+        products = data.products;
+
+        //Unique category list
+        const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+        categories.forEach(cat => {
+        const option = document.createElement("option");
+        option.value = cat;
+        option.textContent = cat;
+        categorySelect.appendChild(option);
+        });
+
+        //Generate dynamic price ranges
+        const prices = products.map(p => parseFloat(p.price_per_stocks)).filter(p => !isNaN(p));
+        const minPrice = Math.floor(Math.min(...prices));
+        const maxPrice = Math.ceil(Math.max(...prices));
+        const range = maxPrice - minPrice;
+
+        let numRanges = 3;
+        if (range > 1000 && range <= 3000) numRanges = 4;
+        else if (range > 3000) numRanges = 5;
+
+        const step = Math.ceil(range / numRanges);
+        const priceRanges = [];
+
+        for (let i = 0; i < numRanges; i++) {
+        const start = minPrice + i * step;
+        const end = i === numRanges - 1 ? maxPrice : start + step;
+        priceRanges.push({ start, end });
+        }
+
+        // 🏷 Populate Price Filter
+        priceSelect.innerHTML = `<option value="all" selected>All Prices</option>`;
+        priceRanges.forEach(r => {
+        const option = document.createElement("option");
+        option.value = `${r.start}-${r.end}`;
+        option.textContent = `₱${r.start.toLocaleString()} - ₱${r.end.toLocaleString()}`;
+        priceSelect.appendChild(option);
+        });
+
+        if (range > 5000) {
+        const lastOption = document.createElement("option");
+        lastOption.value = `${maxPrice}+`;
+        lastOption.textContent = `₱${maxPrice.toLocaleString()}+`;
+        priceSelect.appendChild(lastOption);
+        }
+
+        //Initial render
+        renderProducts(products);
+
+        //Apply filters
+        function filterProducts() {
+        const selectedCategory = categorySelect.value;
+        const selectedPrice = priceSelect.value;
+        let filtered = [...products];
+
+        if (selectedCategory !== "all") {
+            filtered = filtered.filter(p => p.category === selectedCategory);
+        }
+
+        if (selectedPrice !== "all") {
+            if (selectedPrice.includes("+")) {
+            const min = parseFloat(selectedPrice.replace("+", ""));
+            filtered = filtered.filter(p => p.price_per_stocks >= min);
+            } else {
+            const [min, max] = selectedPrice.split("-").map(Number);
+            filtered = filtered.filter(p => p.price_per_stocks >= min && p.price_per_stocks <= max);
+            }
+        }
+
+        smoothTransition(() => renderProducts(filtered));
+        }
+
+        categorySelect.addEventListener("change", filterProducts);
+        priceSelect.addEventListener("change", filterProducts);
+
+    } catch (err) {
+        console.error("Error loading products:", err);
+        productGrid.innerHTML = `<p style="color:red;">Error loading products.</p>`;
+    }
+
+    // Smooth transition animation
+    function smoothTransition(callback) {
+        productGrid.style.opacity = "0";
+        setTimeout(() => {
+        callback();
+        productGrid.style.opacity = "1";
+        }, 250);
+    }
+
+    // Render product cards
+    function renderProducts(products) {
+        productGrid.innerHTML = products.map(p => {
+        const imgSrc = p.image_path
+            ? `/${p.image_path}`
+            : "{{ url_for('static', filename='images/no-image.png') }}";
+
+        // Fixed logic: show Warranty when expiration_date is "No Expiry" or missing
+        let extraInfo = "";
+        if (p.expiration_date && p.expiration_date !== "No Expiry") {
+            extraInfo = `<div class="product-expiry">Expiration: ${p.expiration_date}</div>`;
+        } else if (p.warranty) {
+            extraInfo = `<div class="product-expiry">Warranty: ${p.warranty}</div>`;
+        } else {
+            extraInfo = `<div class="product-expiry">Warranty: None</div>`;
+        }
+
+        return `
+            <div class="product-card" data-id="${p.incubatee_id}">
+            <div class="product-image">
+                <img src="${imgSrc}" alt="${p.name}">
+            </div>
+            <div class="product-info">
+                <div class="product-category">${p.category || "Uncategorized"}</div>
+                <h3 class="product-title">${p.name}</h3>
+                <p class="product-description">${p.details}</p>
+                <div class="product-details">
+                <div class="product-price">₱${parseFloat(p.price_per_stocks).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                ${extraInfo}
+                </div>
+                <div class="product-actions">
+                <button class="add-to-cart" onclick="addToCart(${p.incubatee_id})">Add to Cart</button>
+                <button class="reserve-btn" onclick="reserveProduct(${p.incubatee_id})">Reserve</button>
+                <button class="wishlist-btn" onclick="addToWishlist(${p.incubatee_id})">♥</button>
+                </div>
+            </div>
+            </div>
+        `;
+        }).join("");
+    }
+    });
+    </script>
+
 </body>
 </html>
