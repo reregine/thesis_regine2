@@ -88,7 +88,8 @@ def add_product():
         stock_no = request.form.get("stock_no")
         products = request.form.get("products")
         details = request.form.get("details")
-        warranty = request.form.get("warranty")  # ✅ optional
+        warranty = request.form.get("warranty")
+        category = request.form.get("category")
 
         # Validate numbers
         try:
@@ -127,7 +128,7 @@ def add_product():
         # Create product
         product = IncubateeProduct(name=name, stock_no=stock_no, products=products,
             stock_amount=stock_amount, price_per_stocks=price_per_stocks, details=details,
-            expiration_date=expiration_date, warranty=warranty, added_on=added_on,
+            category=category, expiration_date=expiration_date, warranty=warranty, added_on=added_on,
             image_path=f"{UPLOAD_FOLDER}/{filename}" if filename else None)
 
         db.session.add(product)
@@ -156,8 +157,9 @@ def get_products():
                 "stock_amount": product.stock_amount,
                 "price_per_stocks": float(product.price_per_stocks),  # Convert Decimal to float for JSON
                 "details": product.details,
-                "expiration_date": product.expiration_date.strftime("%Y-%m-%d"),
-                "warranty": product.warranty,
+                "category": product.category if product.category else "Uncategorized",
+                "expiration_date": product.expiration_date.strftime("%Y-%m-%d") if product.expiration_date else "No Expiry",
+                "warranty": product.warranty if product.warranty else "No Warranty",
                 "added_on": product.added_on.strftime("%Y-%m-%d"),
                 "image_path": product.image_path})
         
