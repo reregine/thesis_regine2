@@ -1,158 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ATBI - Agri-Aqua Business Incubator</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <!-- FontAwesome for icons -->
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATBI - Agri-Aqua Business Incubator</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </head>
 <body>
-    <!-- HEADER -->
-    <header class="header">
-        <div class="header-container">
-            <div class="logo">
-                <img src="{{ url_for('static', filename='images/agrilogo.png') }}" alt="ATBI logo" class="logo-img">
-            </div>
-            <nav class="nav-menu">
-                <ul class="nav-list">
-                    <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
-                    <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
-                    <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
-                    <li><a href="#about" class="nav-link">ABOUT</a></li>
-                    <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
-                    <!-- Cart button with special styling -->
-                    <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒</a></li>
-                    <!-- Login button with special styling -->
-                    <li> <a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
-                </ul>
-            </nav>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-container">
+      <div class="logo">
+        <img src="{{ url_for('static', filename='images/agrilogo.png') }}" alt="ATBI logo" class="logo-img">
+      </div>
+      <nav class="nav-menu">
+        <ul class="nav-list">
+          <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
+          <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
+          <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
+          <li><a href="#about" class="nav-link">ABOUT</a></li>
+          <li><a href="{{ url_for('contact.contact_page') }}" class="nav-link">CONTACTS</a></li>
+          <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒</a></li>
+          <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="hero" id="home">
+    <div class="hero-container">
+      <h1 class="hero-title">Welcome to Agri-Aqua Mart</h1>
+      <p class="hero-subtitle">Your Smart, Fresh, and Sustainable Goods</p>
+    </div>
+  </section>
+
+  <!-- SHOP SECTION -->
+  <section class="shop" id="shop">
+    <div class="container">
+      <h2 class="section-title">Featured Agri-Aqua Products</h2>
+      <div class="products-grid">
+        <!-- Product cards -->
+        <div class="product-card">
+          <div class="product-image">
+            <img src="{{ url_for('static', filename='images/smart_irrigation.png') }}" alt="Smart Irrigation System">
+          </div>
+          <div class="product-info">
+            <h3 class="product-title">Smart Irrigation System</h3>
+            <p class="product-price">$299.99</p>
+            <p class="product-expiry">Expiration: Dec 2026</p>
+            <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
+          </div>
         </div>
-    </header>
 
-    <!-- HERO SECTION -->
-    <section class="hero" id="home">
-        <div class="hero-container">
-            <h1 class="hero-title">Welcome to Agri-Aqua Mart</h1>
-            <p class="hero-subtitle">Your Smart, Fresh, and Sustainable Goods</p>
+        <div class="product-card">
+          <div class="product-image">
+            <img src="{{ url_for('static', filename='images/aquaponics_kit.png') }}" alt="Aquaponics Kit">
+          </div>
+          <div class="product-info">
+            <h3 class="product-title">Aquaponics Starter Kit</h3>
+            <p class="product-price">$199.99</p>
+            <p class="product-expiry">Expiration: Nov 2026</p>
+            <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
+          </div>
         </div>
-    </section>
 
-    <!-- SHOP SECTION -->
-    <section class="shop" id="shop">
-        <div class="container">
-            <h2 class="section-title">Featured Agri-Aqua Products</h2>
-            <div class="products-grid">
-
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="{{ url_for('static', filename='images/smart_irrigation.png') }}" alt="Smart Irrigation System">
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-title">Smart Irrigation System</h3>
-                        <p class="product-price">$299.99</p>
-                        <p class="product-expiry">Expiration: Dec 2026</p>
-                        <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
-                    </div>
-                </div>
-
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="{{ url_for('static', filename='images/aquaponics_kit.png') }}" alt="Aquaponics Kit">
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-title">Aquaponics Starter Kit</h3>
-                        <p class="product-price">$199.99</p>
-                        <p class="product-expiry">Expiration: Nov 2026</p>
-                        <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
-                    </div>
-                </div>
-
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="{{ url_for('static', filename='images/soil_IoT.png') }}" alt="Soil Sensor">
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-title">IoT Soil Sensor</h3>
-                        <p class="product-price">$89.99</p>
-                        <p class="product-expiry">Expiration: Oct 2026</p>
-                        <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
-                    </div>
-                </div>
-
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="{{ url_for('static', filename='images/smart_fish.png') }}" alt="Fish Feed Optimizer">
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-title">Smart Fish Feed Optimizer</h3>
-                        <p class="product-price">$159.99</p>
-                        <p class="product-expiry">Expiration: Jan 2027</p>
-                        <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
-                    </div>
-                </div>
-            </div>
+        <div class="product-card">
+          <div class="product-image">
+            <img src="{{ url_for('static', filename='images/soil_IoT.png') }}" alt="Soil Sensor">
+          </div>
+          <div class="product-info">
+            <h3 class="product-title">IoT Soil Sensor</h3>
+            <p class="product-price">$89.99</p>
+            <p class="product-expiry">Expiration: Oct 2026</p>
+            <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
+          </div>
         </div>
-    </section>
-    <!-- 🛒 CART MODAL CONTAINER -->
-    <div id="cartModal" class="cart-modal">
+
+        <div class="product-card">
+          <div class="product-image">
+            <img src="{{ url_for('static', filename='images/smart_fish.png') }}" alt="Fish Feed Optimizer">
+          </div>
+          <div class="product-info">
+            <h3 class="product-title">Smart Fish Feed Optimizer</h3>
+            <p class="product-price">$159.99</p>
+            <p class="product-expiry">Expiration: Jan 2027</p>
+            <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT SECTION -->
+  <section id="about" class="about">
+    <div class="container">
+      <h2 class="section-title">About ATBI</h2>
+      <div class="about-content">
+        <p>
+          The Agri-Aqua Technology Business Incubator (ATBI) is a platform dedicated to nurturing agribusiness and aquaculture startups.
+          Our mission is to empower entrepreneurs by providing mentorship, technical support, and access to markets.
+        </p>
+        <p>
+          ATBI aims to foster innovation and sustainability in agriculture and aquaculture, ensuring that local farmers and innovators
+          can turn their ideas into viable businesses that promote food security and rural development.
+        </p>
+        <p>
+          Partnering with universities and industry experts, ATBI continues to support incubation projects that create positive
+          social and economic impact.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 🛒 CART MODAL -->
+  <div id="cartModal" class="cart-modal">
     <div class="cart-modal-content">
-        <div id="cartContent"></div> <!-- cart.html will load here -->
+      <div id="cartContent"></div>
     </div>
-    </div>
-    <!-- OTHER SECTIONS (Incubates, About, Contact, Footer) stay unchanged -->
+  </div>
 
-<script>
-  const openCartBtn = document.getElementById("openCartBtn");
-  const cartModal = document.getElementById("cartModal");
-  const closeCartBtn = document.getElementById("closeCartBtn");
-  const cartContent = document.getElementById("cartContent");
+  <script>
+    const openCartBtn = document.getElementById("openCartBtn");
+    const cartModal = document.getElementById("cartModal");
+    const cartContent = document.getElementById("cartContent");
 
-  // 🛒 Open modal and load cart.html from Flask
-  openCartBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    cartModal.classList.add("active");
+    openCartBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      cartModal.classList.add("active");
 
-    fetch("/cart/")  // loads your cart.html content
-      .then(response => response.text())
-      .then(html => {
-        cartContent.innerHTML = html;
-
-        // 🧠 After loading the cart.html, attach the close button inside it
-        const internalClose = cartContent.querySelector("#closeCart");
-        if (internalClose) {
-          internalClose.addEventListener("click", () => {
-            cartModal.classList.remove("active");
-          });
-        }
-      })
-      .catch(err => {
-        cartContent.innerHTML = "<p style='padding:20px;color:red;'>Failed to load cart.</p>";
-        console.error("Error loading cart:", err);
-      });
-  });
-
-  // ✖️ Close modal via outer close button (if exists)
-  if (closeCartBtn) {
-    closeCartBtn.addEventListener("click", () => {
-      cartModal.classList.remove("active");
+      fetch("/cart/")
+        .then(response => response.text())
+        .then(html => {
+          cartContent.innerHTML = html;
+          const internalClose = cartContent.querySelector("#closeCart");
+          if (internalClose) {
+            internalClose.addEventListener("click", () => {
+              cartModal.classList.remove("active");
+            });
+          }
+        })
+        .catch(err => {
+          cartContent.innerHTML = "<p style='padding:20px;color:red;'>Failed to load cart.</p>";
+          console.error("Error loading cart:", err);
+        });
     });
-  }
 
-  // ✖️ Close modal when clicking outside cart content
-  cartModal.addEventListener("click", (e) => {
-    if (e.target === cartModal) {
-      cartModal.classList.remove("active");
-    }
-  });
+    cartModal.addEventListener("click", (e) => {
+      if (e.target === cartModal) {
+        cartModal.classList.remove("active");
+      }
+    });
 
-  // ⎋ Optional: Close with ESC key
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      cartModal.classList.remove("active");
-    }
-  });
-</script>
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        cartModal.classList.remove("active");
+      }
+    });
+  </script>
 </body>
 </html>
