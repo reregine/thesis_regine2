@@ -11,9 +11,15 @@
       display: none;
     }
 
-    /* Adjust layout since header is gone */
+    /* Adjust layout since header is fixed */
+    body {
+      margin: 0;
+      padding-top: 100px; /* ✅ Prevents header overlap */
+      font-family: "Segoe UI", sans-serif;
+    }
+
     main {
-      padding: 40px 20px;
+      padding: 20px;
       max-width: 1200px;
       margin: 0 auto;
     }
@@ -22,11 +28,12 @@
     .batch {
       margin-bottom: 60px;
       text-align: center;
+      scroll-margin-top: 120px; /* ✅ Fixes anchor jump position */
     }
 
     .batch h3 {
       font-size: 2rem;
-      margin-top: 20px;
+      margin-top: 0;
       margin-bottom: 2rem;
       color: #006400; /* same green accent as header */
       font-weight: 700;
