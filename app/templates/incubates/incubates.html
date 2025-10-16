@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -6,38 +6,39 @@
   <title>Our Incubates - ATBI</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <style>
-    /* Page Header */
+    /* Remove old page header */
     header.page-header {
-      background: linear-gradient(135deg, #a7f3d0, #6ee7b7); /* light green gradient */
-      color: #064e3b;  /* dark green text */
-      padding: 30px 20px;  /* smaller background height */
-      text-align: center;
-      border-bottom: 2px solid #059669; /* subtle accent line */
+      display: none;
     }
 
-    header.page-header h1 {
-      font-size: 2.2rem;   /* consistent with shop titles */
-      font-weight: 700;
+    /* Adjust layout since header is fixed */
+    body {
       margin: 0;
+      padding-top: 100px; /* ✅ Prevents header overlap */
+      font-family: "Segoe UI", sans-serif;
     }
 
     main {
-      padding: 40px 20px;
+      padding: 20px;
       max-width: 1200px;
       margin: 0 auto;
     }
 
-    /* Batch section */
+    /* Batch section styling */
     .batch {
       margin-bottom: 60px;
+      text-align: center;
+      scroll-margin-top: 120px; /* ✅ Fixes anchor jump position */
     }
 
     .batch h3 {
       font-size: 2rem;
+      margin-top: 0;
       margin-bottom: 2rem;
-      color: #000;
-      text-align: center;
+      color: #006400; /* same green accent as header */
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     /* Grid layout for incubates */
@@ -127,24 +128,16 @@
       </div>
       <nav class="nav-menu">
         <ul class="nav-list">
-        <!-- Each list item contains a navigation link -->
-        <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
-        <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
-        <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
-        <li><a href="{{ url_for('home.index') }}#about" class="nav-link">ABOUT</a></li>
-        <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
-        <!-- Cart button with special styling -->
-        <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒</a></li>
-        <!-- Login button with special styling -->
-        <li> <a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
+          <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
+          <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
+          <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
+          <li><a href="{{ url_for('home.index') }}#about" class="nav-link">ABOUT</a></li>
+          <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
+          <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒</a></li>
+          <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
         </ul>
       </nav>
     </div>
-  </header>
-
-  <!-- Page Header -->
-  <header class="page-header">
-    <h1>Our Incubates</h1>
   </header>
 
   <main>
@@ -152,16 +145,16 @@
     <section class="batch" id="batch1">
       <h3>Batch 1</h3>
       <div class="incubates-grid">
-        <a href="details.html?id=techstart" class="incubate-card">
-        <img src="{{ url_for('static', filename='images/B1.png') }}" alt="TechStart Logo">
+        <a href="#" class="incubate-card">
+          <img src="{{ url_for('static', filename='images/B1.png') }}" alt="7JF Steel Fabrication">
           <div class="incubate-name">7JF Steel Fabrication</div>
         </a>
-        <a href="details.html?id=greeneco" class="incubate-card">
-          <img src="{{ url_for('static', filename='images/B4.png') }}" alt="GreenEco Logo">
+        <a href="#" class="incubate-card">
+          <img src="{{ url_for('static', filename='images/B4.png') }}" alt="GreenEco">
           <div class="incubate-name">GreenEco</div>
         </a>
-        <a href="details.html?id=edutech" class="incubate-card">
-          <img src="{{ url_for('static', filename='images/B5.png') }}" alt="EduTech Logo">
+        <a href="#" class="incubate-card">
+          <img src="{{ url_for('static', filename='images/B5.png') }}" alt="Obra Capisnon">
           <div class="incubate-name">Obra Capisnon</div>
         </a>
       </div>
@@ -171,13 +164,58 @@
     <section class="batch" id="batch2">
       <h3>Batch 2</h3>
       <div class="incubates-grid">
-        <a href="details.html?id=foodies" class="incubate-card">
-          <img src="{{ url_for('static', filename='images/B4.png') }}" alt="Foodies Logo">
+        <a href="#" class="incubate-card">
+          <img src="{{ url_for('static', filename='images/B2.png') }}" alt="Foodies">
           <div class="incubate-name">Foodies</div>
         </a>
-        <a href="details.html?id=medilink" class="incubate-card">
-          <img src="{{ url_for('static', filename='images/medilink.png') }}" alt="MediLink Logo">
+        <a href="#" class="incubate-card">
+          <img src="{{ url_for('static', filename='images/B3.png') }}" alt="MediLink">
           <div class="incubate-name">MediLink</div>
+        </a>
+      </div>
+    </section>
+
+    <!-- Batch 3 -->
+    <section class="batch" id="batch3">
+      <h3>Batch 3</h3>
+      <div class="incubates-grid">
+        <a href="#" class="incubate-card">
+          <img src="{{ url_for('static', filename='images/B6.png') }}" alt="AgriSmart">
+          <div class="incubate-name">AgriSmart</div>
+        </a>
+        <a href="#" class="incubate-card">
+          <img src="{{ url_for('static', filename='images/B7.png') }}" alt="BioFarm">
+          <div class="incubate-name">BioFarm Solutions</div>
+        </a>
+      </div>
+    </section>
+
+    <!-- Batch 4 -->
+    <section class="batch" id="batch4">
+      <h3>Batch 4</h3>
+      <div class="incubates-grid">
+        <a href="#" class="incubate-card">
+          <img src="{{ url_for('static', filename='images/B8.png') }}" alt="AquaGrow">
+          <div class="incubate-name">AquaGrow</div>
+        </a>
+        <a href="#" class="incubate-card">
+          <img src="{{ url_for('static', filename='images/B9.png') }}" alt="TechHarvest">
+          <div class="incubate-name">TechHarvest</div>
+        </a>
+      </div>
+    </section>
+
+    <!-- Batch 5 -->
+    <section class="batch" id="batch5">
+      <h3>Batch 5</h3>
+      <div class="incubates-grid">
+        <a href="#" class="incubate-card">
+          <img src="{{ url_for('static', filename='images/B10.png') }}" alt="EcoFeed">
+          <div class="incubate-name">EcoFeed Innovations</div>
+        </a>
+        <a href="#" class="incubate-card">
+          <img src="{{ url_for('static', filename='images/B11.png') }}" alt="FarmBot">
+          <div class="incubate-name">FarmBot Solutions</div>
         </a>
       </div>
     </section>
@@ -194,64 +232,63 @@
 
   <div class="floating-btn batch-nav">
     <a href="#batch1">Batch 1</a> |
-    <a href="#batch2">Batch 2</a>
+    <a href="#batch2">Batch 2</a> |
+    <a href="#batch3">Batch 3</a> |
+    <a href="#batch4">Batch 4</a> |
+    <a href="#batch5">Batch 5</a>
   </div>
-      <!-- 🛒 CART MODAL CONTAINER -->
-    <div id="cartModal" class="cart-modal">
+
+  <!-- 🛒 CART MODAL -->
+  <div id="cartModal" class="cart-modal">
     <div class="cart-modal-content">
-        <div id="cartContent"></div> <!-- cart.html will load here -->
+      <div id="cartContent"></div>
     </div>
-    </div>
-    <script>
-  const openCartBtn = document.getElementById("openCartBtn");
-  const cartModal = document.getElementById("cartModal");
-  const closeCartBtn = document.getElementById("closeCartBtn");
-  const cartContent = document.getElementById("cartContent");
+  </div>
 
-  //Open modal and load cart.html from Flask
-  openCartBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    cartModal.classList.add("active");
+  <script>
+    const openCartBtn = document.getElementById("openCartBtn");
+    const cartModal = document.getElementById("cartModal");
+    const closeCartBtn = document.getElementById("closeCartBtn");
+    const cartContent = document.getElementById("cartContent");
 
-    fetch("/cart/")  // loads your cart.html content
-      .then(response => response.text())
-      .then(html => {
-        cartContent.innerHTML = html;
+    openCartBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      cartModal.classList.add("active");
 
-        //After loading the cart.html, attach the close button inside it
-        const internalClose = cartContent.querySelector("#closeCart");
-        if (internalClose) {
-          internalClose.addEventListener("click", () => {
-            cartModal.classList.remove("active");
-          });
-        }
-      })
-      .catch(err => {
-        cartContent.innerHTML = "<p style='padding:20px;color:red;'>Failed to load cart.</p>";
-        console.error("Error loading cart:", err);
-      });
-  });
-
-  //close modal via outer close button (if exists)
-  if (closeCartBtn) {
-    closeCartBtn.addEventListener("click", () => {
-      cartModal.classList.remove("active");
+      fetch("/cart/")
+        .then(response => response.text())
+        .then(html => {
+          cartContent.innerHTML = html;
+          const internalClose = cartContent.querySelector("#closeCart");
+          if (internalClose) {
+            internalClose.addEventListener("click", () => {
+              cartModal.classList.remove("active");
+            });
+          }
+        })
+        .catch(err => {
+          cartContent.innerHTML = "<p style='padding:20px;color:red;'>Failed to load cart.</p>";
+          console.error("Error loading cart:", err);
+        });
     });
-  }
 
-  //close modal when clicking outside cart content
-  cartModal.addEventListener("click", (e) => {
-    if (e.target === cartModal) {
-      cartModal.classList.remove("active");
+    if (closeCartBtn) {
+      closeCartBtn.addEventListener("click", () => {
+        cartModal.classList.remove("active");
+      });
     }
-  });
 
-  //Optional: Close with ESC key
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      cartModal.classList.remove("active");
-    }
-  });
-</script>
+    cartModal.addEventListener("click", (e) => {
+      if (e.target === cartModal) {
+        cartModal.classList.remove("active");
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        cartModal.classList.remove("active");
+      }
+    });
+  </script>
 </body>
 </html>
