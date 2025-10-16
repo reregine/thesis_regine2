@@ -1,131 +1,477 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Character encoding for proper text display -->
-  <meta charset="UTF-8">
-  <!-- Responsive viewport for mobile devices -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Page title that appears in browser tab -->
-  <title>Shop - ATBI Agri-Aqua Products</title>
-  <!-- Link to external CSS file for styling -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <!-- Additional CSS for shop page -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css') }}">
+    <!-- Character encoding for proper text display -->
+    <meta charset="UTF-8">
+    <!-- Responsive viewport for mobile devices -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Page title that appears in browser tab -->
+    <title>Shop - ATBI Agri-Aqua Products</title>
+    <!-- Link to external CSS file for styling -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- Additional CSS for shop page -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css') }}">
 
-  <style>
-    /* ✅ Fix footer alignment (stick to bottom) */
-    html, body {
-      height: 100%;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-    }
-
-    main {
-      flex: 1; /* Pushes footer to bottom */
-    }
-
-    .footer {
-      margin-top: auto;
-      background-color: #333;
-      color: #fff;
-      text-align: center;
-      padding: 1rem 0;
-      font-size: 0.95rem;
-    }
-
-    .footer .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-  </style>
 </head>
 <body>
-  <!-- Header Section - Fixed navigation bar at the top -->
-  <header class="header">
-    <div class="header-container">
-      <div class="logo">
-        <img src="{{ url_for('static', filename='images/agrilogo.png') }}" alt="Store Logo" class="logo-img">
-      </div>
-      <nav class="nav-menu">
-        <ul class="nav-list">
-          <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
-          <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
-          <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
-          <li><a href="{{ url_for('home.index') }}#about" class="nav-link">ABOUT</a></li>
-          <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
-          <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒</a></li>
-          <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
+    <!-- Header Section - Fixed navigation bar at the top -->
+    <header class="header">
+        <!-- Container to center and limit the width of header content -->
+        <div class="header-container">
+            <!-- Logo section on the left side -->
+            <div class="logo">
+                <!-- Company logo image - replace logo.png with your actual logo file -->
+                <img src="{{ url_for('static', filename='images/agrilogo.png') }}" alt="Store Logo" class="logo-img">
+            </div>
+            <!-- Navigation menu on the right side -->
+            <nav class="nav-menu">
+                <!-- Unordered list containing navigation links -->
+                <ul class="nav-list">
+                    <!-- Each list item contains a navigation link -->
+                    <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
+                    <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
+                    <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
+                    <li><a href="{{ url_for('home.index') }}#about" class="nav-link">ABOUT</a></li>
+                    <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
+                    <!-- Cart button with special styling -->
+                    <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒</a></li>
+                    <!-- Login button with special styling -->
+                    <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
 
-  <main>
-    <!-- Simplified Header Section -->
-    <section class="shop-header"></section>
+   <!-- Simplified Header Section -->
+<section class="shop-header"></section>
+
 
     <!-- Filters Section -->
     <section class="filters-section">
-      <div class="filters-container">
-        <div class="category-filter">
-          <label for="categorySelect">Filter by Category:</label>
-          <select id="categorySelect" class="category-select">
-            <option value="all" selected>All Categories</option>
-          </select>
+        <div class="filters-container">
+            <!-- 🧭 Category Filter -->
+            <div class="category-filter">
+            <label for="categorySelect">Filter by Category:</label>
+            <select id="categorySelect" class="category-select">
+                <option value="all" selected>All Categories</option>
+            </select>
+            </div>
+            <div class="filter-group">
+            <label class="filter-label" for="priceSelect">Price Range:</label>
+            <select id="priceSelect" class="filter-select">
+                <option value="all" selected>All Prices</option>
+            </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Sort:</label>
+                <select class="filter-select">
+                    <option value="newest">Newest First</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="popularity">Most Popular</option>
+                    <option value="rating">Highest Rated</option>
+                </select>
+            </div>
+            <input type="text" class="search-box" placeholder="Search products...">
         </div>
-        <div class="filter-group">
-          <label class="filter-label" for="priceSelect">Price Range:</label>
-          <select id="priceSelect" class="filter-select">
-            <option value="all" selected>All Prices</option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label class="filter-label">Sort:</label>
-          <select class="filter-select">
-            <option value="newest">Newest First</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-            <option value="popularity">Most Popular</option>
-            <option value="rating">Highest Rated</option>
-          </select>
-        </div>
-        <input type="text" class="search-box" placeholder="Search products...">
-      </div>
     </section>
 
     <!-- Products Section -->
     <section class="products-section">
-      <div class="products-container">
+    <div class="products-container">
         <div class="products-grid" id="productGrid"></div>
-      </div>
+    </div>
     </section>
 
     <!-- 🛒 CART MODAL CONTAINER -->
     <div id="cartModal" class="cart-modal">
-      <div class="cart-modal-content">
+    <div class="cart-modal-content">
         <div id="cartContent"></div> <!-- cart.html will load here -->
-      </div>
     </div>
-
+    </div>
     <!-- Back to Home Button -->
     <a href="{{ url_for('home.index') }}" class="back-to-home">← Back to Home</a>
-  </main>
 
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="container">
-      <p>&copy; 2025 ATBI - Agri-Aqua Business Incubator. All rights reserved.</p>
-    </div>
-  </footer>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 ATBI - Agri-Aqua Business Incubator. All rights reserved.</p>
+        </div>
+    </footer>
 
-  <!-- ✅ Existing Scripts (unchanged) -->
-  <script>
-  // Existing JavaScript logic for cart, wishlist, etc.
-  // (All your scripts from your original code remain intact here)
-  </script>
+    <!-- JavaScript for product actions -->
+    <script>
+    //Check if user is logged in (mock Gmail login)
+    function checkLoginStatus() {
+        const userEmail = localStorage.getItem('userEmail');
+        return userEmail && userEmail.includes('@gmail.com');
+    }
 
-  <!-- Keep all your original scripts below this comment -->
-  {{ super() }}
+    //Require login before any restricted action
+    function requireLogin(action) {
+        if (!checkLoginStatus()) {
+        const login = confirm(`Please log in with your Gmail account to ${action}. Would you like to log in now?`);
+        if (login) window.location.href = 'https://accounts.google.com/signin';
+        return false;
+        }
+        return true;
+    }
+
+    //Add to cart (works with dynamic product data)
+    function addToCart(productId) {
+        if (!requireLogin('add items to cart')) return;
+
+        const card = document.querySelector(`[data-id="${productId}"]`);
+        if (!card) return;
+
+        const productName = card.querySelector('.product-title').textContent;
+        const productPrice = parseFloat(card.querySelector('.product-price').textContent.replace('₱', ''));
+        const productImg = card.querySelector('img').src;
+
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const existingItem = cart.find(item => item.id === productId);
+
+        if (existingItem) {
+        existingItem.quantity += 1;
+        } else {
+        cart.push({
+            id: productId,
+            name: productName,
+            price: productPrice,
+            image: productImg,
+            quantity: 1,
+            timestamp: new Date().toISOString()
+        });
+        }
+
+        localStorage.setItem('cart', JSON.stringify(cart));
+        showNotification('Added to cart successfully!', 'success');
+        updateCartCount();
+    }
+
+    //Reserve product
+    function reserveProduct(productId) {
+        if (!requireLogin('reserve products')) return;
+
+        const card = document.querySelector(`[data-id="${productId}"]`);
+        const productName = card.querySelector('.product-title').textContent;
+        const productPrice = parseFloat(card.querySelector('.product-price').textContent.replace('₱', ''));
+        const userEmail = localStorage.getItem('userEmail');
+
+        const reservation = {
+        id: productId,
+        name: productName,
+        price: productPrice,
+        userEmail: userEmail,
+        reservedAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24h
+        };
+
+        let reservations = JSON.parse(localStorage.getItem('reservations') || '[]');
+        reservations.push(reservation);
+        localStorage.setItem('reservations', JSON.stringify(reservations));
+
+        showNotification('Product reserved for 24 hours! Check your email for confirmation.', 'success');
+        updateReserveButton(productId, true);
+    }
+
+    //Add to wishlist
+    function addToWishlist(productId) {
+        if (!requireLogin('add items to wishlist')) return;
+
+        const card = document.querySelector(`[data-id="${productId}"]`);
+        const productName = card.querySelector('.product-title').textContent;
+        const productPrice = parseFloat(card.querySelector('.product-price').textContent.replace('₱', ''));
+
+        let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        const existingItem = wishlist.find(item => item.id === productId);
+
+        if (!existingItem) {
+        wishlist.push({
+            id: productId,
+            name: productName,
+            price: productPrice,
+            addedAt: new Date().toISOString()
+        });
+
+        localStorage.setItem('wishlist', JSON.stringify(wishlist));
+        showNotification('Added to wishlist!', 'success');
+        updateWishlistButton(productId, true);
+        } else {
+        showNotification('Already in wishlist!', 'info');
+        }
+    }
+
+    //Modern notification popup
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        color: white;
+        font-weight: 600;
+        z-index: 10000;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        max-width: 300px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        `;
+
+        const colors = {
+        success: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+        error: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+        info: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+        default: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)'
+        };
+        notification.style.background = colors[type] || colors.default;
+
+        document.body.appendChild(notification);
+        setTimeout(() => notification.style.transform = 'translateX(0)', 100);
+        setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    //Update cart count in header
+    function updateCartCount() {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const cartBtn = document.querySelector('.cart-btn');
+        if (cartBtn) cartBtn.textContent = totalItems > 0 ? `🛒 (${totalItems})` : '🛒';
+    }
+
+    //Update reserve/wishlist button states
+    function updateReserveButton(productId, isReserved) {
+        const button = document.querySelector(`[data-id="${productId}"] .reserve-btn`);
+        if (button && isReserved) {
+        button.textContent = 'Reserved';
+        button.style.background = 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)';
+        button.disabled = true;
+        }
+    }
+
+    function updateWishlistButton(productId, isInWishlist) {
+        const button = document.querySelector(`[data-id="${productId}"] .wishlist-btn`);
+        if (button && isInWishlist) {
+        button.textContent = '♥';
+        button.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+        }
+    }
+
+    //On page load
+    document.addEventListener('DOMContentLoaded', () => {
+        const reservations = JSON.parse(localStorage.getItem('reservations') || '[]');
+        reservations.forEach(r => {
+        if (new Date(r.expiresAt) > new Date()) updateReserveButton(r.id, true);
+        });
+
+        const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        wishlist.forEach(w => updateWishlistButton(w.id, true));
+
+        updateCartCount();
+    });
+    </script>
+
+    <script>
+    const openCartBtn = document.getElementById("openCartBtn");
+    const cartModal = document.getElementById("cartModal");
+    const closeCartBtn = document.getElementById("closeCartBtn");
+    const cartContent = document.getElementById("cartContent");
+
+    // 🛒 Open modal and load cart.html from Flask
+    openCartBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        cartModal.classList.add("active");
+
+        fetch("/cart/")  // loads your cart.html content
+        .then(response => response.text())
+        .then(html => {
+            cartContent.innerHTML = html;
+
+            // 🧠 After loading the cart.html, attach the close button inside it
+            const internalClose = cartContent.querySelector("#closeCart");
+            if (internalClose) {
+            internalClose.addEventListener("click", () => {
+                cartModal.classList.remove("active");
+            });
+            }
+        })
+        .catch(err => {
+            cartContent.innerHTML = "<p style='padding:20px;color:red;'>Failed to load cart.</p>";
+            console.error("Error loading cart:", err);
+        });
+    });
+
+    // ✖️ Close modal via outer close button (if exists)
+    if (closeCartBtn) {
+        closeCartBtn.addEventListener("click", () => {
+        cartModal.classList.remove("active");
+        });
+    }
+
+    // ✖️ Close modal when clicking outside cart content
+    cartModal.addEventListener("click", (e) => {
+        if (e.target === cartModal) {
+        cartModal.classList.remove("active");
+        }
+    });
+
+    // ⎋ Optional: Close with ESC key
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+        cartModal.classList.remove("active");
+        }
+    });
+    </script>
+    <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+    const categorySelect = document.getElementById("categorySelect");
+    const priceSelect = document.getElementById("priceSelect");
+    const productGrid = document.getElementById("productGrid");
+
+    let products = [];
+
+    try {
+        const response = await fetch("/admin/get-products");
+        const data = await response.json();
+        if (!data.success) throw new Error("Failed to fetch products");
+
+        products = data.products;
+
+        //Unique category list
+        const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+        categories.forEach(cat => {
+        const option = document.createElement("option");
+        option.value = cat;
+        option.textContent = cat;
+        categorySelect.appendChild(option);
+        });
+
+        //Generate dynamic price ranges
+        const prices = products.map(p => parseFloat(p.price_per_stocks)).filter(p => !isNaN(p));
+        const minPrice = Math.floor(Math.min(...prices));
+        const maxPrice = Math.ceil(Math.max(...prices));
+        const range = maxPrice - minPrice;
+
+        let numRanges = 3;
+        if (range > 1000 && range <= 3000) numRanges = 4;
+        else if (range > 3000) numRanges = 5;
+
+        const step = Math.ceil(range / numRanges);
+        const priceRanges = [];
+
+        for (let i = 0; i < numRanges; i++) {
+        const start = minPrice + i * step;
+        const end = i === numRanges - 1 ? maxPrice : start + step;
+        priceRanges.push({ start, end });
+        }
+
+        // 🏷 Populate Price Filter
+        priceSelect.innerHTML = `<option value="all" selected>All Prices</option>`;
+        priceRanges.forEach(r => {
+        const option = document.createElement("option");
+        option.value = `${r.start}-${r.end}`;
+        option.textContent = `₱${r.start.toLocaleString()} - ₱${r.end.toLocaleString()}`;
+        priceSelect.appendChild(option);
+        });
+
+        if (range > 5000) {
+        const lastOption = document.createElement("option");
+        lastOption.value = `${maxPrice}+`;
+        lastOption.textContent = `₱${maxPrice.toLocaleString()}+`;
+        priceSelect.appendChild(lastOption);
+        }
+
+        //Initial render
+        renderProducts(products);
+
+        //Apply filters
+        function filterProducts() {
+        const selectedCategory = categorySelect.value;
+        const selectedPrice = priceSelect.value;
+        let filtered = [...products];
+
+        if (selectedCategory !== "all") {
+            filtered = filtered.filter(p => p.category === selectedCategory);
+        }
+
+        if (selectedPrice !== "all") {
+            if (selectedPrice.includes("+")) {
+            const min = parseFloat(selectedPrice.replace("+", ""));
+            filtered = filtered.filter(p => p.price_per_stocks >= min);
+            } else {
+            const [min, max] = selectedPrice.split("-").map(Number);
+            filtered = filtered.filter(p => p.price_per_stocks >= min && p.price_per_stocks <= max);
+            }
+        }
+
+        smoothTransition(() => renderProducts(filtered));
+        }
+
+        categorySelect.addEventListener("change", filterProducts);
+        priceSelect.addEventListener("change", filterProducts);
+
+    } catch (err) {
+        console.error("Error loading products:", err);
+        productGrid.innerHTML = `<p style="color:red;">Error loading products.</p>`;
+    }
+
+    // Smooth transition animation
+    function smoothTransition(callback) {
+        productGrid.style.opacity = "0";
+        setTimeout(() => {
+        callback();
+        productGrid.style.opacity = "1";
+        }, 250);
+    }
+
+    // Render product cards
+    function renderProducts(products) {
+        productGrid.innerHTML = products.map(p => {
+        const imgSrc = p.image_path
+            ? `/${p.image_path}`
+            : "{{ url_for('static', filename='images/no-image.png') }}";
+
+        // Fixed logic: show Warranty when expiration_date is "No Expiry" or missing
+        let extraInfo = "";
+        if (p.expiration_date && p.expiration_date !== "No Expiry") {
+            extraInfo = `<div class="product-expiry">Expiration: ${p.expiration_date}</div>`;
+        } else if (p.warranty) {
+            extraInfo = `<div class="product-expiry">Warranty: ${p.warranty}</div>`;
+        } else {
+            extraInfo = `<div class="product-expiry">Warranty: None</div>`;
+        }
+
+        return `
+            <div class="product-card" data-id="${p.incubatee_id}">
+            <div class="product-image">
+                <img src="${imgSrc}" alt="${p.name}">
+            </div>
+            <div class="product-info">
+                <h3 class="product-title">${p.name}</h3>
+                <p class="product-description">${p.details}</p>
+                <div class="product-details">
+                <div class="product-price">₱${parseFloat(p.price_per_stocks).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                ${extraInfo}
+                </div>
+                <div class="product-actions">
+                <button class="add-to-cart" onclick="addToCart(${p.incubatee_id})">Add to Cart</button>
+                <button class="reserve-btn" onclick="reserveProduct(${p.incubatee_id})">Reserve</button>
+                <button class="wishlist-btn" onclick="addToWishlist(${p.incubatee_id})">♥</button>
+                </div>
+            </div>
+            </div>
+        `;
+        }).join("");
+    }
+    });
+    </script>
+
 </body>
 </html>

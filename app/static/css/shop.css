@@ -17,6 +17,7 @@
     border-radius: 16px;
     background: #fff;
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+
 }
 
 .product-details {
@@ -129,7 +130,7 @@
         }
 
         .product-image {
-            height: 250px;
+            height: 200px;
             overflow: hidden;
             position: relative;
         }
@@ -183,14 +184,11 @@
             margin-bottom: 1rem;
         }
 
-        
-
         .product-price {
             font-size: 1.5rem;
             font-weight: 700;
             color: #10b981;
         }
-
 
         .product-actions {
             display: flex;
@@ -338,7 +336,7 @@
 .category-filter {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.5rem;
   margin: 20px 0;
   font-family: "Poppins", sans-serif;
 }
