@@ -11,7 +11,6 @@
     <!-- Link to external CSS file for styling -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css') }}">
-
 </head>
 <body>
     <!-- Header Section - Fixed navigation bar at the top -->
@@ -63,16 +62,17 @@
             </select>
             </div>
             <div class="filter-group">
-                <label class="filter-label">Sort:</label>
-                <select class="filter-select">
-                    <option value="newest">Newest First</option>
-                    <option value="price-low">Price: Low to High</option>
-                    <option value="price-high">Price: High to Low</option>
-                    <option value="popularity">Most Popular</option>
-                    <option value="rating">Highest Rated</option>
-                </select>
+            <label class="filter-label" for="sortSelect">Sort:</label>
+            <select class="filter-select" id="sortSelect">
+                <option value="newest">Newest First</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="popularity">Most Popular</option>
+                <option value="rating">Highest Rated</option>
+            </select>
             </div>
-            <input type="text" class="search-box" placeholder="Search products...">
+
+            <input type="text" class="search-box" id="searchInput" placeholder="Search products...">
         </div>
     </section>
 
@@ -277,7 +277,6 @@
         updateCartCount();
     });
     </script>
-
     <script>
     const openCartBtn = document.getElementById("openCartBtn");
     const cartModal = document.getElementById("cartModal");
@@ -330,115 +329,131 @@
     });
     </script>
     <script>
-    document.addEventListener("DOMContentLoaded", async () => {
+    document.addEventListener("DOMContentLoaded", () => {
+    const searchBox = document.querySelector(".search-box");
     const categorySelect = document.getElementById("categorySelect");
     const priceSelect = document.getElementById("priceSelect");
+    const sortSelect = document.getElementById("sortSelect");
     const productGrid = document.getElementById("productGrid");
-
     let products = [];
 
-    try {
-        const response = await fetch("/admin/get-products");
-        const data = await response.json();
-        if (!data.success) throw new Error("Failed to fetch products");
-
-        products = data.products;
-
-        //Unique category list
-        const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
-        categories.forEach(cat => {
-        const option = document.createElement("option");
-        option.value = cat;
-        option.textContent = cat;
-        categorySelect.appendChild(option);
+    // Fetch all products once
+    fetch("/admin/get-products")
+        .then(res => res.json())
+        .then(data => {
+        if (data.success) {
+            products = data.products;
+            renderProducts(products);
+        }
         });
 
-        //Generate dynamic price ranges
-        const prices = products.map(p => parseFloat(p.price_per_stocks)).filter(p => !isNaN(p));
-        const minPrice = Math.floor(Math.min(...prices));
-        const maxPrice = Math.ceil(Math.max(...prices));
-        const range = maxPrice - minPrice;
+    // Debounced search
+    let searchTimeout;
+    searchBox.addEventListener("input", () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => performSearch(searchBox.value.trim().toLowerCase()), 300);
+    });
+    //sort event listener
+    sortSelect.addEventListener("change", () => applyFiltersAndSorting(products));
 
-        let numRanges = 3;
-        if (range > 1000 && range <= 3000) numRanges = 4;
-        else if (range > 3000) numRanges = 5;
-
-        const step = Math.ceil(range / numRanges);
-        const priceRanges = [];
-
-        for (let i = 0; i < numRanges; i++) {
-        const start = minPrice + i * step;
-        const end = i === numRanges - 1 ? maxPrice : start + step;
-        priceRanges.push({ start, end });
+    async function performSearch(query) {
+        if (!query) {
+        applyFiltersAndSorting(products);
+        return;
         }
 
-        // 🏷 Populate Price Filter
-        priceSelect.innerHTML = `<option value="all" selected>All Prices</option>`;
-        priceRanges.forEach(r => {
-        const option = document.createElement("option");
-        option.value = `${r.start}-${r.end}`;
-        option.textContent = `₱${r.start.toLocaleString()} - ₱${r.end.toLocaleString()}`;
-        priceSelect.appendChild(option);
+        // Basic fuzzy/partial search
+        const filtered = products.filter(p => {
+        const fields = [p.name, p.products, p.category, p.details]
+            .filter(Boolean)
+            .map(str => str.toLowerCase());
+
+        return fields.some(field =>
+            field.includes(query) || getSimilarity(field, query) >= 0.7 // fuzzy match
+        );
         });
 
-        if (range > 5000) {
-        const lastOption = document.createElement("option");
-        lastOption.value = `${maxPrice}+`;
-        lastOption.textContent = `₱${maxPrice.toLocaleString()}+`;
-        priceSelect.appendChild(lastOption);
+        applyFiltersAndSorting(filtered);
+    }
+
+    // Fuzzy match helper (Levenshtein similarity)
+    function getSimilarity(a, b) {
+        const distance = levenshteinDistance(a, b);
+        return 1 - distance / Math.max(a.length, b.length);
+    }
+
+    function levenshteinDistance(a, b) {
+        const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+        for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+        for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+        for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+            dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
         }
+        }
+        return dp[a.length][b.length];
+    }
 
-        //Initial render
-        renderProducts(products);
-
-        //Apply filters
-        function filterProducts() {
+    // Apply filters + sorting to any dataset
+    function applyFiltersAndSorting(list) {
         const selectedCategory = categorySelect.value;
         const selectedPrice = priceSelect.value;
-        let filtered = [...products];
+        const selectedSort = sortSelect.value;
 
+        let filtered = [...list];
+
+        // Filter by category
         if (selectedCategory !== "all") {
-            filtered = filtered.filter(p => p.category === selectedCategory);
+        filtered = filtered.filter(p => p.category === selectedCategory);
         }
 
+        // Filter by price
         if (selectedPrice !== "all") {
-            if (selectedPrice.includes("+")) {
+        if (selectedPrice.includes("+")) {
             const min = parseFloat(selectedPrice.replace("+", ""));
             filtered = filtered.filter(p => p.price_per_stocks >= min);
-            } else {
+        } else {
             const [min, max] = selectedPrice.split("-").map(Number);
             filtered = filtered.filter(p => p.price_per_stocks >= min && p.price_per_stocks <= max);
-            }
+        }
+        }
+
+        // Sorting
+        switch (selectedSort) {
+        case "newest":
+            filtered.sort((a, b) => new Date(b.added_on) - new Date(a.added_on));
+            break;
+        case "price-low":
+            filtered.sort((a, b) => a.price_per_stocks - b.price_per_stocks);
+            break;
+        case "price-high":
+            filtered.sort((a, b) => b.price_per_stocks - a.price_per_stocks);
+            break;
         }
 
         smoothTransition(() => renderProducts(filtered));
-        }
-
-        categorySelect.addEventListener("change", filterProducts);
-        priceSelect.addEventListener("change", filterProducts);
-
-    } catch (err) {
-        console.error("Error loading products:", err);
-        productGrid.innerHTML = `<p style="color:red;">Error loading products.</p>`;
     }
 
-    // Smooth transition animation
     function smoothTransition(callback) {
         productGrid.style.opacity = "0";
         setTimeout(() => {
         callback();
         productGrid.style.opacity = "1";
-        }, 250);
+        }, 200);
     }
 
-    // Render product cards
     function renderProducts(products) {
+        if (!products.length) {
+        productGrid.innerHTML = `<p style="text-align:center;color:#999;">No matching products found.</p>`;
+        return;
+        }
+
         productGrid.innerHTML = products.map(p => {
         const imgSrc = p.image_path
             ? `/${p.image_path}`
             : "{{ url_for('static', filename='images/no-image.png') }}";
 
-        // Fixed logic: show Warranty when expiration_date is "No Expiry" or missing
         let extraInfo = "";
         if (p.expiration_date && p.expiration_date !== "No Expiry") {
             extraInfo = `<div class="product-expiry">Expiration: ${p.expiration_date}</div>`;
@@ -454,6 +469,7 @@
                 <img src="${imgSrc}" alt="${p.name}">
             </div>
             <div class="product-info">
+                <div class="product-category">${p.category || "Uncategorized"}</div>
                 <h3 class="product-title">${p.name}</h3>
                 <p class="product-description">${p.details}</p>
                 <div class="product-details">
@@ -466,8 +482,7 @@
                 <button class="wishlist-btn" onclick="addToWishlist(${p.incubatee_id})">♥</button>
                 </div>
             </div>
-            </div>
-        `;
+            </div>`;
         }).join("");
     }
     });
