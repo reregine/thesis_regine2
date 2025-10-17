@@ -329,164 +329,225 @@
     });
     </script>
     <script>
-    document.addEventListener("DOMContentLoaded", () => {
-    const searchBox = document.querySelector(".search-box");
-    const categorySelect = document.getElementById("categorySelect");
-    const priceSelect = document.getElementById("priceSelect");
-    const sortSelect = document.getElementById("sortSelect");
-    const productGrid = document.getElementById("productGrid");
-    let products = [];
+    document.addEventListener("DOMContentLoaded", async () => {
+        const searchBox = document.querySelector(".search-box");
+        const categorySelect = document.getElementById("categorySelect");
+        const priceSelect = document.getElementById("priceSelect");
+        const sortSelect = document.getElementById("sortSelect");
+        const productGrid = document.getElementById("productGrid");
 
-    // Fetch all products once
-    fetch("/admin/get-products")
-        .then(res => res.json())
-        .then(data => {
-        if (data.success) {
+        let products = [];
+
+        try {
+            // Fetch products from backend
+            const response = await fetch("/admin/get-products");
+            const data = await response.json();
+            if (!data.success) throw new Error("Failed to fetch products");
+
             products = data.products;
+
+            /* Populate Category Dropdown */
+            const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+            categorySelect.innerHTML = `<option value="all" selected>All Categories</option>`;
+            categories.forEach(cat => {
+                const option = document.createElement("option");
+                option.value = cat;
+                option.textContent = cat;
+                categorySelect.appendChild(option);
+            });
+
+            /* Generate Dynamic Price Ranges */
+            const prices = products.map(p => parseFloat(p.price_per_stocks)).filter(p => !isNaN(p));
+            const minPrice = Math.floor(Math.min(...prices));
+            const maxPrice = Math.ceil(Math.max(...prices));
+            const range = maxPrice - minPrice;
+
+            let numRanges = 3;
+            if (range > 1000 && range <= 3000) numRanges = 4;
+            else if (range > 3000) numRanges = 5;
+
+            const step = Math.ceil(range / numRanges);
+            const priceRanges = [];
+
+            for (let i = 0; i < numRanges; i++) {
+                const start = minPrice + i * step;
+                const end = i === numRanges - 1 ? maxPrice : start + step;
+                priceRanges.push({ start, end });
+            }
+
+            priceSelect.innerHTML = `<option value="all" selected>All Prices</option>`;
+            priceRanges.forEach(r => {
+                const option = document.createElement("option");
+                option.value = `${r.start}-${r.end}`;
+                option.textContent = `₱${r.start.toLocaleString()} - ₱${r.end.toLocaleString()}`;
+                priceSelect.appendChild(option);
+            });
+
+            if (range > 5000) {
+                const lastOption = document.createElement("option");
+                lastOption.value = `${maxPrice}+`;
+                lastOption.textContent = `₱${maxPrice.toLocaleString()}+`;
+                priceSelect.appendChild(lastOption);
+            }
+
+            /*Initial render */
             renderProducts(products);
-        }
-        });
 
-    // Debounced search
-    let searchTimeout;
-    searchBox.addEventListener("input", () => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => performSearch(searchBox.value.trim().toLowerCase()), 300);
-    });
-    //sort event listener
-    sortSelect.addEventListener("change", () => applyFiltersAndSorting(products));
+            /* Event listeners */
+            categorySelect.addEventListener("change", () => applyFiltersAndSorting(products));
+            priceSelect.addEventListener("change", () => applyFiltersAndSorting(products));
+            sortSelect.addEventListener("change", () => applyFiltersAndSorting(products));
 
-    async function performSearch(query) {
-        if (!query) {
-        applyFiltersAndSorting(products);
-        return;
-        }
+            /* Debounced Search with fuzzy matching */
+            let searchTimeout;
+            searchBox.addEventListener("input", () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => performSearch(searchBox.value.trim().toLowerCase()), 300);
+            });
 
-        // Basic fuzzy/partial search
-        const filtered = products.filter(p => {
-        const fields = [p.name, p.products, p.category, p.details]
-            .filter(Boolean)
-            .map(str => str.toLowerCase());
-
-        return fields.some(field =>
-            field.includes(query) || getSimilarity(field, query) >= 0.7 // fuzzy match
-        );
-        });
-
-        applyFiltersAndSorting(filtered);
-    }
-
-    // Fuzzy match helper (Levenshtein similarity)
-    function getSimilarity(a, b) {
-        const distance = levenshteinDistance(a, b);
-        return 1 - distance / Math.max(a.length, b.length);
-    }
-
-    function levenshteinDistance(a, b) {
-        const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
-        for (let i = 0; i <= a.length; i++) dp[i][0] = i;
-        for (let j = 0; j <= b.length; j++) dp[0][j] = j;
-        for (let i = 1; i <= a.length; i++) {
-        for (let j = 1; j <= b.length; j++) {
-            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-            dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
-        }
-        }
-        return dp[a.length][b.length];
-    }
-
-    // Apply filters + sorting to any dataset
-    function applyFiltersAndSorting(list) {
-        const selectedCategory = categorySelect.value;
-        const selectedPrice = priceSelect.value;
-        const selectedSort = sortSelect.value;
-
-        let filtered = [...list];
-
-        // Filter by category
-        if (selectedCategory !== "all") {
-        filtered = filtered.filter(p => p.category === selectedCategory);
+        } catch (err) {
+            console.error("Error loading products:", err);
+            productGrid.innerHTML = `<p style="color:red;">Error loading products.</p>`;
         }
 
-        // Filter by price
-        if (selectedPrice !== "all") {
-        if (selectedPrice.includes("+")) {
-            const min = parseFloat(selectedPrice.replace("+", ""));
-            filtered = filtered.filter(p => p.price_per_stocks >= min);
-        } else {
-            const [min, max] = selectedPrice.split("-").map(Number);
-            filtered = filtered.filter(p => p.price_per_stocks >= min && p.price_per_stocks <= max);
-        }
-        }
+        /* Search Function with fuzzy support */
+        function performSearch(query) {
+            if (!query) {
+                applyFiltersAndSorting(products);
+                return;
+            }
 
-        // Sorting
-        switch (selectedSort) {
-        case "newest":
-            filtered.sort((a, b) => new Date(b.added_on) - new Date(a.added_on));
-            break;
-        case "price-low":
-            filtered.sort((a, b) => a.price_per_stocks - b.price_per_stocks);
-            break;
-        case "price-high":
-            filtered.sort((a, b) => b.price_per_stocks - a.price_per_stocks);
-            break;
+            const filtered = products.filter(p => {
+                const fields = [p.name, p.products, p.category, p.details]
+                    .filter(Boolean)
+                    .map(str => str.toLowerCase());
+
+                return fields.some(field =>
+                    field.includes(query) || getSimilarity(field, query) >= 0.7
+                );
+            });
+
+            applyFiltersAndSorting(filtered);
         }
 
-        smoothTransition(() => renderProducts(filtered));
-    }
-
-    function smoothTransition(callback) {
-        productGrid.style.opacity = "0";
-        setTimeout(() => {
-        callback();
-        productGrid.style.opacity = "1";
-        }, 200);
-    }
-
-    function renderProducts(products) {
-        if (!products.length) {
-        productGrid.innerHTML = `<p style="text-align:center;color:#999;">No matching products found.</p>`;
-        return;
+        /* Fuzzy match helpers */
+        function getSimilarity(a, b) {
+            const distance = levenshteinDistance(a, b);
+            return 1 - distance / Math.max(a.length, b.length);
         }
 
-        productGrid.innerHTML = products.map(p => {
-        const imgSrc = p.image_path
-            ? `/${p.image_path}`
-            : "{{ url_for('static', filename='images/no-image.png') }}";
-
-        let extraInfo = "";
-        if (p.expiration_date && p.expiration_date !== "No Expiry") {
-            extraInfo = `<div class="product-expiry">Expiration: ${p.expiration_date}</div>`;
-        } else if (p.warranty) {
-            extraInfo = `<div class="product-expiry">Warranty: ${p.warranty}</div>`;
-        } else {
-            extraInfo = `<div class="product-expiry">Warranty: None</div>`;
+        function levenshteinDistance(a, b) {
+            const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+            for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+            for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+            for (let i = 1; i <= a.length; i++) {
+                for (let j = 1; j <= b.length; j++) {
+                    const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                    dp[i][j] = Math.min(
+                        dp[i - 1][j] + 1,
+                        dp[i][j - 1] + 1,
+                        dp[i - 1][j - 1] + cost
+                    );
+                }
+            }
+            return dp[a.length][b.length];
         }
 
-        return `
-            <div class="product-card" data-id="${p.incubatee_id}">
-            <div class="product-image">
-                <img src="${imgSrc}" alt="${p.name}">
-            </div>
-            <div class="product-info">
-                <div class="product-category">${p.category || "Uncategorized"}</div>
-                <h3 class="product-title">${p.name}</h3>
-                <p class="product-description">${p.details}</p>
-                <div class="product-details">
-                <div class="product-price">₱${parseFloat(p.price_per_stocks).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
-                ${extraInfo}
-                </div>
-                <div class="product-actions">
-                <button class="add-to-cart" onclick="addToCart(${p.incubatee_id})">Add to Cart</button>
-                <button class="reserve-btn" onclick="reserveProduct(${p.incubatee_id})">Reserve</button>
-                <button class="wishlist-btn" onclick="addToWishlist(${p.incubatee_id})">♥</button>
-                </div>
-            </div>
-            </div>`;
-        }).join("");
-    }
+        /* Filter + Sort combo */
+        function applyFiltersAndSorting(list) {
+            const selectedCategory = categorySelect.value;
+            const selectedPrice = priceSelect.value;
+            const selectedSort = sortSelect.value;
+
+            let filtered = [...list];
+
+            // Category filter
+            if (selectedCategory !== "all") {
+                filtered = filtered.filter(p => p.category === selectedCategory);
+            }
+
+            // Price filter
+            if (selectedPrice !== "all") {
+                if (selectedPrice.includes("+")) {
+                    const min = parseFloat(selectedPrice.replace("+", ""));
+                    filtered = filtered.filter(p => p.price_per_stocks >= min);
+                } else {
+                    const [min, max] = selectedPrice.split("-").map(Number);
+                    filtered = filtered.filter(p => p.price_per_stocks >= min && p.price_per_stocks <= max);
+                }
+            }
+
+            // Sorting
+            switch (selectedSort) {
+                case "newest":
+                    filtered.sort((a, b) => new Date(b.added_on) - new Date(a.added_on));
+                    break;
+                case "price-low":
+                    filtered.sort((a, b) => a.price_per_stocks - b.price_per_stocks);
+                    break;
+                case "price-high":
+                    filtered.sort((a, b) => b.price_per_stocks - a.price_per_stocks);
+                    break;
+            }
+
+            smoothTransition(() => renderProducts(filtered));
+        }
+
+        /*Smooth fade transition */
+        function smoothTransition(callback) {
+            productGrid.style.opacity = "0";
+            setTimeout(() => {
+                callback();
+                productGrid.style.opacity = "1";
+            }, 200);
+        }
+
+        /*Product rendering */
+        function renderProducts(products) {
+            if (!products.length) {
+                productGrid.innerHTML = `<p style="text-align:center;color:#999;">No matching products found.</p>`;
+                return;
+            }
+
+            productGrid.innerHTML = products.map(p => {
+                const imgSrc = p.image_path
+                    ? `/${p.image_path}`
+                    : "{{ url_for('static', filename='images/no-image.png') }}";
+
+                let extraInfo = "";
+                if (p.expiration_date && p.expiration_date !== "No Expiry") {
+                    extraInfo = `<div class="product-expiry">Expiration: ${p.expiration_date}</div>`;
+                } else if (p.warranty) {
+                    extraInfo = `<div class="product-expiry">Warranty: ${p.warranty}</div>`;
+                } else {
+                    extraInfo = `<div class="product-expiry">Warranty: None</div>`;
+                }
+
+                return `
+                    <div class="product-card" data-id="${p.incubatee_id}">
+                        <div class="product-image">
+                            <img src="${imgSrc}" alt="${p.name}">
+                        </div>
+                        <div class="product-info">
+                            <div class="product-category">${p.category || "Uncategorized"}</div>
+                            <h3 class="product-title">${p.name}</h3>
+                            <p class="product-description">${p.details}</p>
+                            <div class="product-details">
+                                <div class="product-price">₱${parseFloat(p.price_per_stocks).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                ${extraInfo}
+                            </div>
+                            <div class="product-actions">
+                                <button class="add-to-cart" onclick="addToCart(${p.incubatee_id})">Add to Cart</button>
+                                <button class="reserve-btn" onclick="reserveProduct(${p.incubatee_id})">Reserve</button>
+                                <button class="wishlist-btn" onclick="addToWishlist(${p.incubatee_id})">♥</button>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join("");
+        }
     });
     </script>
+
 
 </body>
 </html>
