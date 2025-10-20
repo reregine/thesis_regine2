@@ -106,19 +106,139 @@ cd D:\programs\Postgres18\bin
 pg_ctl -D "D:\programs\Postgres18\data" start
 
 Databases Table
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
-CREATE TABLE incubatee_products (
-    incubatee_id SERIAL PRIMARY KEY,      -- unique incubatee product ID
-    name VARCHAR(150) NOT NULL,           -- incubatee name
-    stock_no VARCHAR(50) NOT NULL,        -- stock number (only numbers and dash)
-    products VARCHAR(150) NOT NULL,       -- offered service
-    stock_amount INTEGER NOT NULL,        -- stock amount
-    price_per_stocks NUMERIC(8,2) NOT NULL CHECK (price_per_stocks <= 999999.99), -- price per stock (max 999,999.99)
-    details TEXT NOT NULL,                -- product description
-    expiration_date DATE NOT NULL,        -- expiration date
-    added_on DATE NOT NULL DEFAULT CURRENT_DATE -- date added
+-- ======================================
+-- INCUBATEES TABLE (you already have this)
+-- ======================================
+CREATE TABLE incubatees (
+    incubatee_id SERIAL PRIMARY KEY,
+    last_name TEXT NOT NULL,
+    first_name TEXT NOT NULL,
+    middle_name TEXT,
+    contact_info TEXT,
+    batch INTEGER,
+    new_field INTEGER,
+    company_name TEXT,
+    email VARCHAR(100),
+    phone_number VARCHAR(100)
 );
+
+-- ======================================
+-- USERS TABLE (customers)
+-- ======================================
+CREATE TABLE users (
+    id_no SERIAL PRIMARY KEY,
+    username VARCHAR(150) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Function for auto-updating timestamps
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ======================================
+-- INCUBATEE PRODUCTS TABLE
+-- ======================================
+CREATE TABLE incubatee_products (
+    product_id SERIAL PRIMARY KEY,
+    incubatee_id INT NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    stock_no VARCHAR(50) NOT NULL,
+    products VARCHAR(150) NOT NULL,
+    stock_amount INT NOT NULL CHECK (stock_amount >= 0),
+    price_per_stocks NUMERIC(8,2) NOT NULL CHECK (price_per_stocks >= 0),
+    details TEXT NOT NULL,
+    category VARCHAR(100),
+    expiration_date DATE,
+    warranty VARCHAR(100),
+    added_on DATE DEFAULT CURRENT_DATE,
+    image_path VARCHAR(255),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    FOREIGN KEY (incubatee_id)
+        REFERENCES incubatees(incubatee_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TRIGGER update_incubatee_products_modtime
+BEFORE UPDATE ON incubatee_products
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+-- ======================================
+-- RESERVATIONS TABLE
+-- ======================================
+CREATE TABLE reservations (
+    reservation_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL CHECK (quantity > 0),
+    status VARCHAR(20) NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending', 'approved', 'completed', 'rejected')),
+    reserved_at TIMESTAMPTZ DEFAULT NOW(),
+    approved_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ,
+    rejected_at TIMESTAMPTZ,
+    rejected_reason TEXT,
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    FOREIGN KEY (user_id)
+        REFERENCES users(id_no)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (product_id)
+        REFERENCES incubatee_products(product_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TRIGGER update_reservations_modtime
+BEFORE UPDATE ON reservations
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+-- ======================================
+-- FAVORITES TABLE
+-- ======================================
+CREATE TABLE favorites (
+    favorite_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    added_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    FOREIGN KEY (user_id)
+        REFERENCES users(id_no)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (product_id)
+        REFERENCES incubatee_products(product_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    UNIQUE (user_id, product_id)
+);
+
+CREATE TRIGGER update_favorites_modtime
+BEFORE UPDATE ON favorites
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+-- ======================================
+-- OPTIONAL VIEW: RESERVATION STATUS SUMMARY
+-- ======================================
+CREATE OR REPLACE VIEW reservation_status_summary AS
+SELECT
+    user_id,
+    status,
+    COUNT(*) AS total_reservations
+FROM reservations
+GROUP BY user_id, status;
+
 
 Manually start the PostgreSQL if wala sa process ka laptop insigida mag run imo database
 
@@ -137,112 +257,18 @@ image, name , products, details , price, expiration if not null if null switch t
 This is a sample data to be enter on incubate
 Here's the updated list with categories and warranties added:
 
-1. **Incubatee Name:** GreenLeaf Organics
-   **Stock Number:** 2024-001
-   **Category:** Agri-Aqua Business
-   **Offered Services:** Organic Farming Consultation
-   **Stock Amount:** 150
-   **Price per Stock:** ₱450.00
-   **Product Description:** Premium organic vegetable seeds and sustainable farming guidance for urban gardeners and small-scale farmers.
-   **Product Image:** organic-vegetables.jpg
-   **Expiration Date:** 2025-12-31
-   **Warranty:** N/A
+INSERT INTO incubatee_products
+(incubatee_id, name, stock_no, products, stock_amount, price_per_stocks, details, category, expiration_date, warranty, added_on, image_path)
+VALUES
+-- 🌿 Maria Santos (GreenLeaf Farms)
+(1, 'Organic Lettuce', 'GLF-001', 'Fresh Organic Lettuce', 50, 50.00, 'Crisp, pesticide-free lettuce ideal for salads.', 'Vegetables', '2025-12-31', 'No Warranty', CURRENT_DATE, 'static/uploads/lettuce.jpg'),
+(1, 'Hydroponic Basil', 'GLF-002', 'Fresh Basil Leaves', 40, 80.00, 'Hydroponically grown basil with strong aroma.', 'Herbs', '2025-11-30', 'No Warranty', CURRENT_DATE, 'static/uploads/basil.jpg'),
 
-2. **Incubatee Name:** TechStart Solutions
-   **Stock Number:** 2024-002
-   **Category:** ICT Solution
-   **Offered Services:** Software Development
-   **Stock Amount:** 200
-   **Price per Stock:** ₱850.00
-   **Product Description:** Custom mobile and web application development services tailored for small and medium enterprises.
-   **Product Image:** software-development.jpg
-   **Expiration Date:** 2026-06-30
-   **Warranty:** 12 months technical support and maintenance
+-- Carlos Reyes (Technology Solutions) — focus on tech-related products
+(2, 'Smart Home Sensor', 'CTS-101', 'Wi-Fi Enabled Motion Sensor', 50, 1500.00, 'Advanced motion sensor for smart home automation.', 'Electronics', NULL, '1 year', CURRENT_DATE, 'static/uploads/smart_sensor.jpg'),
+(2, 'USB-C Charging Hub', 'CTS-102', 'Multi-Port USB-C Hub', 75, 1200.00, 'Compact hub with 4 USB-C ports for fast charging and data transfer.', 'Electronics', '2026-12-31', '1 year', CURRENT_DATE, 'static/uploads/usb_c_hub.jpg'),
 
-3. **Incubatee Name:** Kakanin Delights
-   **Stock Number:** 2024-003
-   **Category:** Food Technology
-   **Offered Services:** Traditional Filipino Delicacies
-   **Stock Amount:** 300
-   **Price per Stock:** ₱125.00
-   **Product Description:** Handcrafted Filipino rice cakes and native delicacies made from locally-sourced ingredients. Perfect for merienda.
-   **Product Image:** filipino-kakanin.jpg
-   **Expiration Date:** 2025-03-15
-   **Warranty:** N/A
+-- Angela Lopez (FreshNet Poultry) — focus on food products / farm produce
+(3, 'Free-Range Chicken', 'FGO-201', 'Organic Free-Range Chicken', 40, 350.00, 'Freshly slaughtered free-range chicken from local farms.', 'Poultry', '2026-02-28', '7 days', CURRENT_DATE, 'static/uploads/free_range_chicken.jpg'),
+(3, 'Duck Eggs', 'FGO-202', 'Fresh Duck Eggs', 60, 15.00, 'Organic duck eggs sourced from farm-raised ducks.', 'Eggs', '2026-03-05', '14 days', CURRENT_DATE, 'static/uploads/duck_eggs.jpg');
 
-4. **Incubatee Name:** EcoBottle PH
-   **Stock Number:** 2024-004
-   **Category:** Industrial and Engineering
-   **Offered Services:** Sustainable Packaging
-   **Stock Amount:** 500
-   **Price per Stock:** ₱75.00
-   **Product Description:** Biodegradable water bottles made from plant-based materials. Eco-friendly alternative to plastic bottles.
-   **Product Image:** eco-water-bottle.jpg
-   **Expiration Date:** 2027-01-20
-   **Warranty:** 6 months against manufacturing defects
-
-5. **Incubatee Name:** Craftisan Weavers
-   **Stock Number:** 2024-005
-   **Category:** Industrial and Engineering
-   **Offered Services:** Handwoven Textiles
-   **Stock Amount:** 80
-   **Price per Stock:** ₱1250.00
-   **Product Description:** Authentic handwoven bags, mats, and home decor items made by local artisans using traditional weaving techniques.
-   **Product Image:** handwoven-bags.jpg
-   **Expiration Date:** 2026-09-10
-   **Warranty:** 3 months against craftsmanship defects
-
-6. **Incubatee Name:** FreshCatch Aquaculture
-   **Stock Number:** 2024-006
-   **Category:** Agri-Aqua Business
-   **Offered Services:** Sustainable Fish Farming
-   **Stock Amount:** 400
-   **Price per Stock:** ₱320.00
-   **Product Description:** Live tilapia and bangus fingerlings for aquaculture. Sustainably raised using organic feed and clean water systems.
-   **Product Image:** tilapia-fish.jpg
-   **Expiration Date:** 2025-08-25
-   **Warranty:** N/A
-
-7. **Incubatee Name:** BrightMinds Tutorial
-   **Stock Number:** 2024-007
-   **Category:** ICT Solution
-   **Offered Services:** Educational Services
-   **Stock Amount:** 100
-   **Price per Stock:** ₱600.00
-   **Product Description:** Online and in-person tutoring services for Math, Science, and English. Specialized programs for K-12 students.
-   **Product Image:** online-tutoring.jpg
-   **Expiration Date:** 2026-12-31
-   **Warranty:** Satisfaction guarantee - free make-up sessions for missed classes
-
-8. **Incubatee Name:** Herbal Wellness Co
-   **Stock Number:** 2024-008
-   **Category:** Food Processing Technology
-   **Offered Services:** Natural Health Products
-   **Stock Amount:** 250
-   **Price per Stock:** ₱180.00
-   **Product Description:** Organic herbal teas and wellness supplements made from Philippine medicinal plants. FDA-approved and laboratory-tested.
-   **Product Image:** herbal-tea.jpg
-   **Expiration Date:** 2025-11-30
-   **Warranty:** N/A
-
-9. **Incubatee Name:** Solar Power Innovate
-   **Stock Number:** 2024-009
-   **Category:** Industrial and Engineering
-   **Offered Services:** Renewable Energy Solutions
-   **Stock Amount:** 50
-   **Price per Stock:** ₱2500.00
-   **Product Description:** Portable solar panel kits for homes and small businesses. Easy installation with complete technical support and warranty.
-   **Product Image:** solar-panels.jpg
-   **Expiration Date:** 2028-04-15
-   **Warranty:** 24 months parts and service warranty
-
-10. **Incubatee Name:** CoffeeLab Roasters
-    **Stock Number:** 2024-010
-    **Category:** Food Processing Technology
-    **Offered Services:** Specialty Coffee
-    **Stock Amount:** 350
-    **Price per Stock:** ₱280.00
-    **Product Description:** Freshly roasted Arabica coffee beans from Benguet and Batangas. Single-origin varieties with tasting notes of chocolate and caramel.
-    **Product Image:** coffee-beans.jpg
-    **Expiration Date:** 2025-07-20
-    **Warranty:** N/A

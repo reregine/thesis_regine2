@@ -9,12 +9,72 @@
 
 </head>
 <body>
-  <!-- Header with logout button -->
+  <!-- 🌿 Header with Logout and Add Incubatee -->
   <div class="header">
     <h1>🏢 ATBI Admin Dashboard</h1>
-    <button class="logout-btn" onclick="logout()">
-      🚪 Logout
-    </button>
+    <div class="header-actions">
+      <button class="add-incubatee-btn" id="openIncubateeModal">
+        <span class="icon">➕</span> Add Incubatee
+      </button>
+      <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+  </div>
+
+  <!-- Add Incubatee Modal -->
+  <div id="incubateeModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add New Incubatee</h2>
+        <button class="close-btn" id="closeIncubateeModalTop">&times;</button>
+      </div>
+
+      <form id="incubateeAddForm">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" id="first_name" name="first_name" required>
+        </div>
+
+        <div class="form-group">
+          <label>Middle Name</label>
+          <input type="text" id="middle_name" name="middle_name">
+        </div>
+
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" id="last_name" name="last_name" required>
+        </div>
+
+        <div class="form-group">
+          <label>Company Name</label>
+          <input type="text" id="company_name" name="company_name">
+        </div>
+
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="text" id="phone_number" name="phone_number">
+        </div>
+
+        <div class="form-group">
+          <label>Contact Info</label>
+          <textarea id="contact_info" name="contact_info" rows="2"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Batch</label>
+          <input type="number" id="batch" name="batch">
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="closeIncubateeModalBottom">Cancel</button>
+          <button type="submit" class="btn-save">Save</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div class="container">
@@ -35,8 +95,17 @@
             <option value="Food Technology">Food Technology</option>
           </select>
         </div>
+        <div class="form-group incubatee-search-container">
+          <label for="incubateeSearch">Incubatee Name</label>
+          <div class="incubatee-search-container">
+            <input type="text" id="incubateeSearch" placeholder="Search incubatee..." autocomplete="off">
+            <div id="incubateeDropdown" class="dropdown hidden"></div>
+          </div>
+          <input type="hidden" id="incubatee_id" name="incubatee_id" required>
+        </div>
+
         <div class="form-group">
-          <label for="name">Incubatee Name <span class="required-star">*</span></label>
+          <label for="name">Product Name <span class="required-star">*</span></label>
           <input type="text" id="name" name="name" placeholder="Enter incubatee name" required>
         </div>
         <div class="form-group">
@@ -127,281 +196,483 @@
   </div>
 
 <script>
-  // Auto display today's date
-  const today = new Date();
-  const formattedDate = today.toISOString().split('T')[0]; 
-  document.getElementById("current-date").innerText = formattedDate;
+    // Auto display today's date
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0]; 
+    document.getElementById("current-date").innerText = formattedDate;
 
-  // Load products when page loads
-  document.addEventListener('DOMContentLoaded', function() {
-    loadProducts();
-  });
-  let allProducts = []; // store all products globally
-
-  // Function to load all products from database
-  function loadProducts() {
-    fetch("/admin/get-products")
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          allProducts = data.products; // store all
-          displayProducts(allProducts);
-        } else {
-          console.error("Error loading products:", data.error);
-          showEmptyState();
-        }
-      })
-      .catch(error => {
-        console.error("Error fetching products:", error);
-        showEmptyState();
-      });
-  }
-
-  // Category filter event
-  document.getElementById("categoryFilter").addEventListener("change", (e) => {
-    const selectedCategory = e.target.value;
-    if (selectedCategory === "all") {
-      displayProducts(allProducts);
-    } else {
-      const filtered = allProducts.filter(p => p.category === selectedCategory);
-      displayProducts(filtered);
-    }
-  });
-  // Function to display products in the table
-  function displayProducts(products) {
-    const tableBody = document.getElementById("product-list");
-    
-    if (products.length === 0) {
-      showEmptyState();
-      return;
-    }
-
-    tableBody.innerHTML = products.map(product => `
-      <tr>
-        <td>${escapeHtml(product.name)}</td>
-        <td>${escapeHtml(product.stock_no)}</td>
-        <td>${escapeHtml(product.products)}</td>
-        <td>${product.stock_amount}</td>
-        <td>₱${product.price_per_stocks.toFixed(2)}</td>
-        <td>
-          ${product.image_path ? 
-            `<img src="/${product.image_path}" width="60" style="border-radius:6px;" alt="${escapeHtml(product.name)}">` : 
-            'No Image'
-          }
-        </td>
-        <td>${product.expiration_date}</td>
-        <td>${product.warranty ? product.warranty : "—"}</td>
-        <td>${product.added_on}</td>
-        <td>
-          <button class="btn-delete" onclick="deleteProduct(${product.incubatee_id})" title="Delete product">
-            <span class="btn-delete-icon">🗑️</span>
-            <span class="btn-delete-text">Delete</span>
-          </button>
-        </td>
-      </tr>
-    `).join('');
-  }
-
-  // Function to show empty state
-  function showEmptyState() {
-    const tableBody = document.getElementById("product-list");
-    tableBody.innerHTML = `
-      <tr>
-        <td colspan="9" style="text-align:center; color:#777; padding:20px;">
-          No products added yet. Add your first product using the form on the left.
-        </td>
-      </tr>
-    `;
-  }
-
-  // Helper function to prevent XSS
-  function escapeHtml(unsafe) {
-    return unsafe
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
-  // Validation: Stock Number → Only numbers and dash
-  document.getElementById("stock_no").addEventListener("input", function() {
-    this.value = this.value.replace(/[^0-9-]/g, "");
-  });
-
-  // Validation: Offered Services → Only letters and spaces
-  document.getElementById("products").addEventListener("input", function() {
-    this.value = this.value.replace(/[^a-zA-Z\s]/g, "");
-  });
-
-  // Preview uploaded image
-  document.getElementById("product_image").addEventListener("change", function(event) {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const preview = document.getElementById("preview-img");
-        preview.src = e.target.result;
-        preview.style.display = "block";
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-
-  // Handle form submission
-  document.getElementById("incubateeForm").addEventListener("submit", function(event) {
-    event.preventDefault();
-
-    if (!this.checkValidity()) {
-      this.reportValidity();
-      return;
-    }
-
-    const saveBtn = this.querySelector(".btn");
-    saveBtn.classList.add("btn-loading");
-    saveBtn.textContent = "Saving...";
-    
-    const formData = new FormData();
-    formData.append("name", document.getElementById("name").value);
-    formData.append("stock_no", document.getElementById("stock_no").value);
-    formData.append("products", document.getElementById("products").value);
-    formData.append("stock_amount", document.getElementById("stock_amount").value);
-    formData.append("price_per_stocks", document.getElementById("price_per_stocks").value);
-    formData.append("details", document.getElementById("details").value);
-    formData.append("category", document.getElementById("category").value);
-    formData.append("warranty", document.getElementById("warranty").value);
-    formData.append("expiration_date", document.getElementById("expiration_date").value);
-    formData.append("added_on", formattedDate);
-
-    // Append the image file
-    const imageFile = document.getElementById("product_image").files[0];
-    if (imageFile) {
-      formData.append("product_image", imageFile);
-    }
-
-    // Send to backend
-    fetch("/admin/add-product", {
-      method: "POST",
-      body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        // Reset form
-        this.reset();
-        document.getElementById("preview-img").style.display = "none";
-        
-        // Reload the product list to show the new product
-        loadProducts();
-        
-        // Show success message
-        alert("✅ Product saved successfully!");
-      } else {
-        alert("⚠️ Error saving product: " + data.error);
-      }
-    })
-    .catch(error => {
-      console.error("Error:", error);
-      alert("⚠️ Failed to connect to server.");
-    })
-    .finally(() => {
-      saveBtn.classList.remove("btn-loading");
-      saveBtn.textContent = "Save Product";
+    // Load products when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      loadProducts();
     });
-  });
+    let allProducts = []; // store all products globally
 
-  // Enhanced delete product function with loading state
-  function deleteProduct(productId) {
-    if (confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
-      const deleteBtn = event.target.closest('.btn-delete');
-      
-      // Add loading state
-      if (deleteBtn) {
-        deleteBtn.classList.add('loading');
-        deleteBtn.innerHTML = '<span class="btn-delete-icon">🗑️</span><span class="btn-delete-text">Deleting...</span>';
+    // Function to load all products from database
+    function loadProducts() {
+      fetch("/admin/get-products")
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            allProducts = data.products; // store all
+            displayProducts(allProducts);
+          } else {
+            console.error("Error loading products:", data.error);
+            showEmptyState();
+          }
+        })
+        .catch(error => {
+          console.error("Error fetching products:", error);
+          showEmptyState();
+        });
+    }
+
+    // Category filter event
+    document.getElementById("categoryFilter").addEventListener("change", (e) => {
+      const selectedCategory = e.target.value;
+      if (selectedCategory === "all") {
+        displayProducts(allProducts);
+      } else {
+        const filtered = allProducts.filter(p => p.category === selectedCategory);
+        displayProducts(filtered);
       }
+    });
+    // Function to display products in the table
+    function displayProducts(products) {
+      const tableBody = document.getElementById("product-list");
       
-      fetch(`/admin/delete-product/${productId}`, {
-        method: "DELETE"
+      if (products.length === 0) {
+        showEmptyState();
+        return;
+      }
+
+      tableBody.innerHTML = products.map(product => `
+        <tr>
+          <td>${escapeHtml(product.name)}</td>
+          <td>${escapeHtml(product.stock_no)}</td>
+          <td>${escapeHtml(product.products)}</td>
+          <td>${product.stock_amount}</td>
+          <td>₱${product.price_per_stocks.toFixed(2)}</td>
+          <td>
+            ${product.image_path ? 
+              `<img src="/${product.image_path}" width="60" style="border-radius:6px;" alt="${escapeHtml(product.name)}">` : 
+              'No Image'
+            }
+          </td>
+          <td>${product.expiration_date}</td>
+          <td>${product.warranty ? product.warranty : "—"}</td>
+          <td>${product.added_on}</td>
+          <td>
+            <button class="btn-delete" onclick="deleteProduct(${product.incubatee_id})" title="Delete product">
+              <span class="btn-delete-icon">🗑️</span>
+              <span class="btn-delete-text">Delete</span>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Function to show empty state
+    function showEmptyState() {
+      const tableBody = document.getElementById("product-list");
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="9" style="text-align:center; color:#777; padding:20px;">
+            No products added yet. Add your first product using the form on the left.
+          </td>
+        </tr>
+      `;
+    }
+
+    // Helper function to prevent XSS
+    function escapeHtml(unsafe) {
+      return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Validation: Stock Number → Only numbers and dash
+    document.getElementById("stock_no").addEventListener("input", function() {
+      this.value = this.value.replace(/[^0-9-]/g, "");
+    });
+
+    // Validation: Offered Services → Only letters and spaces
+    document.getElementById("products").addEventListener("input", function() {
+      this.value = this.value.replace(/[^a-zA-Z\s]/g, "");
+    });
+
+    // Preview uploaded image
+    document.getElementById("product_image").addEventListener("change", function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const preview = document.getElementById("preview-img");
+          preview.src = e.target.result;
+          preview.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Handle form submission
+    document.getElementById("incubateeForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      if (!this.checkValidity()) {
+        this.reportValidity();
+        return;
+      }
+
+      const saveBtn = this.querySelector(".btn");
+      saveBtn.classList.add("btn-loading");
+      saveBtn.textContent = "Saving...";
+      
+      const formData = new FormData();
+      formData.append("incubatee_id", document.getElementById("incubatee_id").value);
+      formData.append("name", document.getElementById("name").value);
+      formData.append("stock_no", document.getElementById("stock_no").value);
+      formData.append("products", document.getElementById("products").value);
+      formData.append("stock_amount", document.getElementById("stock_amount").value);
+      formData.append("price_per_stocks", document.getElementById("price_per_stocks").value);
+      formData.append("details", document.getElementById("details").value);
+      formData.append("category", document.getElementById("category").value);
+      formData.append("warranty", document.getElementById("warranty").value);
+      formData.append("expiration_date", document.getElementById("expiration_date").value);
+      formData.append("added_on", formattedDate);
+
+      // Append the image file
+      const imageFile = document.getElementById("product_image").files[0];
+      if (imageFile) {
+        formData.append("product_image", imageFile);
+      }
+
+      // Send to backend
+      fetch("/admin/add-product", {
+        method: "POST",
+        body: formData
       })
       .then(response => response.json())
       .then(data => {
         if (data.success) {
+          // Reset form
+          this.reset();
+          document.getElementById("preview-img").style.display = "none";
+          
+          // Reload the product list to show the new product
+          loadProducts();
+          
           // Show success message
-          showNotification('✅ Product deleted successfully!', 'success');
-          loadProducts(); // Reload the list
+          alert("✅ Product saved successfully!");
         } else {
-          showNotification('⚠️ Error deleting product: ' + data.error, 'error');
+          alert("⚠️ Error saving product: " + data.error);
         }
       })
       .catch(error => {
         console.error("Error:", error);
-        showNotification('⚠️ Failed to delete product.', 'error');
+        alert("⚠️ Failed to connect to server.");
       })
       .finally(() => {
-        // Remove loading state
+        saveBtn.classList.remove("btn-loading");
+        saveBtn.textContent = "Save Product";
+      });
+    });
+
+    // Enhanced delete product function with loading state
+    function deleteProduct(productId) {
+      if (confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
+        const deleteBtn = event.target.closest('.btn-delete');
+        
+        // Add loading state
         if (deleteBtn) {
-          deleteBtn.classList.remove('loading');
-          deleteBtn.innerHTML = '<span class="btn-delete-icon">🗑️</span><span class="btn-delete-text">Delete</span>';
+          deleteBtn.classList.add('loading');
+          deleteBtn.innerHTML = '<span class="btn-delete-icon">🗑️</span><span class="btn-delete-text">Deleting...</span>';
+        }
+        
+        fetch(`/admin/delete-product/${productId}`, {
+          method: "DELETE"
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Show success message
+            showNotification('✅ Product deleted successfully!', 'success');
+            loadProducts(); // Reload the list
+          } else {
+            showNotification('⚠️ Error deleting product: ' + data.error, 'error');
+          }
+        })
+        .catch(error => {
+          console.error("Error:", error);
+          showNotification('⚠️ Failed to delete product.', 'error');
+        })
+        .finally(() => {
+          // Remove loading state
+          if (deleteBtn) {
+            deleteBtn.classList.remove('loading');
+            deleteBtn.innerHTML = '<span class="btn-delete-icon">🗑️</span><span class="btn-delete-text">Delete</span>';
+          }
+        });
+      }
+    }
+
+    // Optional: Notification function for better UX
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        ${type === 'success' ? 'background: linear-gradient(135deg, #22c55e, #16a34a);' : ''}
+        ${type === 'error' ? 'background: linear-gradient(135deg, #e63946, #d90429);' : ''}
+        ${type === 'info' ? 'background: linear-gradient(135deg, #3b82f6, #1d4ed8);' : ''}
+      `;
+      
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      // Animate in
+      setTimeout(() => notification.style.transform = 'translateX(0)', 100);
+      
+      // Auto remove after 3 seconds
+      setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+    // Logout functionality (keep your existing code)
+    function logout() {
+      document.getElementById("logout-modal").classList.remove("hidden");
+    }
+
+    document.getElementById("confirm-logout").addEventListener("click", function() {
+      fetch('/login/logout', {
+        method: 'GET',
+        credentials: 'include'
+      })
+      .then(response => {
+        window.location.href = '/login/';
+      })
+      .catch(error => {
+        console.error('Logout error:', error);
+        window.location.href = '/login/';
+      });
+    });
+
+    document.getElementById("cancel-logout").addEventListener("click", function() {
+      document.getElementById("logout-modal").classList.add("hidden");
+    });
+
+    // 🎯 Modal open/close logic
+    const incubateeModal = document.getElementById("incubateeModal");
+    const openIncubateeModal = document.getElementById("openIncubateeModal");
+    const closeIncubateeModalTop = document.getElementById("closeIncubateeModalTop");
+    const closeIncubateeModalBottom = document.getElementById("closeIncubateeModalBottom");
+
+    // Open modal
+    if (openIncubateeModal) {
+      openIncubateeModal.addEventListener("click", () => {
+        incubateeModal.classList.add("active");
+      });
+    }
+
+    // Close modal from both buttons
+    [closeIncubateeModalTop, closeIncubateeModalBottom].forEach(btn => {
+      if (btn) {
+        btn.addEventListener("click", () => {
+          incubateeModal.classList.remove("active");
+        });
+      }
+    });
+
+    // Close modal when clicking outside
+    if (incubateeModal) {
+      incubateeModal.addEventListener("click", (e) => {
+        if (e.target === incubateeModal) {
+          incubateeModal.classList.remove("active");
         }
       });
     }
-  }
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("incubateeAddForm");
+      const modal = document.getElementById("incubateeModal");
+      const incubateeSelect = document.getElementById("incubatee_id"); // dropdown in Add Product modal
 
-  // Optional: Notification function for better UX
-  function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 1rem 1.5rem;
-      border-radius: 8px;
-      color: white;
-      font-weight: 600;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      transform: translateX(100%);
-      transition: transform 0.3s ease;
-      ${type === 'success' ? 'background: linear-gradient(135deg, #22c55e, #16a34a);' : ''}
-      ${type === 'error' ? 'background: linear-gradient(135deg, #e63946, #d90429);' : ''}
-      ${type === 'info' ? 'background: linear-gradient(135deg, #3b82f6, #1d4ed8);' : ''}
-    `;
-    
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    // Animate in
-    setTimeout(() => notification.style.transform = 'translateX(0)', 100);
-    
-    // Auto remove after 3 seconds
-    setTimeout(() => {
-      notification.style.transform = 'translateX(100%)';
-      setTimeout(() => notification.remove(), 300);
-    }, 3000);
-  }
-  // Logout functionality (keep your existing code)
-  function logout() {
-    document.getElementById("logout-modal").classList.remove("hidden");
-  }
+      // Handle form submission (Add Incubatee)
+      if (form) {
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
 
-  document.getElementById("confirm-logout").addEventListener("click", function() {
-    fetch('/login/logout', {
-      method: 'GET',
-      credentials: 'include'
-    })
-    .then(response => {
-      window.location.href = '/login/';
-    })
-    .catch(error => {
-      console.error('Logout error:', error);
-      window.location.href = '/login/';
+          const formData = {
+            first_name: document.getElementById("first_name").value.trim(),
+            middle_name: document.getElementById("middle_name").value.trim(),
+            last_name: document.getElementById("last_name").value.trim(),
+            company_name: document.getElementById("company_name").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            phone_number: document.getElementById("phone_number").value.trim(),
+            contact_info: document.getElementById("contact_info").value.trim(),
+            batch: document.getElementById("batch").value.trim()
+          };
+
+          try {
+            const res = await fetch("/admin/add-incubatee", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(formData)
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+              showToast("✅ Incubatee added successfully!", "success");
+              form.reset();
+              modal.classList.remove("active");
+
+              // 🔄 Refresh dropdown instantly
+              await refreshIncubateeDropdown(incubateeSelect);
+            } else {
+              showToast("❌ " + (data.error || "Failed to add incubatee."), "error");
+            }
+          } catch (err) {
+            console.error("Error:", err);
+            showToast("⚠️ Error adding incubatee. Please try again.", "error");
+          }
+        });
+      }
+
+      // 🔁 Fetch incubatees again for dropdown
+      async function refreshIncubateeDropdown(selectEl) {
+        if (!selectEl) return;
+
+        try {
+          const res = await fetch("/admin/get-incubatees");
+          const data = await res.json();
+
+          if (data.success && data.incubatees.length > 0) {
+            selectEl.innerHTML = `<option value="">-- Select Incubatee --</option>`;
+            data.incubatees.forEach((i) => {
+              const option = document.createElement("option");
+              option.value = i.incubatee_id;
+              option.textContent = `${i.last_name}, ${i.first_name} (${i.company_name || "No Company"})`;
+              selectEl.appendChild(option);
+            });
+          } else {
+            selectEl.innerHTML = `<option value="">No incubatees found</option>`;
+          }
+        } catch (err) {
+          console.error("Error refreshing dropdown:", err);
+        }
+      }
+
+      // ✨ Nice Toast Notification
+      function showToast(message, type = "info") {
+        const toast = document.createElement("div");
+        toast.textContent = message;
+        toast.className = `toast toast-${type}`;
+        document.body.appendChild(toast);
+
+        // basic styles
+        toast.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: ${type === "success" ? "#16a34a" : type === "error" ? "#dc2626" : "#2563eb"};
+          color: white;
+          padding: 10px 18px;
+          border-radius: 8px;
+          font-weight: 600;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+          opacity: 0;
+          transform: translateY(-10px);
+          transition: all 0.3s ease;
+          z-index: 2000;
+        `;
+        setTimeout(() => {
+          toast.style.opacity = "1";
+          toast.style.transform = "translateY(0)";
+        }, 50);
+
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateY(-10px)";
+          setTimeout(() => toast.remove(), 300);
+        }, 2500);
+      }
     });
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const searchContainer = document.querySelector(".incubatee-search-container");
+  const searchInput = document.getElementById("incubateeSearch");
+  const dropdown = document.getElementById("incubateeDropdown");
+  const hiddenInput = document.getElementById("incubatee_id");
+
+  if (!searchInput || !dropdown || !hiddenInput) return;
+
+  let incubatees = [];
+
+  // 🔹 Fetch incubatees from backend
+  try {
+    const res = await fetch("/admin/get-incubatees");
+    const data = await res.json();
+    if (data.success) incubatees = data.incubatees;
+  } catch (err) {
+    console.error("❌ Failed to load incubatees", err);
+  }
+
+  // 🔹 Show filtered list as user types
+  searchInput.addEventListener("input", () => {
+    const query = searchInput.value.toLowerCase().trim();
+    dropdown.innerHTML = "";
+
+    if (!query) {
+      dropdown.classList.add("hidden");
+      return;
+    }
+
+    const filtered = incubatees.filter(i =>
+      `${i.first_name} ${i.last_name} ${i.company_name || ""}`
+        .toLowerCase()
+        .includes(query)
+    );
+
+    if (filtered.length === 0) {
+      dropdown.innerHTML = `<div class="dropdown-item empty">No matches found</div>`;
+    } else {
+      filtered.forEach(i => {
+        const item = document.createElement("div");
+        item.classList.add("dropdown-item");
+        item.textContent = `${i.first_name} ${i.last_name} (${i.company_name || "No Company"})`;
+        item.dataset.id = i.incubatee_id;
+        item.addEventListener("click", () => {
+          searchInput.value = item.textContent;
+          hiddenInput.value = item.dataset.id;
+          dropdown.classList.add("hidden");
+        });
+        dropdown.appendChild(item);
+      });
+    }
+
+    dropdown.classList.remove("hidden");
   });
 
-  document.getElementById("cancel-logout").addEventListener("click", function() {
-    document.getElementById("logout-modal").classList.add("hidden");
+  // 🔹 Hide dropdown when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!searchContainer.contains(e.target)) {
+      dropdown.classList.add("hidden");
+    }
   });
+});
+
 </script>
 </body>
 </html>
