@@ -20,10 +20,9 @@ class Incubatee(db.Model):
     products = db.relationship("IncubateeProduct", back_populates="incubatee", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<Incubatee {self.first_name} {self.last_name}>"
+        return f"<Incubatee {self.first_name} {self.last_name}>"    
 
 class IncubateeProduct(db.Model):
-    """Represents a product posted by an incubatee."""
     __tablename__ = "incubatee_products"
 
     product_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -43,8 +42,10 @@ class IncubateeProduct(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relationship back to Incubatee
     incubatee = db.relationship("Incubatee", back_populates="products")
+
+    # 🔧 Add this line
+    reservations = db.relationship("Reservation", back_populates="product", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<IncubateeProduct {self.name}>"

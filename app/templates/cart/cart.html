@@ -1,4 +1,4 @@
-<!-- ===== MODERN CART SIDEBAR ===== -->
+<!-- ===== MODERN SHOPEE-STYLE CART SIDEBAR ===== -->
 <style>
   :root {
     --green: #16a34a;
@@ -7,17 +7,19 @@
     --text-dark: #14532d;
     --text-light: #6b7280;
     --border-light: #e5e7eb;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   }
 
+  /* ===== CART SIDEBAR ===== */
   .cart-sidebar {
     width: 100%;
-    max-width: 420px;
+    max-width: 440px;
     height: 100%;
     background: #fff;
     display: flex;
     flex-direction: column;
     border-left: 1px solid var(--border-light);
-    box-shadow: -5px 0 25px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow);
     border-radius: 0 16px 16px 0;
     overflow: hidden;
     animation: slideIn 0.4s ease forwards;
@@ -28,11 +30,11 @@
     to { transform: translateX(0); opacity: 1; }
   }
 
-  /* HEADER */
+  /* ===== HEADER ===== */
   .cart-header {
     background: var(--green);
     color: white;
-    padding: 20px 24px;
+    padding: 18px 22px;
     font-size: 22px;
     font-weight: 600;
     display: flex;
@@ -45,11 +47,11 @@
     background: rgba(255, 255, 255, 0.2);
     border: none;
     color: white;
-    font-size: 26px;
-    padding: 4px 10px;
-    border-radius: 6px;
+    font-size: 24px;
+    padding: 6px 12px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: background 0.3s ease, transform 0.2s ease;
+    transition: all 0.3s ease;
   }
 
   .close-cart:hover {
@@ -57,12 +59,22 @@
     transform: scale(1.15);
   }
 
-  /* BODY */
-  .cart-items {
+  /* ===== CART SECTION ===== */
+  .cart-section {
     flex: 1;
-    overflow-y: auto;
     padding: 18px;
     background: var(--gray-bg);
+    overflow-y: auto;
+  }
+
+  .cart-title {
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--text-dark);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .cart-item {
@@ -74,13 +86,13 @@
     padding: 12px;
     border-radius: 12px;
     margin-bottom: 14px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
   .cart-item:hover {
     transform: translateY(-3px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
   }
 
   .cart-item img {
@@ -88,7 +100,7 @@
     height: 70px;
     border-radius: 10px;
     object-fit: cover;
-    border: 2px solid var(--border-light);
+    border: 1px solid var(--border-light);
   }
 
   .item-info {
@@ -115,7 +127,7 @@
     font-weight: 500;
   }
 
-  /* QUANTITY CONTROLS */
+  /* ===== QUANTITY CONTROLS ===== */
   .quantity {
     display: flex;
     align-items: center;
@@ -127,10 +139,9 @@
     background: var(--green);
     border: none;
     color: white;
-    width: 28px;
-    height: 28px;
-    font-size: 18px;
-    line-height: 0;
+    width: 26px;
+    height: 26px;
+    font-size: 16px;
     border-radius: 6px;
     cursor: pointer;
     transition: background 0.3s ease;
@@ -141,37 +152,37 @@
   }
 
   .quantity .qty {
-    min-width: 20px;
+    min-width: 22px;
     text-align: center;
     font-weight: 600;
     color: var(--text-dark);
   }
 
-  /* FOOTER */
+  /* ===== FOOTER ===== */
   .cart-footer {
     padding: 18px;
     border-top: 1px solid var(--border-light);
-    background: #ffffff;
-    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.04);
+    background: #fff;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
   }
 
-  .select-all {
+  .cart-footer .select-all {
     display: flex;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     gap: 8px;
     font-size: 14px;
     color: var(--text-light);
   }
 
-  .total {
+  .cart-footer .total {
     font-weight: 700;
     color: var(--text-dark);
     font-size: 16px;
     margin-bottom: 16px;
   }
 
-  .reserve-btn {
+  .cart-footer .reserve-btn {
     width: 100%;
     background: var(--green);
     color: white;
@@ -184,9 +195,71 @@
     transition: background 0.3s ease, transform 0.2s ease;
   }
 
-  .reserve-btn:hover {
+  .cart-footer .reserve-btn:hover {
     background: var(--green-dark);
     transform: translateY(-1px);
+  }
+
+  /* ===== STATUS SECTION (below cart) ===== */
+  .status-section {
+    border-top: 1px solid var(--border-light);
+    background: #fff;
+  }
+
+  .status-tabs {
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .status-tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px 0;
+    font-weight: 500;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+  }
+
+  .status-tab.active {
+    color: var(--green-dark);
+    border-bottom: 3px solid var(--green);
+    background: var(--gray-bg);
+  }
+
+  .tab-count {
+    display: inline-block;
+    background: var(--green);
+    color: white;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 5px;
+    border-radius: 10px;
+    margin-left: 4px;
+  }
+
+  /* ===== STATUS CONTENT ===== */
+  .status-content {
+    padding: 16px;
+    text-align: center;
+    color: var(--text-light);
+    font-size: 15px;
+  }
+
+  .empty-status {
+    padding: 30px;
+    color: var(--text-light);
+    text-align: center;
+    font-size: 14px;
+  }
+
+  .empty-status img {
+    width: 80px;
+    opacity: 0.8;
+    margin-bottom: 10px;
   }
 
   @media (max-width: 600px) {
@@ -194,190 +267,66 @@
       max-width: 100%;
       border-radius: 0;
     }
-    .cart-item {
-      flex-direction: column;
-      align-items: flex-start;
-    }
   }
-  /* ===== STATUS TABS ===== */
-  .status-tabs {
-    display: flex;
-    background: #fff;
-    border-bottom: 1px solid var(--border-light);
-  }
-
-    .status-tab {
-      flex: 1;
-      text-align: left;
-      padding: 12px 0;
-      font-weight: 500;
-      color: var(--text-light);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      border-bottom: 3px solid transparent;
-      position: relative;
-    }
-
-    .status-tab.active {
-      color: var(--green-dark);
-      border-bottom: 3px solid var(--green);
-      background: var(--gray-bg);
-    }
-
-    .tab-count {
-      display: inline-block;
-      background: var(--green);
-      color: white;
-      font-size: 10px;
-      font-weight: 500;
-      padding: 2px 5px;
-      border-radius: 10px;
-      margin-left: 5px;
-    }
-    /* ===== STATUS BADGES ===== */
-    .status-badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-top: 6px;
-      color: white;
-    }
-
-    .status-pending { background: var(--pending); color: #854d0e; }
-    .status-approved { background: var(--approved); }
-    .status-completed { background: var(--completed); }
-    .status-rejected { background: var(--rejected); }
 </style>
 
-<!-- ===== CART SIDEBAR CONTENT ===== -->
+<!-- ===== SHOPEE-STYLE CART SIDEBAR CONTENT ===== -->
 <div class="cart-sidebar active" id="cartSidebar">
-
   <div class="cart-header">
-    <span>My Cart</span>
+    <span>🛒 My Shopping Cart</span>
     <button class="close-cart" id="closeCart">&times;</button>
   </div>
 
-  <!-- Tabs -->
-  <div class="status-tabs">
-    <div class="status-tab" data-tab="pending">Pending <span class="tab-count">0</span></div>
-    <div class="status-tab" data-tab="approved">Approved <span class="tab-count">0</span></div>
-    <div class="status-tab" data-tab="completed">Completed <span class="tab-count">0</span></div>
-    <div class="status-tab" data-tab="rejected">Rejected <span class="tab-count">0</span></div>
-  </div>
-
-  <div class="cart-items" id="cartItems">
-    <!-- Example items -->
-    <div class="cart-item">
-      <input type="checkbox" class="item-checkbox">
-      <img src="https://via.placeholder.com/70" alt="Product Image">
-      <div class="item-info">
-        <div class="item-name">Organic Lettuce</div>
-        <div class="item-price">₱50</div>
-        <div class="stock-info">Only 3 left!</div>
-        <div class="quantity">
-          <button class="decrease">−</button>
-          <span class="qty">1</span>
-          <button class="increase">+</button>
-        </div>
-      </div>
+  <!-- CART SECTION -->
+  <div class="cart-section">
+    <div class="cart-title">
+      <span>Cart Items</span>
+      <span id="cartCount" style="font-size:14px;color:var(--text-light);">3 items</span>
     </div>
 
-    <div class="cart-item">
-      <input type="checkbox" class="item-checkbox">
-      <img src="https://via.placeholder.com/70" alt="Product Image">
-      <div class="item-info">
-        <div class="item-name">Tilapia Fish (1kg)</div>
-        <div class="item-price">₱120</div>
-        <div class="stock-info">Low stock (5 remaining)</div>
-        <div class="quantity">
-          <button class="decrease">−</button>
-          <span class="qty">2</span>
-          <button class="increase">+</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="cart-item">
-      <input type="checkbox" class="item-checkbox">
-      <img src="https://via.placeholder.com/70" alt="Product Image">
-      <div class="item-info">
-        <div class="item-name">Mango Jam (Jar)</div>
-        <div class="item-price">₱80</div>
-        <div class="stock-info" style="color:var(--green);">In stock</div>
-        <div class="quantity">
-          <button class="decrease">−</button>
-          <span class="qty">1</span>
-          <button class="increase">+</button>
+    <div class="cart-items" id="cartItems">
+      <div class="cart-item">
+        <input type="checkbox" class="item-checkbox">
+        <img src="https://via.placeholder.com/70" alt="Product Image">
+        <div class="item-info">
+          <div class="item-name">Organic Lettuce</div>
+          <div class="item-price">₱50</div>
+          <div class="stock-info">Only 3 left!</div>
+          <div class="quantity">
+            <button class="decrease">−</button>
+            <span class="qty">1</span>
+            <button class="increase">+</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- CART FOOTER -->
   <div class="cart-footer">
     <div class="select-all">
       <input type="checkbox" id="selectAll">
       <label for="selectAll">Select All Items</label>
     </div>
-    <div class="total" id="totalAmount">Total: ₱250</div>
-    <button class="reserve-btn">Reserve Selected</button>
+    <div class="total" id="totalAmount">Total: ₱50</div>
+    <button class="reserve-btn">Proceed to Reserve</button>
   </div>
-</div>
 
-<!-- ===== SCRIPT ===== -->
-<script>
-  // Close button event
-  document.addEventListener("click", (e) => {
-    if (e.target && e.target.id === "closeCart") {
-      const modal = document.getElementById("cartModal");
-      if (modal) modal.classList.remove("active");
-    }
-  });
+  <!-- STATUS SECTION -->
+  <div class="status-section">
+    <div class="status-tabs">
+      <div class="status-tab active" data-tab="pending">Pending <span class="tab-count">0</span></div>
+      <div class="status-tab" data-tab="approved">Approved <span class="tab-count">0</span></div>
+      <div class="status-tab" data-tab="completed">Completed <span class="tab-count">0</span></div>
+      <div class="status-tab" data-tab="rejected">Rejected <span class="tab-count">0</span></div>
+    </div>
 
-  // Select all items
-  document.addEventListener("change", (e) => {
-    if (e.target && e.target.id === "selectAll") {
-      const checked = e.target.checked;
-      document.querySelectorAll(".item-checkbox").forEach(box => box.checked = checked);
-    }
-  });
-
-  // Quantity control
-  document.addEventListener("click", (e) => {
-    if (e.target.classList.contains("increase")) {
-      const qty = e.target.previousElementSibling;
-      qty.textContent = parseInt(qty.textContent) + 1;
-    }
-    if (e.target.classList.contains("decrease")) {
-      const qty = e.target.nextElementSibling;
-      const current = parseInt(qty.textContent);
-      if (current > 1) qty.textContent = current - 1;
-    }
-  });
+    <div class="status-content" id="statusContent">
+      <div class="empty-status">
+        <img src="https://cdn-icons-png.flaticon.com/512/4076/4076505.png" alt="Empty Cart">
+        <p>🕓 No actions have been made yet.<br>Your order history will appear here once you start reserving.</p>
+      </div>
+    </div>
+  </div>
   
-  document.addEventListener("DOMContentLoaded", () => {
-  const tabs = document.querySelectorAll(".status-tab");
-
-  // 🖱️ Click to activate tab
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      tabs.forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-    });
-  });
-
-  // ✨ Optional hover effect (temporary active highlight)
-  tabs.forEach(tab => {
-    tab.addEventListener("mouseenter", () => {
-      if (!tab.classList.contains("active")) tab.classList.add("hover-temp");
-    });
-    tab.addEventListener("mouseleave", () => {
-      tab.classList.remove("hover-temp");
-    });
-  });
-});
-
-document.querySelector('.status-tab[data-tab="pending"]').classList.add('active');
-
-</script>
+</div>

@@ -133,51 +133,6 @@
       <div id="cartContent"></div>
     </div>
   </div>
-
-  <script>
-    const openCartBtn = document.getElementById("openCartBtn");
-    const cartModal = document.getElementById("cartModal");
-    const closeCartBtn = document.getElementById("closeCartBtn");
-    const cartContent = document.getElementById("cartContent");
-
-    openCartBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      cartModal.classList.add("active");
-
-      fetch("/cart/")
-        .then(response => response.text())
-        .then(html => {
-          cartContent.innerHTML = html;
-          const internalClose = cartContent.querySelector("#closeCart");
-          if (internalClose) {
-            internalClose.addEventListener("click", () => {
-              cartModal.classList.remove("active");
-            });
-          }
-        })
-        .catch(err => {
-          cartContent.innerHTML = "<p style='padding:20px;color:red;'>Failed to load cart.</p>";
-          console.error("Error loading cart:", err);
-        });
-    });
-
-    if (closeCartBtn) {
-      closeCartBtn.addEventListener("click", () => {
-        cartModal.classList.remove("active");
-      });
-    }
-
-    cartModal.addEventListener("click", (e) => {
-      if (e.target === cartModal) {
-        cartModal.classList.remove("active");
-      }
-    });
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        cartModal.classList.remove("active");
-      }
-    });
-  </script>
+<script src="{{ url_for('static', filename='js/cart.js') }}"></script>
 </body>
 </html>

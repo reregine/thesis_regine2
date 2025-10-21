@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
-from app.extension import db
-from app.models.user import User
+from ..extension import db
+from ..models.user import User
 
 login_bp = Blueprint("login", __name__, url_prefix="/login")
 

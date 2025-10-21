@@ -100,82 +100,109 @@
     </footer>
 
     <!-- JavaScript for product actions -->
-    <script>
-    //Check if user is logged in (mock Gmail login)
+     <script>
+    // Check if user is logged in via session
     function checkLoginStatus() {
-        const userEmail = localStorage.getItem('userEmail');
-        return userEmail && userEmail.includes('@gmail.com');
+        return sessionStorage.getItem('user_id') !== null;
     }
 
-    //Require login before any restricted action
+    // Require login before any restricted action
     function requireLogin(action) {
         if (!checkLoginStatus()) {
-        const login = confirm(`Please log in with your Gmail account to ${action}. Would you like to log in now?`);
-        if (login) window.location.href = 'https://accounts.google.com/signin';
-        return false;
+            alert(`Please log in to ${action}.`);
+            window.location.href = '/login'; // redirect to your login page
+            return false;
         }
         return true;
     }
 
-    //Add to cart (works with dynamic product data)
-    function addToCart(productId) {
+    // Add to cart
+    async function addToCart(productId) {
         if (!requireLogin('add items to cart')) return;
 
-        const card = document.querySelector(`[data-id="${productId}"]`);
-        if (!card) return;
+        const quantity = 1;
+        const userId = sessionStorage.getItem('user_id');
 
-        const productName = card.querySelector('.product-title').textContent;
-        const productPrice = parseFloat(card.querySelector('.product-price').textContent.replace('₱', ''));
-        const productImg = card.querySelector('img').src;
-
-        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const existingItem = cart.find(item => item.id === productId);
-
-        if (existingItem) {
-        existingItem.quantity += 1;
-        } else {
-        cart.push({
-            id: productId,
-            name: productName,
-            price: productPrice,
-            image: productImg,
-            quantity: 1,
-            timestamp: new Date().toISOString()
-        });
+        try {
+            const res = await fetch('/cart/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ product_id: productId, quantity, user_id: userId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showNotification('Added to cart!', 'success');
+                updateCartCount();
+            } else {
+                showNotification(data.message || 'Failed to add to cart', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showNotification('Server error. Try again later.', 'error');
         }
-
-        localStorage.setItem('cart', JSON.stringify(cart));
-        showNotification('Added to cart successfully!', 'success');
-        updateCartCount();
     }
 
-    //Reserve product
-    function reserveProduct(productId) {
+    // Reserve product
+    async function reserveProduct(productId) {
         if (!requireLogin('reserve products')) return;
 
-        const card = document.querySelector(`[data-id="${productId}"]`);
-        const productName = card.querySelector('.product-title').textContent;
-        const productPrice = parseFloat(card.querySelector('.product-price').textContent.replace('₱', ''));
-        const userEmail = localStorage.getItem('userEmail');
+        const quantity = 1;
+        const userId = sessionStorage.getItem('user_id');
 
-        const reservation = {
-        id: productId,
-        name: productName,
-        price: productPrice,
-        userEmail: userEmail,
-        reservedAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24h
-        };
+        try {
+            const res = await fetch('/reservations/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ product_id: productId, quantity, user_id: userId })
+            });
+            const data = await res.json();
 
-        let reservations = JSON.parse(localStorage.getItem('reservations') || '[]');
-        reservations.push(reservation);
-        localStorage.setItem('reservations', JSON.stringify(reservations));
-
-        showNotification('Product reserved for 24 hours! Check your email for confirmation.', 'success');
-        updateReserveButton(productId, true);
+            if (data.success) {
+                showNotification(`Product reserved! Status: ${data.status}`, 'success');
+                updateReserveButton(productId, data.status);
+            } else {
+                showNotification(data.message || 'Reservation failed', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showNotification('Server error. Try again later.', 'error');
+        }
     }
 
-    //Add to wishlist
+    // Update reserve button based on status
+    function updateReserveButton(productId, status) {
+        const button = document.querySelector(`[data-id="${productId}"] .reserve-btn`);
+        if (!button) return;
+
+        const colors = {
+            pending: 'linear-gradient(135deg, #facc15 0%, #eab308 100%)',
+            approved: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+            completed: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+            rejected: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+        };
+
+        button.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        button.style.background = colors[status] || colors.pending;
+        button.disabled = status !== 'pending'; // allow cancel only for pending if you want
+    }
+
+    // Load user's reservations and update buttons
+    async function loadUserReservations() {
+        const userId = sessionStorage.getItem('user_id');
+        if (!userId) return;
+
+        try {
+            const res = await fetch(`/reservations/user/${userId}`);
+            const data = await res.json();
+            if (data.success && Array.isArray(data.reservations)) {
+                data.reservations.forEach(r => updateReserveButton(r.product_id, r.status));
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    // Add to wishlist
     function addToWishlist(productId) {
         if (!requireLogin('add items to wishlist')) return;
 
@@ -187,20 +214,25 @@
         const existingItem = wishlist.find(item => item.id === productId);
 
         if (!existingItem) {
-        wishlist.push({
-            id: productId,
-            name: productName,
-            price: productPrice,
-            addedAt: new Date().toISOString()
-        });
-
-        localStorage.setItem('wishlist', JSON.stringify(wishlist));
-        showNotification('Added to wishlist!', 'success');
-        updateWishlistButton(productId, true);
+            wishlist.push({
+                id: productId,
+                name: productName,
+                price: productPrice,
+                addedAt: new Date().toISOString()
+            });
+            localStorage.setItem('wishlist', JSON.stringify(wishlist));
+            showNotification('Added to wishlist!', 'success');
+            updateWishlistButton(productId, true);
         } else {
-        showNotification('Already in wishlist!', 'info');
+            showNotification('Already in wishlist!', 'info');
         }
     }
+
+    // On page load
+    document.addEventListener('DOMContentLoaded', () => {
+        updateCartCount();
+        loadUserReservations();
+    });
 
     //Modern notification popup
     function showNotification(message, type = 'info') {
@@ -277,57 +309,7 @@
         updateCartCount();
     });
     </script>
-    <script>
-    const openCartBtn = document.getElementById("openCartBtn");
-    const cartModal = document.getElementById("cartModal");
-    const closeCartBtn = document.getElementById("closeCartBtn");
-    const cartContent = document.getElementById("cartContent");
-
-    // 🛒 Open modal and load cart.html from Flask
-    openCartBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        cartModal.classList.add("active");
-
-        fetch("/cart/")  // loads your cart.html content
-        .then(response => response.text())
-        .then(html => {
-            cartContent.innerHTML = html;
-
-            // 🧠 After loading the cart.html, attach the close button inside it
-            const internalClose = cartContent.querySelector("#closeCart");
-            if (internalClose) {
-            internalClose.addEventListener("click", () => {
-                cartModal.classList.remove("active");
-            });
-            }
-        })
-        .catch(err => {
-            cartContent.innerHTML = "<p style='padding:20px;color:red;'>Failed to load cart.</p>";
-            console.error("Error loading cart:", err);
-        });
-    });
-
-    // ✖️ Close modal via outer close button (if exists)
-    if (closeCartBtn) {
-        closeCartBtn.addEventListener("click", () => {
-        cartModal.classList.remove("active");
-        });
-    }
-
-    // ✖️ Close modal when clicking outside cart content
-    cartModal.addEventListener("click", (e) => {
-        if (e.target === cartModal) {
-        cartModal.classList.remove("active");
-        }
-    });
-
-    // ⎋ Optional: Close with ESC key
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-        cartModal.classList.remove("active");
-        }
-    });
-    </script>
+    <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
     <script>
     document.addEventListener("DOMContentLoaded", async () => {
         const searchBox = document.querySelector(".search-box");

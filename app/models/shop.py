@@ -1,7 +1,7 @@
 # app/models/shop.py
-from app.models.admin import IncubateeProduct
+from ..models.admin import IncubateeProduct
 from sqlalchemy import or_
-from app.extension import db
+from ..extension import db
 
 
 class Shop:

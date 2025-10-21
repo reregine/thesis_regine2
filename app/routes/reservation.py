@@ -1,32 +1,195 @@
-# Reservation endpoints
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from ..extension import db
-from ..models import Reservation, Product
+from flask import Blueprint, request, jsonify, session, current_app
+from app.extension import db
+from ..models.reservation import Reservation
+from ..models.admin import IncubateeProduct
+from datetime import datetime
 
-reserve_bp = Blueprint("reservation", __name__, url_prefix="/reservation")
+reservation_bp = Blueprint("reservation_bp", __name__, url_prefix="/reservations")
 
-@reserve_bp.route("/new/<int:product_id>", methods=["GET", "POST"])
-def new_reservation(product_id):
-    # ✅ Check if user is logged in
-    if not session.get("user_logged_in") and not session.get("admin_logged_in"):
-        return redirect(url_for("login.login"))  # back to login page
-    
-    product = Product.query.get_or_404(product_id)
 
-    if request.method == "POST":
-        customer_name = request.form.get("name")
-        customer_email = request.form.get("email")
-        quantity = int(request.form.get("quantity", 1))
+# ======================================================
+# CREATE A RESERVATION
+# ======================================================
+@reservation_bp.route("/create", methods=["POST"])
+def create_reservation():
+    try:
+        data = request.get_json()
+        user_id = data.get("user_id")
+        product_id = data.get("product_id")
+        quantity = data.get("quantity")
 
+        if not all([user_id, product_id, quantity]):
+            return jsonify({"error": "Missing required fields"}), 400
+
+        product = IncubateeProduct.query.get(product_id)
+        if not product:
+            return jsonify({"error": "Product not found"}), 404
+
+        if product.stock_amount < quantity:
+            return jsonify({"error": "Insufficient stock"}), 400
+
+        # Temporarily deduct stock (optional)
+        product.stock_amount -= quantity
         reservation = Reservation(
-            customer_name=customer_name,
-            customer_email=customer_email,
+            user_id=user_id,
+            product_id=product_id,
             quantity=quantity,
-            product_id=product.id
+            status="pending",
+            reserved_at=datetime.utcnow()
         )
+
         db.session.add(reservation)
         db.session.commit()
-        flash("Reservation created successfully!", "success")
-        return redirect(url_for("showroom.index"))
 
-    return render_template("reservation/form.html", product=product)
+        return jsonify({
+            "message": "Reservation created successfully",
+            "reservation_id": reservation.reservation_id,
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error creating reservation: {e}")
+        return jsonify({"error": "Server error"}), 500
+
+
+# ======================================================
+# GET ALL RESERVATIONS (ADMIN / STAFF)
+# ======================================================
+@reservation_bp.route("/", methods=["GET"])
+def get_all_reservations():
+    try:
+        reservations = Reservation.query.all()
+        result = [{
+            "reservation_id": r.reservation_id,
+            "user_id": r.user_id,
+            "product_name": r.product.name,
+            "quantity": r.quantity,
+            "status": r.status,
+            "reserved_at": r.reserved_at.strftime("%Y-%m-%d %H:%M:%S"),
+        } for r in reservations]
+
+        return jsonify(result), 200
+    except Exception as e:
+        current_app.logger.error(f"Error fetching all reservations: {e}")
+        return jsonify({"error": "Server error"}), 500
+
+
+# ======================================================
+# GET USER-SPECIFIC RESERVATIONS
+# ======================================================
+@reservation_bp.route("/user/<int:user_id>", methods=["GET"])
+def get_user_reservations(user_id):
+    try:
+        reservations = Reservation.query.filter_by(user_id=user_id).all()
+        result = [{
+            "reservation_id": r.reservation_id,
+            "product_name": r.product.name,
+            "quantity": r.quantity,
+            "status": r.status,
+            "reserved_at": r.reserved_at.strftime("%Y-%m-%d %H:%M:%S"),
+        } for r in reservations]
+
+        return jsonify(result), 200
+    except Exception as e:
+        current_app.logger.error(f"Error fetching user reservations: {e}")
+        return jsonify({"error": "Server error"}), 500
+
+
+# ======================================================
+# GET RESERVATIONS BY STATUS (Shopee-style tab)
+# ======================================================
+@reservation_bp.route("/status/<string:status>", methods=["GET"])
+def get_reservations_by_status(status):
+    valid_statuses = ["pending", "approved", "completed", "rejected"]
+    if status not in valid_statuses:
+        return jsonify({"success": False, "message": "Invalid status"}), 400
+
+    try:
+        # Require user login
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"success": False, "message": "User not logged in"}), 401
+
+        reservations = (
+            db.session.query(Reservation)
+            .join(IncubateeProduct)
+            .filter(Reservation.user_id == user_id, Reservation.status == status)
+            .all()
+        )
+
+        data = []
+        for r in reservations:
+            product = r.product
+            data.append({
+                "reservation_id": r.reservation_id,
+                "product_id": product.product_id,
+                "product_name": product.name,
+                "image_path": product.image_path,
+                "quantity": r.quantity,
+                "price_per_stocks": float(product.price_per_stocks),
+                "status": r.status,
+                "reserved_at": r.reserved_at.strftime("%Y-%m-%d %H:%M:%S"),
+            })
+
+        return jsonify({"success": True, "reservations": data}), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error fetching reservations by status: {e}")
+        db.session.rollback()
+        return jsonify({"success": False, "message": "Server error"}), 500
+
+
+# ======================================================
+# UPDATE RESERVATION STATUS
+# ======================================================
+@reservation_bp.route("/<int:reservation_id>/status", methods=["PUT"])
+def update_reservation_status(reservation_id):
+    try:
+        data = request.get_json()
+        new_status = data.get("status")
+        reason = data.get("reason")
+
+        reservation = Reservation.query.get(reservation_id)
+        if not reservation:
+            return jsonify({"error": "Reservation not found"}), 404
+
+        if new_status not in ["pending", "approved", "completed", "rejected"]:
+            return jsonify({"error": "Invalid status"}), 400
+
+        reservation.status = new_status
+
+        if new_status == "approved":
+            reservation.approved_at = datetime.utcnow()
+        elif new_status == "completed":
+            reservation.completed_at = datetime.utcnow()
+        elif new_status == "rejected":
+            reservation.rejected_at = datetime.utcnow()
+            reservation.rejected_reason = reason or "No reason provided"
+
+        db.session.commit()
+        return jsonify({"message": f"Reservation status updated to {new_status}"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error updating reservation: {e}")
+        return jsonify({"error": "Server error"}), 500
+
+
+# ======================================================
+# DELETE RESERVATION
+# ======================================================
+@reservation_bp.route("/<int:reservation_id>", methods=["DELETE"])
+def delete_reservation(reservation_id):
+    try:
+        reservation = Reservation.query.get(reservation_id)
+        if not reservation:
+            return jsonify({"error": "Reservation not found"}), 404
+
+        db.session.delete(reservation)
+        db.session.commit()
+        return jsonify({"message": "Reservation deleted successfully"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting reservation: {e}")
+        return jsonify({"error": "Server error"}), 500
