@@ -26,7 +26,7 @@ def authenticate():
         username = data.get('username', '').strip()
         password = data.get('password', '').strip()
 
-        # ✅ Admin login (hardcoded)
+        #  Admin login (hardcoded)
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session['admin_logged_in'] = True
             session['admin_username'] = username
@@ -36,7 +36,7 @@ def authenticate():
                 'redirect_url': url_for('admin.admin_dashboard')
             })
 
-        # ✅ Normal user login
+        # Normal user login
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
             session['user_logged_in'] = True
@@ -98,3 +98,24 @@ def logout():
     """Logout"""
     session.clear()
     return redirect(url_for('login.login'))
+
+@login_bp.route("/status", methods=["GET"])
+def login_status():
+    """Return whether the current user is logged in."""
+    if session.get("user_logged_in"):
+        return jsonify({
+            "success": True,
+            "user_id": session.get("user_id"),
+            "username": session.get("username"),
+            "role": "user"
+        })
+    elif session.get("admin_logged_in"):
+        return jsonify({
+            "success": True,
+            "admin": True,
+            "username": session.get("admin_username"),
+            "role": "admin"
+        })
+    else:
+        return jsonify({"success": False, "message": "Not logged in"}), 401
+

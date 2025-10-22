@@ -22,7 +22,7 @@
           <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
           <li><a href="{{ url_for('home.index') }}#about" class="nav-link">ABOUT</a></li>
           <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
-          <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒</a></li>
+          <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒<span id="cartCountBadge" class="cart-count-badge">0</span></a></li>
           <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
         </ul>
       </nav>
@@ -58,7 +58,7 @@
           <div class="incubate-name">Foodies</div>
         </a>
         <a href="#" class="incubate-card">
-          <img src="{{ url_for('static', filename='images/B3.png') }}" alt="MediLink">
+          <img src="{{ url_for('static', filename='images/B6.png') }}" alt="MediLink">
           <div class="incubate-name">MediLink</div>
         </a>
       </div>
@@ -69,11 +69,11 @@
       <h3>Batch 3</h3>
       <div class="incubates-grid">
         <a href="#" class="incubate-card">
-          <img src="{{ url_for('static', filename='images/B6.png') }}" alt="AgriSmart">
+          <img src="{{ url_for('static', filename='images/agri_smart.png') }}" alt="AgriSmart">
           <div class="incubate-name">AgriSmart</div>
         </a>
         <a href="#" class="incubate-card">
-          <img src="{{ url_for('static', filename='images/B7.png') }}" alt="BioFarm">
+          <img src="{{ url_for('static', filename='images/bio_farm.png') }}" alt="BioFarm">
           <div class="incubate-name">BioFarm Solutions</div>
         </a>
       </div>
@@ -84,11 +84,11 @@
       <h3>Batch 4</h3>
       <div class="incubates-grid">
         <a href="#" class="incubate-card">
-          <img src="{{ url_for('static', filename='images/B8.png') }}" alt="AquaGrow">
+          <img src="{{ url_for('static', filename='images/aquagrow.jpg') }}" alt="AquaGrow">
           <div class="incubate-name">AquaGrow</div>
         </a>
         <a href="#" class="incubate-card">
-          <img src="{{ url_for('static', filename='images/B9.png') }}" alt="TechHarvest">
+          <img src="{{ url_for('static', filename='images/tech.jpg') }}" alt="TechHarvest">
           <div class="incubate-name">TechHarvest</div>
         </a>
       </div>
@@ -99,11 +99,11 @@
       <h3>Batch 5</h3>
       <div class="incubates-grid">
         <a href="#" class="incubate-card">
-          <img src="{{ url_for('static', filename='images/B10.png') }}" alt="EcoFeed">
+          <img src="{{ url_for('static', filename='images/echo_feed.png') }}" alt="EcoFeed">
           <div class="incubate-name">EcoFeed Innovations</div>
         </a>
         <a href="#" class="incubate-card">
-          <img src="{{ url_for('static', filename='images/B11.png') }}" alt="FarmBot">
+          <img src="{{ url_for('static', filename='images/farmBot.png') }}" alt="FarmBot">
           <div class="incubate-name">FarmBot Solutions</div>
         </a>
       </div>
@@ -133,6 +133,33 @@
       <div id="cartContent"></div>
     </div>
   </div>
+<script>
+      async function updateCartCountFromBackend() {
+    try {
+        const res = await fetch('/cart/count');
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) return;
+
+        const data = await res.json();
+        if (data.success) {
+        const count = data.count || 0;
+        const badge = document.getElementById('cartCountBadge');
+        if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+        }
+        }
+    } catch (err) {
+        console.error('Error fetching cart count:', err);
+    }
+    }
+
+    // Call it on page load
+    updateCartCountFromBackend();
+
+    // Optional: auto-update every 10-15 seconds
+    setInterval(updateCartCountFromBackend, 15000);
+</script>
 <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
 </body>
 </html>

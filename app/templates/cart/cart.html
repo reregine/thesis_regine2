@@ -127,6 +127,55 @@
     font-weight: 500;
   }
 
+  /* Add to your existing cart CSS */
+.item-checkbox {
+    width: 18px;
+    height: 18px;
+    margin-right: 12px;
+    cursor: pointer;
+    accent-color: #16a34a;
+}
+
+.cart-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid var(--border-light);
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.select-all {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-light);
+    cursor: pointer;
+}
+
+.select-all input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #16a34a;
+}
+
+.reserve-btn:disabled {
+    background: #9ca3af !important;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.reserve-btn:disabled:hover {
+    background: #9ca3af !important;
+    transform: none !important;
+}
+
   /* ===== QUANTITY CONTROLS ===== */
   .quantity {
     display: flex;
@@ -277,28 +326,16 @@
     <button class="close-cart" id="closeCart">&times;</button>
   </div>
 
-  <!-- CART SECTION -->
+  <!-- 🛒 CART SECTION -->
   <div class="cart-section">
     <div class="cart-title">
       <span>Cart Items</span>
-      <span id="cartCount" style="font-size:14px;color:var(--text-light);">3 items</span>
+      <span id="cartCount" style="font-size:14px;color:var(--text-light);">0 items</span>
     </div>
 
+    <!-- Container for dynamic cart items -->
     <div class="cart-items" id="cartItems">
-      <div class="cart-item">
-        <input type="checkbox" class="item-checkbox">
-        <img src="https://via.placeholder.com/70" alt="Product Image">
-        <div class="item-info">
-          <div class="item-name">Organic Lettuce</div>
-          <div class="item-price">₱50</div>
-          <div class="stock-info">Only 3 left!</div>
-          <div class="quantity">
-            <button class="decrease">−</button>
-            <span class="qty">1</span>
-            <button class="increase">+</button>
-          </div>
-        </div>
-      </div>
+      <p style="text-align:center;color:#999;">Loading your cart...</p>
     </div>
   </div>
 
@@ -309,7 +346,7 @@
       <label for="selectAll">Select All Items</label>
     </div>
     <div class="total" id="totalAmount">Total: ₱50</div>
-    <button class="reserve-btn">Proceed to Reserve</button>
+    <button class="reserve-btn" onclick="reserveSelectedItems()">Proceed to Reserve</button>
   </div>
 
   <!-- STATUS SECTION -->
@@ -328,5 +365,5 @@
       </div>
     </div>
   </div>
-  
+
 </div>

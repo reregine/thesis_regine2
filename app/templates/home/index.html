@@ -22,7 +22,7 @@
           <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
           <li><a href="#about" class="nav-link">ABOUT</a></li>
           <li><a href="{{ url_for('contact.contact_page') }}" class="nav-link">CONTACTS</a></li>
-          <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒</a></li>
+          <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒<span id="cartCountBadge" class="cart-count-badge">0</span></a></li>
           <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
         </ul>
       </nav>
@@ -121,6 +121,33 @@
       <div id="cartContent"></div>
     </div>
   </div>
+<script>
+      async function updateCartCountFromBackend() {
+    try {
+        const res = await fetch('/cart/count');
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) return;
+
+        const data = await res.json();
+        if (data.success) {
+        const count = data.count || 0;
+        const badge = document.getElementById('cartCountBadge');
+        if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+        }
+        }
+    } catch (err) {
+        console.error('Error fetching cart count:', err);
+    }
+    }
+
+    // Call it on page load
+    updateCartCountFromBackend();
+
+    // Optional: auto-update every 10-15 seconds
+    setInterval(updateCartCountFromBackend, 15000);
+</script>
 <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
 </body>
 </html>

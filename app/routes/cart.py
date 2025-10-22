@@ -17,27 +17,23 @@ def cart_page():
     # This will render templates/cart/cart.html
     return render_template("cart/cart.html")
 
-@cart_bp.route("/get-items", methods=["GET"])
-def get_cart_items():
+@cart_bp.route("/count", methods=["GET"])
+def cart_count():
     try:
-        user_id = session.get("user_id")  # assume you store this after login
+        user_id = session.get("user_id")
         if not user_id:
             return jsonify({"success": False, "message": "User not logged in"}), 401
 
-        cart_items = (
-            db.session.query(Cart).join(IncubateeProduct).filter(Cart.user_id == user_id).all())
+        # Count DISTINCT products in the user's cart
+        total_items = db.session.query(db.func.count(Cart.product_id))\
+            .filter(Cart.user_id == user_id).scalar() or 0
 
-        items = []
-        for item in cart_items:
-            product = item.product
-            items.append({"cart_id": item.cart_id,"product_id": product.product_id,"name": product.name,"image_path": product.image_path,"price_per_stocks": float(product.price_per_stocks),"stock_amount": product.stock_amount,"quantity": item.quantity,"added_at": item.added_at.strftime("%Y-%m-%d %H:%M:%S"),})
-
-        return jsonify({"success": True, "items": items})
+        return jsonify({"success": True, "count": total_items}), 200
 
     except Exception as e:
-        current_app.logger.error(f"Error fetching cart items: {e}")
+        current_app.logger.error(f"Error fetching cart count: {e}")
         return jsonify({"success": False, "message": "Server error"}), 500
-
+    
 @cart_bp.route("/add", methods=["POST"])
 def add_to_cart():
     try:
@@ -73,7 +69,52 @@ def add_to_cart():
         db.session.rollback()
         return jsonify({"success": False, "message": "Server error"}), 500
 
+@cart_bp.route("/get-items", methods=["GET"])
+def get_cart_items():
+    try:
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"success": False, "message": "User not logged in"}), 401
 
+        cart_items = (
+            db.session.query(Cart, IncubateeProduct)
+            .join(IncubateeProduct, Cart.product_id == IncubateeProduct.product_id)
+            .filter(Cart.user_id == user_id)
+            .all())
+
+        if not cart_items:
+            return jsonify({"success": True, "items": [], "message": "Your cart is empty."}), 200
+
+        items = []
+        for cart, product in cart_items:
+            # FIX: Handle paths that start with "static/"
+            if product.image_path:
+                # Remove "static/" prefix if it exists
+                clean_path = product.image_path
+                if clean_path.startswith('static/'):
+                    clean_path = clean_path.replace('static/', '', 1)
+                
+                image_url = url_for('static', filename=clean_path)
+            else:
+                image_url = url_for('static', filename='images/no-image.png')
+                
+            items.append({
+                "cart_id": cart.cart_id,
+                "product_id": product.product_id,
+                "name": product.name,
+                "image_path": image_url,
+                "price_per_stocks": float(product.price_per_stocks or 0),
+                "stock_amount": product.stock_amount or 0,
+                "quantity": cart.quantity,
+                "added_at": cart.added_at.strftime("%Y-%m-%d %H:%M:%S")
+            })
+
+        return jsonify({"success": True, "items": items}), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error fetching cart items: {e}")
+        return jsonify({"success": False, "message": f"Server error: {str(e)}"}), 500
+    
 @cart_bp.route("/reserve", methods=["POST"])
 def reserve_selected_items():
     try:
@@ -123,3 +164,23 @@ def delete_cart_item(cart_id):
         current_app.logger.error(f"Error deleting cart item: {e}")
         db.session.rollback()
         return jsonify({"success": False, "message": "Server error"}), 500
+    
+@cart_bp.route("/update-quantity/<int:cart_id>", methods=["POST"])
+def update_cart_quantity(cart_id):
+    try:
+        data = request.get_json()
+        qty = data.get("quantity")
+        if qty is None or qty <= 0:
+            return jsonify({"success": False, "message": "Invalid quantity"}), 400
+
+        cart_item = Cart.query.get(cart_id)
+        if not cart_item:
+            return jsonify({"success": False, "message": "Cart item not found"}), 404
+
+        cart_item.quantity = qty
+        db.session.commit()
+
+        return jsonify({"success": True, "message": "Quantity updated"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
