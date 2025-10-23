@@ -3,8 +3,7 @@ from app.extension import db
 from app.models.cart import Cart
 from app.models.reservation import Reservation
 from app.models.admin import IncubateeProduct
-from app.models.user import User
-from datetime import datetime
+from datetime import datetime, timezone
 
 cart_bp = Blueprint("cart_bp", __name__, url_prefix="/cart")
 
@@ -132,8 +131,11 @@ def reserve_selected_items():
         if not selected_items:
             return jsonify({"success": False, "message": "No valid items found"}), 404
 
+        # FIX: Use server's local time
+        current_time = datetime.now()
+
         for item in selected_items:
-            reservation = Reservation(user_id=user_id,product_id=item.product_id,quantity=item.quantity,status="pending",reserved_at=datetime.utcnow())
+            reservation = Reservation(user_id=user_id,product_id=item.product_id,quantity=item.quantity,status="pending",reserved_at=current_time)
             db.session.add(reservation)
             db.session.delete(item)  # remove from cart after reservation
 
@@ -145,6 +147,43 @@ def reserve_selected_items():
         db.session.rollback()
         return jsonify({"success": False, "message": "Server error"}), 500
 
+@cart_bp.route("/cancel-reservation/<int:reservation_id>", methods=["POST"])
+def cancel_reservation(reservation_id):
+    try:
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"success": False, "message": "User not logged in"}), 401
+
+        # Find the reservation
+        reservation = Reservation.query.filter_by(
+            reservation_id=reservation_id, 
+            user_id=user_id, 
+            status="pending"  # Only allow canceling pending reservations
+        ).first()
+
+        if not reservation:
+            return jsonify({"success": False, "message": "Reservation not found or cannot be canceled"}), 404
+
+        # Get the product details before deleting
+        product = IncubateeProduct.query.get(reservation.product_id)
+        if not product:
+            return jsonify({"success": False, "message": "Product not found"}), 404
+
+        # Add the item back to cart
+        cart_item = Cart(user_id=user_id,product_id=reservation.product_id,quantity=reservation.quantity)
+        db.session.add(cart_item)
+        
+        # Delete the reservation
+        db.session.delete(reservation)
+        db.session.commit()
+
+        return jsonify({"success": True, "message": "Reservation canceled and item returned to cart"})
+
+    except Exception as e:
+        current_app.logger.error(f"Error canceling reservation: {e}")
+        db.session.rollback()
+        return jsonify({"success": False, "message": "Server error"}), 500
+    
 @cart_bp.route("/delete/<int:cart_id>", methods=["DELETE"])
 def delete_cart_item(cart_id):
     try:

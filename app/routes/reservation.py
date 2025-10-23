@@ -30,21 +30,12 @@ def create_reservation():
 
         # Temporarily deduct stock (optional)
         product.stock_amount -= quantity
-        reservation = Reservation(
-            user_id=user_id,
-            product_id=product_id,
-            quantity=quantity,
-            status="pending",
-            reserved_at=datetime.utcnow()
-        )
+        reservation = Reservation(user_id=user_id,product_id=product_id,quantity=quantity,status="pending",reserved_at=datetime.utcnow())
 
         db.session.add(reservation)
         db.session.commit()
 
-        return jsonify({
-            "message": "Reservation created successfully",
-            "reservation_id": reservation.reservation_id,
-        }), 201
+        return jsonify({"message": "Reservation created successfully","reservation_id": reservation.reservation_id,}), 201
 
     except Exception as e:
         db.session.rollback()
@@ -59,14 +50,7 @@ def create_reservation():
 def get_all_reservations():
     try:
         reservations = Reservation.query.all()
-        result = [{
-            "reservation_id": r.reservation_id,
-            "user_id": r.user_id,
-            "product_name": r.product.name,
-            "quantity": r.quantity,
-            "status": r.status,
-            "reserved_at": r.reserved_at.strftime("%Y-%m-%d %H:%M:%S"),
-        } for r in reservations]
+        result = [{"reservation_id": r.reservation_id,"user_id": r.user_id,"product_name": r.product.name,"quantity": r.quantity,"status": r.status,"reserved_at": r.reserved_at.strftime("%Y-%m-%d %H:%M:%S"),} for r in reservations]
 
         return jsonify(result), 200
     except Exception as e:
@@ -84,8 +68,7 @@ def get_user_reservations(user_id):
             .join(IncubateeProduct, Reservation.product_id == IncubateeProduct.product_id)
             .filter(Reservation.user_id == user_id)
             .order_by(Reservation.reserved_at.desc())
-            .all()
-        )
+            .all())
 
         reservations_list = []
         for reservation, product in reservations:
@@ -124,8 +107,7 @@ def get_reservations_by_status(status):
             .join(IncubateeProduct, Reservation.product_id == IncubateeProduct.product_id)
             .filter(Reservation.user_id == user_id, Reservation.status == status)
             .order_by(Reservation.reserved_at.desc())
-            .all()
-        )
+            .all())
 
         reservations_list = []
         for reservation, product in reservations:
@@ -141,8 +123,7 @@ def get_reservations_by_status(status):
                 "approved_at": reservation.approved_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.approved_at else None,
                 "completed_at": reservation.completed_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.completed_at else None,
                 "rejected_at": reservation.rejected_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.rejected_at else None,
-                "rejected_reason": reservation.rejected_reason
-            })
+                "rejected_reason": reservation.rejected_reason})
 
         return jsonify({"success": True, "reservations": reservations_list}), 200
 

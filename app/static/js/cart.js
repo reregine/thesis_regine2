@@ -1,3 +1,103 @@
+// Notification System - Included directly in cart.js
+if (typeof window.notification === 'undefined') {
+    class NotificationSystem {
+        constructor() {
+            this.initStyles();
+        }
+
+        initStyles() {
+            if (document.getElementById('notification-styles')) return;
+
+            const styles = `
+                .notification {
+                    position: fixed;
+                    top: 20px;
+                    left: 20px;
+                    background: linear-gradient(135deg, #10b981, #059669);
+                    color: white;
+                    padding: 16px 20px;
+                    border-radius: 12px;
+                    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+                    z-index: 10000;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    transform: translateX(-400px);
+                    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                    max-width: 400px;
+                    border-left: 4px solid #047857;
+                }
+                .notification.show { transform: translateX(0); }
+                .notification.error {
+                    background: linear-gradient(135deg, #ef4444, #dc2626);
+                    border-left: 4px solid #b91c1c;
+                    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+                }
+                .notification.warning {
+                    background: linear-gradient(135deg, #f59e0b, #d97706);
+                    border-left: 4px solid #b45309;
+                    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+                }
+                .notification-icon { font-size: 24px; flex-shrink: 0; }
+                .notification-content { flex: 1; }
+                .notification-title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+                .notification-message { font-size: 14px; opacity: 0.9; line-height: 1.4; }
+                .notification-close {
+                    background: none; border: none; color: white; font-size: 18px;
+                    cursor: pointer; padding: 4px; border-radius: 4px;
+                    transition: background 0.2s ease;
+                }
+                .notification-close:hover { background: rgba(255, 255, 255, 0.2); }
+            `;
+
+            const styleSheet = document.createElement('style');
+            styleSheet.id = 'notification-styles';
+            styleSheet.textContent = styles;
+            document.head.appendChild(styleSheet);
+        }
+
+        show(type, title, message, duration = 4000) {
+            this.hide();
+            const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+            
+            this.notificationEl = document.createElement('div');
+            this.notificationEl.className = `notification ${type}`;
+            this.notificationEl.innerHTML = `
+                <div class="notification-icon">${icons[type] || 'ℹ️'}</div>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-message">${message}</div>
+                </div>
+                <button class="notification-close" onclick="window.notification.hide()">×</button>
+            `;
+
+            document.body.appendChild(this.notificationEl);
+            setTimeout(() => this.notificationEl.classList.add('show'), 100);
+            if (duration > 0) {
+                this.autoHideTimeout = setTimeout(() => this.hide(), duration);
+            }
+            return this;
+        }
+
+        hide() {
+            if (this.autoHideTimeout) clearTimeout(this.autoHideTimeout);
+            if (this.notificationEl) {
+                this.notificationEl.classList.remove('show');
+                setTimeout(() => {
+                    if (this.notificationEl && this.notificationEl.parentElement) {
+                        this.notificationEl.remove();
+                    }
+                }, 400);
+            }
+        }
+
+        success(message, duration = 4000) { return this.show('success', 'Success!', message, duration); }
+        error(message, duration = 4000) { return this.show('error', 'Error!', message, duration); }
+        warning(message, duration = 4000) { return this.show('warning', 'Warning!', message, duration); }
+    }
+
+    window.notification = new NotificationSystem();
+}
 document.addEventListener("DOMContentLoaded", () => {
   const openCartBtn = document.getElementById("openCartBtn");
   const cartModal = document.getElementById("cartModal");
@@ -227,15 +327,17 @@ function attachCartScripts(container) {
                           imagePath = imagePath.replace('static/uploads/static/uploads/', 'static/uploads/');
                       }
                       
-                      // Format date nicely
+                      // FIXED: Using Intl.DateTimeFormat with Asia/Manila timezone
                       const reservedDate = new Date(reservation.reserved_at);
-                      const formattedDate = reservedDate.toLocaleDateString('en-US', {
+                      const formattedDate = new Intl.DateTimeFormat('en-US', {
+                          timeZone: 'Asia/Manila',
                           year: 'numeric',
                           month: 'short',
                           day: 'numeric',
                           hour: '2-digit',
-                          minute: '2-digit'
-                      });
+                          minute: '2-digit',
+                          hour12: true
+                      }).format(reservedDate);
                       
                       return `
                       <div class="reservation-item">
@@ -254,11 +356,14 @@ function attachCartScripts(container) {
                                   <div class="status-badge status-${reservation.status}">
                                       ${reservation.status.toUpperCase()}
                                   </div>
-                                  ${reservation.status === 'pending' ? `
-                                  <div class="reservation-actions">
-                                      <button class="action-btn secondary" onclick="cancelReservation(${reservation.reservation_id})">Cancel</button>
-                                  </div>
-                                  ` : ''}
+                              ${reservation.status === 'pending' ? `
+                              <div class="reservation-actions">
+                                  <button class="action-btn secondary" 
+                                          onclick="cancelReservation(${reservation.reservation_id}, '${reservation.product_name.replace(/'/g, "\\'")}')">
+                                      Cancel
+                                  </button>
+                              </div>
+                              ` : ''}
                               </div>
                               
                               ${reservation.rejected_reason ? `
@@ -440,8 +545,9 @@ function attachCartScripts(container) {
       if (!cartItemsContainer || !totalElem) return;
 
       let total = 0;
-      let selectedCount = 0;
-      let totalItems = 0;
+      let selectedProducts = 0; // Count of selected products
+      let totalProducts = 0; // Total number of products in cart
+      let selectedItemsCount = 0; // Total quantity of selected items
 
       // Get all cart items
       const cartItems = cartItemsContainer.querySelectorAll(".cart-item");
@@ -454,11 +560,12 @@ function attachCartScripts(container) {
           if (priceElem && qtyElem) {
               const price = parseFloat(priceElem.textContent.replace(/[^\d.]/g, "")) || 0;
               const qty = parseInt(qtyElem.textContent) || 0;
-              totalItems += qty;
+              totalProducts++; // Count each product
               
               if (checkbox.checked) {
                   total += price * qty;
-                  selectedCount += qty;
+                  selectedProducts++; // Count selected products
+                  selectedItemsCount += qty; // Count total selected items quantity
               }
           }
       });
@@ -466,78 +573,176 @@ function attachCartScripts(container) {
       // Update total display
       totalElem.textContent = `Total: ₱${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
       
-      // Update cart count (show selected/total)
+      // Update cart count (show selected products/total products)
       if (cartCountElem) {
-          if (selectedCount > 0) {
-              cartCountElem.textContent = `${selectedCount} of ${totalItems} items selected`;
+          if (selectedProducts > 0) {
+              cartCountElem.textContent = `${selectedProducts} of ${totalProducts} products selected`;
           } else {
-              cartCountElem.textContent = `${totalItems} items`;
+              cartCountElem.textContent = `${totalProducts} products`;
           }
       }
 
       // Update reserve button text
       if (reserveBtn) {
-          if (selectedCount > 0) {
-              reserveBtn.textContent = `Reserve Selected (${selectedCount} items)`;
+          if (selectedProducts > 0) {
+              reserveBtn.textContent = `Reserve Selected (${selectedProducts} products)`;
               reserveBtn.disabled = false;
               reserveBtn.style.background = 'var(--green)';
               reserveBtn.style.cursor = 'pointer';
           } else {
-              reserveBtn.textContent = "Select items to reserve";
+              reserveBtn.textContent = "Select products to reserve";
               reserveBtn.disabled = true;
               reserveBtn.style.background = '#9ca3af';
               reserveBtn.style.cursor = 'not-allowed';
           }
       }
   }
+  window.reserveSelectedItems = async function() {
+      const container = document.querySelector('.cart-sidebar') || document.querySelector('#cartContent');
+      if (!container) return;
 
-// 🟢 Update the reserve function to only reserve selected items
-window.reserveSelectedItems = async function() {
-    const container = document.querySelector('.cart-sidebar') || document.querySelector('#cartContent');
-    if (!container) return;
+      const selectedItems = [];
+      const itemCheckboxes = container.querySelectorAll(".item-checkbox:checked");
+      
+      itemCheckboxes.forEach(checkbox => {
+          const cartItem = checkbox.closest('.cart-item');
+          const cartId = cartItem.dataset.cartId;
+          if (cartId) {
+              selectedItems.push(parseInt(cartId));
+          }
+      });
 
-    const selectedItems = [];
-    const itemCheckboxes = container.querySelectorAll(".item-checkbox:checked");
-    
-    itemCheckboxes.forEach(checkbox => {
-        const cartItem = checkbox.closest('.cart-item');
-        const cartId = cartItem.dataset.cartId;
-        if (cartId) {
-            selectedItems.push(parseInt(cartId));
-        }
-    });
+      if (selectedItems.length === 0) {
+          window.notification.warning("Please select at least one product to reserve.", 3000);
+          return;
+      }
 
-    if (selectedItems.length === 0) {
-        alert("Please select at least one item to reserve.");
-        return;
-    }
+      try {
+          const reserveResponse = await fetch('/cart/reserve', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ cart_ids: selectedItems })
+          });
 
-    try {
-        const reserveResponse = await fetch('/cart/reserve', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ cart_ids: selectedItems })
-        });
+          const reserveData = await reserveResponse.json();
+          if (reserveData.success) {
+              // Show success notification
+              const productText = selectedItems.length === 1 ? 'product' : 'products';
+              window.notification.success(`${selectedItems.length} ${productText} reserved successfully!`, 4000);
+              
+              // Reload cart to show updated state
+              if (window.loadCartItems && container) {
+                  window.loadCartItems(container);
+              }
+              
+              // Refresh status section to show pending reservations
+              setTimeout(() => {
+                  if (window.refreshStatusSection) {
+                      window.refreshStatusSection();
+                  }
+              }, 1000);
+              
+          } else {
+              window.notification.error(reserveData.message || 'Failed to reserve products', 4000);
+          }
+      } catch (error) {
+          console.error('Error reserving products:', error);
+          window.notification.error('Error reserving products. Please try again.', 4000);
+      }
+  }
+  // Modern confirmation dialog for cancel reservation
+  window.cancelReservation = async function(reservationId, productName = 'this product') {
+      return new Promise((resolve) => {
+          // Create dialog overlay
+          const dialogOverlay = document.createElement('div');
+          dialogOverlay.className = 'confirm-dialog-overlay';
+          dialogOverlay.innerHTML = `
+              <div class="confirm-dialog">
+                  <div class="confirm-dialog-icon">⚠️</div>
+                  <div class="confirm-dialog-title">Cancel Reservation?</div>
+                  <div class="confirm-dialog-message">
+                      Are you sure you want to cancel the reservation for <strong>${productName}</strong>? 
+                      This item will be returned to your cart.
+                  </div>
+                  <div class="confirm-dialog-buttons">
+                      <button class="confirm-btn no" onclick="closeConfirmDialog(false)">Keep Reserved</button>
+                      <button class="confirm-btn yes" onclick="closeConfirmDialog(true)">Yes, Cancel</button>
+                  </div>
+              </div>
+          `;
 
-        const reserveData = await reserveResponse.json();
-        if (reserveData.success) {
-            alert('Selected items reserved successfully!');
-            // Reload cart to show updated state
-            if (window.loadCartItems && container) {
-                window.loadCartItems(container);
-            }
-        } else {
-            alert(reserveData.message || 'Failed to reserve items');
-        }
-    } catch (error) {
-        console.error('Error reserving items:', error);
-        alert('Error reserving items');
-    }
-}
+          document.body.appendChild(dialogOverlay);
 
-  // 🟢 Add these global functions for the buttons to work
+          // Show with animation
+          setTimeout(() => {
+              dialogOverlay.classList.add('show');
+              dialogOverlay.querySelector('.confirm-dialog').classList.add('show');
+          }, 10);
+
+          // Close dialog function
+          window.closeConfirmDialog = async (confirmed) => {
+              dialogOverlay.classList.remove('show');
+              dialogOverlay.querySelector('.confirm-dialog').classList.remove('show');
+              
+              setTimeout(() => {
+                  if (dialogOverlay.parentElement) {
+                      dialogOverlay.remove();
+                  }
+              }, 300);
+
+              if (confirmed) {
+                  // Proceed with cancellation
+                  try {
+                      const response = await fetch(`/cart/cancel-reservation/${reservationId}`, {
+                          method: 'POST',
+                          headers: {
+                              'Content-Type': 'application/json',
+                          }
+                      });
+
+                      const data = await response.json();
+                      
+                      if (data.success) {
+                          window.notification.success("Reservation canceled! Item returned to cart.", 4000);
+                          
+                          // Refresh the pending reservations view
+                          const container = document.querySelector('.cart-sidebar') || document.querySelector('#cartContent');
+                          if (container) {
+                              await loadReservationsByStatus("pending", container);
+                              await loadReservationCounts(container);
+                          }
+                      } else {
+                          window.notification.error(data.message || "Failed to cancel reservation", 4000);
+                      }
+                  } catch (error) {
+                      console.error('Error canceling reservation:', error);
+                      window.notification.error("Error canceling reservation. Please try again.", 4000);
+                  }
+              }
+              
+              resolve(confirmed);
+          };
+
+          // Close on overlay click
+          dialogOverlay.addEventListener('click', (e) => {
+              if (e.target === dialogOverlay) {
+                  window.closeConfirmDialog(false);
+              }
+          });
+
+          // Close on ESC key
+          const escHandler = (e) => {
+              if (e.key === 'Escape') {
+                  window.closeConfirmDialog(false);
+                  document.removeEventListener('keydown', escHandler);
+              }
+          };
+          document.addEventListener('keydown', escHandler);
+      });
+  }
+  //Add these global functions for the buttons to work
   window.updateQuantity = async function(cartId, newQuantity) {
     if (newQuantity < 1) {
       await removeFromCart(cartId);
@@ -557,6 +762,7 @@ window.reserveSelectedItems = async function() {
       }
     } catch (error) {
       console.error('Error updating quantity:', error);
+      window.notification.error('Error updating quantity. Please try again.', 4000);
     }
   }
 
@@ -572,6 +778,7 @@ window.reserveSelectedItems = async function() {
       }
     } catch (error) {
       console.error('Error removing from cart:', error);
+      window.notification.error('Error removing item. Please try again.', 4000);
     }
   }
 }
@@ -627,6 +834,7 @@ async function loadCartItems(container) {
 
   } catch (err) {
     console.error("❌ Error loading cart:", err);
+    window.notification.error('Error loading cart. Please try again.', 4000);
     cartItemsContainer.innerHTML = `<p style="color:red;text-align:center;">Server error while loading cart.</p>`;
   }
 }
@@ -713,6 +921,7 @@ async function updateCartQuantity(cartId, qty) {
     if (!data.success) console.warn("Failed to update quantity:", data.message);
   } catch (err) {
     console.error("Error updating quantity:", err);
+    window.notification.error('Error updating quantity. Please try again.', 4000);
   }
 }
 
