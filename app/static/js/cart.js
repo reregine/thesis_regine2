@@ -41,33 +41,21 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ======================
-// Internal cart scripts - FIXED VERSION
+// Internal cart scripts - UPDATED WITH RESERVATION SUPPORT
 // ======================
 function attachCartScripts(container) {
   if (!container) return;
 
-  // 🟢 IMMEDIATELY LOAD CART ITEMS WHEN CART OPENS
+  // IMMEDIATELY LOAD CART ITEMS WHEN CART OPENS
   loadCartItems(container);
 
   const cartItemsContainer = container.querySelector("#cartItems");
   const totalElem = container.querySelector("#totalAmount");
 
-  // 🟨 Status Tabs
-  const tabs = container.querySelectorAll(".status-tab");
-  tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      tabs.forEach((t) => t.classList.remove("active"));
-      tab.classList.add("active");
-      const tabName = tab.dataset.tab;
-      if (tabName === "cart") {
-        loadCartItems(container); // Reload cart items when cart tab is clicked
-      } else {
-        loadTabContent(tabName);
-      }
-    });
-  });
+  //Status Tabs - Load reservation counts and set up click events
+  initializeStatusTabs(container);
 
-  // 🟢 FIXED: Load cart items function
+  // FIXED: Load cart items function
   async function loadCartItems(container) {
     const cartItemsContainer = container.querySelector("#cartItems");
     const cartCountElem = container.querySelector("#cartCount");
@@ -106,13 +94,251 @@ function attachCartScripts(container) {
         return;
       }
 
-      // 🟢 RENDER THE ACTUAL CART ITEMS
+      //RENDER THE ACTUAL CART ITEMS
       renderCartItems(items, container);
       
     } catch (err) {
       console.error("❌ Error loading cart:", err);
       cartItemsContainer.innerHTML = `<p style="color:red;text-align:center;">Server error while loading cart.</p>`;
     }
+  }
+
+  //UPDATED: Initialize status tabs with auto-loading
+  async function initializeStatusTabs(container) {
+    const tabs = container.querySelectorAll(".status-tab");
+    
+    // 🟢 FIX: Ensure user ID is available before loading counts
+    let userId = getUserId();
+    if (!userId) {
+      userId = await fetchUserInfo();
+    }
+    
+    // Load reservation counts and auto-show pending tab
+    await loadReservationCounts(container);
+    
+    //AUTO-SHOW PENDING TAB IF THERE ARE PENDING RESERVATIONS
+    const pendingCount = parseInt(container.querySelector('.status-tab[data-tab="pending"] .tab-count').textContent) || 0;
+    if (pendingCount > 0) {
+      // Switch to pending tab automatically
+      tabs.forEach(t => t.classList.remove("active"));
+      const pendingTab = container.querySelector('.status-tab[data-tab="pending"]');
+      pendingTab.classList.add("active");
+      await loadReservationsByStatus("pending", container);
+    }
+    
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", async () => {
+        tabs.forEach((t) => t.classList.remove("active"));
+        tab.classList.add("active");
+        const tabName = tab.dataset.tab;
+        
+        if (tabName === "cart") {
+          loadCartItems(container);
+        } else {
+          await loadReservationsByStatus(tabName, container);
+        }
+      });
+    });
+  }
+
+  //NEW: Load reservation counts for all status tabs
+  async function loadReservationCounts(container) {
+    try {
+      const userId = getUserId();
+      if (!userId) {
+        console.error("User ID not found");
+        return;
+      }
+      
+      const res = await fetch("/reservations/user/" + userId);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      if (data.success) {
+        const reservations = data.reservations || [];
+        
+        // Count reservations by status
+        const counts = {
+          pending: 0,
+          approved: 0,
+          completed: 0,
+          rejected: 0
+        };
+        
+        reservations.forEach(reservation => {
+          if (counts.hasOwnProperty(reservation.status)) {
+            counts[reservation.status]++;
+          }
+        });
+        
+        // Update tab counts
+        Object.keys(counts).forEach(status => {
+          const badge = container.querySelector(`.status-tab[data-tab="${status}"] .tab-count`);
+          if (badge) {
+            badge.textContent = counts[status];
+          }
+        });
+        
+        return counts; // Return counts for auto-display logic
+      }
+    } catch (err) {
+      console.error("❌ Error loading reservation counts:", err);
+      return { pending: 0, approved: 0, completed: 0, rejected: 0 };
+    }
+  }
+
+  async function loadReservationsByStatus(status, container) {
+      const dynamicContent = container.querySelector("#dynamicContent");
+      if (!dynamicContent) return;
+
+      try {
+          dynamicContent.innerHTML = `
+              <div style="text-align:center;padding:60px 20px;color:#666;">
+                  <div style="font-size:48px;margin-bottom:16px;">⏳</div>
+                  <p>Loading ${status} reservations...</p>
+              </div>
+          `;
+
+          const res = await fetch(`/reservations/status/${status}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+          const data = await res.json();
+          
+          if (data.success) {
+              const reservations = data.reservations || [];
+              
+              if (reservations.length === 0) {
+                  dynamicContent.innerHTML = `
+                  <div class="empty-status">
+                      <img src="https://cdn-icons-png.flaticon.com/512/4076/4076505.png" alt="No ${status} reservations">
+                      <p>No ${status} reservations</p>
+                      <small>
+                          ${status === 'pending' ? 'Reservations waiting for approval will appear here' : 
+                            status === 'approved' ? 'Approved reservations ready for pickup/delivery' :
+                            status === 'completed' ? 'Completed reservations history' :
+                            'Rejected reservations with reasons'}
+                      </small>
+                  </div>`;
+              } else {
+                  dynamicContent.innerHTML = reservations.map(reservation => {
+                      // Clean up image path
+                      let imagePath = reservation.image_path;
+                      if (imagePath && imagePath.includes('static/uploads/static/uploads/')) {
+                          imagePath = imagePath.replace('static/uploads/static/uploads/', 'static/uploads/');
+                      }
+                      
+                      // Format date nicely
+                      const reservedDate = new Date(reservation.reserved_at);
+                      const formattedDate = reservedDate.toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                      });
+                      
+                      return `
+                      <div class="reservation-item">
+                          <img src="${imagePath}" alt="${reservation.product_name}" 
+                              onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/512/4076/4076505.png'">
+                          <div class="reservation-info">
+                              <div class="reservation-name">${reservation.product_name}</div>
+                              <div class="reservation-price">₱${reservation.price_per_stocks.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                              
+                              <div class="reservation-meta">
+                                  <div class="reservation-quantity">Quantity: ${reservation.quantity}</div>
+                                  <div class="reservation-date">Reserved: ${formattedDate}</div>
+                              </div>
+                              
+                              <div class="status-section">
+                                  <div class="status-badge status-${reservation.status}">
+                                      ${reservation.status.toUpperCase()}
+                                  </div>
+                                  ${reservation.status === 'pending' ? `
+                                  <div class="reservation-actions">
+                                      <button class="action-btn secondary" onclick="cancelReservation(${reservation.reservation_id})">Cancel</button>
+                                  </div>
+                                  ` : ''}
+                              </div>
+                              
+                              ${reservation.rejected_reason ? `
+                              <div class="rejection-reason">
+                                  ${reservation.rejected_reason}
+                              </div>
+                              ` : ''}
+                          </div>
+                      </div>
+                      `;
+                  }).join("");
+              }
+          } else {
+              dynamicContent.innerHTML = `
+                  <div style="text-align:center;padding:60px 20px;color:#d32f2f;">
+                      <div style="font-size:48px;margin-bottom:16px;">❌</div>
+                      <p>${data.message || "Failed to load reservations."}</p>
+                  </div>`;
+          }
+      } catch (err) {
+          console.error(`❌ Error loading ${status} reservations:`, err);
+          dynamicContent.innerHTML = `
+              <div style="text-align:center;padding:60px 20px;color:#d32f2f;">
+                  <div style="font-size:48px;margin-bottom:16px;">⚠️</div>
+                  <p>Server error while loading ${status} reservations.</p>
+              </div>`;
+      }
+  }
+  window.refreshStatusSection = async function() {
+    const container = document.querySelector('.cart-sidebar') || document.querySelector('#cartContent');
+    if (!container) return;
+    
+    // Reload counts and auto-show pending tab
+    const counts = await loadReservationCounts(container);
+    
+    if (counts && counts.pending > 0) {
+      // Switch to pending tab and show pending reservations
+      const tabs = container.querySelectorAll(".status-tab");
+      tabs.forEach(t => t.classList.remove("active"));
+      const pendingTab = container.querySelector('.status-tab[data-tab="pending"]');
+      pendingTab.classList.add("active");
+      await loadReservationsByStatus("pending", container);
+    }
+  };
+
+  //IMPROVED: Helper function to get user ID from multiple sources
+  function getUserId() {
+      // Try sessionStorage first
+      let userId = sessionStorage.getItem('user_id');
+      
+      if (!userId) {
+          // Try to get from the page if available
+          const userDataElement = document.querySelector('[data-user-id]');
+          if (userDataElement) {
+              userId = userDataElement.getAttribute('data-user-id');
+              if (userId) {
+                  sessionStorage.setItem('user_id', userId);
+              }
+          }
+      }
+      
+      return userId || ''; // Return empty string if not found, don't fetch here
+  }
+  //NEW: Fetch user info from server
+  async function fetchUserInfo() {
+      try {
+          const res = await fetch("/login/status");
+          if (res.ok) {
+              const data = await res.json();
+              if (data.success && data.user_id) {
+                  sessionStorage.setItem("user_id", data.user_id);
+                  sessionStorage.setItem("username", data.username || "");
+                  console.log("User ID fetched from server:", data.user_id);
+                  return data.user_id;
+              }
+          }
+      } catch (err) {
+          console.error("Error fetching user info:", err);
+      }
+      return null;
   }
 
   //Render cart items function with checkboxes
@@ -452,7 +678,7 @@ function attachDynamicCartEvents(container) {
   });
 }
 
-// 🧮 Recalculate total dynamically
+//Recalculate total dynamically
 function recalcTotals(container) {
   const items = container.querySelectorAll(".cart-item");
   const totalElem = container.querySelector("#totalAmount");
@@ -475,7 +701,7 @@ function recalcTotals(container) {
   totalElem.textContent = `Total: ₱${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 }
 
-// 🔄 Optional: update quantity in backend (if you want real persistence)
+//Optional: update quantity in backend (if you want real persistence)
 async function updateCartQuantity(cartId, qty) {
   try {
     const res = await fetch(`/cart/update-quantity/${cartId}`, {
@@ -490,12 +716,11 @@ async function updateCartQuantity(cartId, qty) {
   }
 }
 
-// 🏁 Initialize on page load
+//Initialize on page load
 document.addEventListener("DOMContentLoaded", () => {
   const cartSidebar = document.getElementById("cartSidebar");
   if (cartSidebar) loadCartItems(cartSidebar);
 });
-
 
 // ======================
 // 🎛 Attach Dynamic Events (Qty + Select All)

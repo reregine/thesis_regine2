@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, session, current_app
+from flask import Blueprint, request, jsonify, session, current_app, url_for
 from app.extension import db
 from ..models.reservation import Reservation
 from ..models.admin import IncubateeProduct
@@ -73,69 +73,81 @@ def get_all_reservations():
         current_app.logger.error(f"Error fetching all reservations: {e}")
         return jsonify({"error": "Server error"}), 500
 
-
 # ======================================================
-# GET USER-SPECIFIC RESERVATIONS
+# GET RESERVATIONS BY STATUS (Shopee-style tab)
 # ======================================================
 @reservation_bp.route("/user/<int:user_id>", methods=["GET"])
 def get_user_reservations(user_id):
     try:
-        reservations = Reservation.query.filter_by(user_id=user_id).all()
-        result = [{
-            "reservation_id": r.reservation_id,
-            "product_name": r.product.name,
-            "quantity": r.quantity,
-            "status": r.status,
-            "reserved_at": r.reserved_at.strftime("%Y-%m-%d %H:%M:%S"),
-        } for r in reservations]
+        reservations = (
+            db.session.query(Reservation, IncubateeProduct)
+            .join(IncubateeProduct, Reservation.product_id == IncubateeProduct.product_id)
+            .filter(Reservation.user_id == user_id)
+            .order_by(Reservation.reserved_at.desc())
+            .all()
+        )
 
-        return jsonify(result), 200
+        reservations_list = []
+        for reservation, product in reservations:
+            reservations_list.append({
+                "reservation_id": reservation.reservation_id,
+                "product_id": product.product_id,
+                "product_name": product.name,
+                "image_path": url_for('static', filename=f'uploads/{product.image_path}') if product.image_path else url_for('static', filename='images/no-image.png'),
+                "price_per_stocks": float(product.price_per_stocks or 0),
+                "quantity": reservation.quantity,
+                "status": reservation.status,
+                "reserved_at": reservation.reserved_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "approved_at": reservation.approved_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.approved_at else None,
+                "completed_at": reservation.completed_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.completed_at else None,
+                "rejected_at": reservation.rejected_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.rejected_at else None,
+                "rejected_reason": reservation.rejected_reason  })
+
+        return jsonify({"success": True, "reservations": reservations_list}), 200
+
     except Exception as e:
         current_app.logger.error(f"Error fetching user reservations: {e}")
-        return jsonify({"error": "Server error"}), 500
+        return jsonify({"success": False, "message": "Server error"}), 500
 
-
-# ======================================================
-# GET RESERVATIONS BY STATUS (Shopee-style tab)
-# ======================================================
 @reservation_bp.route("/status/<string:status>", methods=["GET"])
 def get_reservations_by_status(status):
-    valid_statuses = ["pending", "approved", "completed", "rejected"]
-    if status not in valid_statuses:
-        return jsonify({"success": False, "message": "Invalid status"}), 400
-
     try:
-        # Require user login
         user_id = session.get("user_id")
         if not user_id:
             return jsonify({"success": False, "message": "User not logged in"}), 401
 
+        if status not in ["pending", "approved", "completed", "rejected"]:
+            return jsonify({"success": False, "message": "Invalid status"}), 400
+
         reservations = (
-            db.session.query(Reservation)
-            .join(IncubateeProduct)
+            db.session.query(Reservation, IncubateeProduct)
+            .join(IncubateeProduct, Reservation.product_id == IncubateeProduct.product_id)
             .filter(Reservation.user_id == user_id, Reservation.status == status)
+            .order_by(Reservation.reserved_at.desc())
             .all()
         )
 
-        data = []
-        for r in reservations:
-            product = r.product
-            data.append({
-                "reservation_id": r.reservation_id,
+        reservations_list = []
+        for reservation, product in reservations:
+            reservations_list.append({
+                "reservation_id": reservation.reservation_id,
                 "product_id": product.product_id,
                 "product_name": product.name,
-                "image_path": product.image_path,
-                "quantity": r.quantity,
-                "price_per_stocks": float(product.price_per_stocks),
-                "status": r.status,
-                "reserved_at": r.reserved_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "image_path": url_for('static', filename=f'uploads/{product.image_path}') if product.image_path else url_for('static', filename='images/no-image.png'),
+                "price_per_stocks": float(product.price_per_stocks or 0),
+                "quantity": reservation.quantity,
+                "status": reservation.status,
+                "reserved_at": reservation.reserved_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "approved_at": reservation.approved_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.approved_at else None,
+                "completed_at": reservation.completed_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.completed_at else None,
+                "rejected_at": reservation.rejected_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.rejected_at else None,
+                "rejected_reason": reservation.rejected_reason
             })
 
-        return jsonify({"success": True, "reservations": data}), 200
+        return jsonify({"success": True, "reservations": reservations_list}), 200
 
     except Exception as e:
-        current_app.logger.error(f"Error fetching reservations by status: {e}")
-        db.session.rollback()
+        current_app.logger.error(f"Error fetching {status} reservations: {e}")
         return jsonify({"success": False, "message": "Server error"}), 500
 
 

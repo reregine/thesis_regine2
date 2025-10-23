@@ -351,17 +351,48 @@
 
   <!-- STATUS SECTION -->
   <div class="status-section">
-    <div class="status-tabs">
-      <div class="status-tab active" data-tab="pending">Pending <span class="tab-count">0</span></div>
-      <div class="status-tab" data-tab="approved">Approved <span class="tab-count">0</span></div>
-      <div class="status-tab" data-tab="completed">Completed <span class="tab-count">0</span></div>
-      <div class="status-tab" data-tab="rejected">Rejected <span class="tab-count">0</span></div>
-    </div>
-
     <div class="status-content" id="statusContent">
-      <div class="empty-status">
-        <img src="https://cdn-icons-png.flaticon.com/512/4076/4076505.png" alt="Empty Cart">
-        <p>🕓 No actions have been made yet.<br>Your order history will appear here once you start reserving.</p>
+      <!-- Status Tabs -->
+      <div class="status-tabs-container">
+        <div class="status-tabs">
+          <div class="status-tab active" data-tab="pending">
+            <div class="tab-content">
+              <span class="tab-icon"></span>
+              <span class="tab-text">Pending</span>
+              <span class="tab-count">0</span>
+            </div>
+          </div>
+          <div class="status-tab" data-tab="approved">
+            <div class="tab-content">
+              <span class="tab-icon"></span>
+              <span class="tab-text">Approved</span>
+              <span class="tab-count">0</span>
+            </div>
+          </div>
+          <div class="status-tab" data-tab="completed">
+            <div class="tab-content">
+              <span class="tab-icon"></span>
+              <span class="tab-text">Completed</span>
+              <span class="tab-count">0</span>
+            </div>
+          </div>
+          <div class="status-tab" data-tab="rejected">
+            <div class="tab-content">
+              <span class="tab-icon"></span>
+              <span class="tab-text">Rejected</span>
+              <span class="tab-count">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Content Area - This is where items will show -->
+      <div class="dynamic-content" id="dynamicContent">
+        <div class="empty-status">
+          <img src="https://cdn-icons-png.flaticon.com/512/4076/4076505.png" alt="No Reservations">
+          <p>No reservations yet</p>
+          <small>Your reservation history will appear here once you start reserving products.</small>
+        </div>
       </div>
     </div>
   </div>
