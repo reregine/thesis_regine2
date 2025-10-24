@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request, session, current_app, render_template, redirect, url_for
-from app.extension import db
-from app.models.cart import Cart
-from app.models.reservation import Reservation
-from app.models.admin import IncubateeProduct
+from ..extension import db
+from ..models.cart import Cart
+from ..models.reservation import Reservation
+from ..models.admin import IncubateeProduct
 from datetime import datetime, timezone
 
 cart_bp = Blueprint("cart_bp", __name__, url_prefix="/cart")
@@ -113,7 +113,137 @@ def get_cart_items():
     except Exception as e:
         current_app.logger.error(f"Error fetching cart items: {e}")
         return jsonify({"success": False, "message": f"Server error: {str(e)}"}), 500
-    
+
+@cart_bp.route("/remove", methods=["POST"])
+def remove_from_cart():
+    """Remove item from cart by product_id"""
+    try:
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"success": False, "message": "User not logged in"}), 401
+
+        data = request.get_json()
+        product_id = data.get("product_id")
+        
+        if not product_id:
+            return jsonify({"success": False, "message": "Missing product_id"}), 400
+
+        # Find and remove the cart item
+        cart_item = Cart.query.filter_by(user_id=user_id, product_id=product_id).first()
+        if not cart_item:
+            return jsonify({"success": False, "message": "Item not found in cart"}), 404
+
+        db.session.delete(cart_item)
+        db.session.commit()
+        
+        return jsonify({"success": True, "message": "Item removed from cart"})
+
+    except Exception as e:
+        current_app.logger.error(f"Error removing from cart: {e}")
+        db.session.rollback()
+        return jsonify({"success": False, "message": "Server error"}), 500
+
+@cart_bp.route("/update", methods=["POST"])
+def update_cart_item():
+    """Update cart item quantity"""
+    try:
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"success": False, "message": "User not logged in"}), 401
+
+        data = request.get_json()
+        product_id = data.get("product_id")
+        quantity = data.get("quantity")
+        
+        if not product_id:
+            return jsonify({"success": False, "message": "Missing product_id"}), 400
+        
+        if quantity is None or quantity < 0:
+            return jsonify({"success": False, "message": "Invalid quantity"}), 400
+
+        # Find the cart item
+        cart_item = Cart.query.filter_by(user_id=user_id, product_id=product_id).first()
+        if not cart_item:
+            return jsonify({"success": False, "message": "Item not found in cart"}), 404
+
+        if quantity == 0:
+            # Remove item if quantity is 0
+            db.session.delete(cart_item)
+            message = "Item removed from cart"
+        else:
+            # Update quantity
+            cart_item.quantity = quantity
+            message = "Cart updated successfully"
+
+        db.session.commit()
+        return jsonify({"success": True, "message": message})
+
+    except Exception as e:
+        current_app.logger.error(f"Error updating cart: {e}")
+        db.session.rollback()
+        return jsonify({"success": False, "message": "Server error"}), 500
+
+@cart_bp.route("/clear", methods=["POST"])
+def clear_cart():
+    """Clear all items from cart"""
+    try:
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"success": False, "message": "User not logged in"}), 401
+
+        # Remove all cart items for this user
+        Cart.query.filter_by(user_id=user_id).delete()
+        db.session.commit()
+        
+        return jsonify({"success": True, "message": "Cart cleared successfully"})
+
+    except Exception as e:
+        current_app.logger.error(f"Error clearing cart: {e}")
+        db.session.rollback()
+        return jsonify({"success": False, "message": "Server error"}), 500
+
+@cart_bp.route('/totals', methods=['GET'])
+def get_cart_totals():
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'message': 'User not logged in'}), 401
+
+        # Query cart items directly from database
+        cart_items = (
+            db.session.query(Cart, IncubateeProduct)
+            .join(IncubateeProduct, Cart.product_id == IncubateeProduct.product_id)
+            .filter(Cart.user_id == user_id)
+            .all()
+        )
+
+        subtotal = 0
+        for cart, product in cart_items:
+            # Calculate subtotal based on product price and cart quantity
+            price = float(product.price_per_stocks or 0)
+            quantity = cart.quantity
+            subtotal += price * quantity
+
+        # For agricultural products, often no shipping/tax is applied
+        tax = 0
+        shipping = 0
+        total = subtotal
+
+        return jsonify({
+            'success': True,
+            'subtotal': float(subtotal),
+            'tax': float(tax),
+            'shipping': float(shipping),
+            'total': float(total)
+        })
+
+    except Exception as e:
+        current_app.logger.error(f"Error calculating cart totals: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error calculating totals: {str(e)}'
+        }), 500
+
 @cart_bp.route("/reserve", methods=["POST"])
 def reserve_selected_items():
     try:
@@ -222,4 +352,3 @@ def update_cart_quantity(cart_id):
         return jsonify({"success": True, "message": "Quantity updated"}), 200
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
-

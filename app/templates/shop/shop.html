@@ -99,188 +99,9 @@
             <p>&copy; 2025 ATBI - Agri-Aqua Business Incubator. All rights reserved.</p>
         </div>
     </footer>
-
     <!-- JavaScript for product actions -->
     <script>
-    async function checkLoginStatus() {
-    try {
-        const res = await fetch("/login/status");
-        if (!res.ok) return false;
-        const data = await res.json();
-        if (data.success) {
-        // Optionally cache the user_id locally for quicker access
-        sessionStorage.setItem("user_id", data.user_id || "");
-        sessionStorage.setItem("username", data.username || "");
-        return true;
-        }
-        return false;
-    } catch (err) {
-        console.error("Error checking login:", err);
-        return false;
-    }
-    }
-
-    // Require login before restricted actions
-    function requireLogin(action) {
-    if (!checkLoginStatus()) {
-        alert(`Please log in to ${action}.`);
-        window.location.href = '/login';
-        return false;
-    }
-    return true;
-    }
-
-    // 🛒 Add to Cart (uses backend)
-    async function addToCart(productId) {
-    if (!(await requireLogin('add items to cart'))) return;
-
-    const quantity = 1;
-
-    try {
-        const res = await fetch('/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_id: productId, quantity })
-        });
-
-        const data = await res.json();
-        if (data.success) {
-        showNotification('Added to cart!', 'success');
-        updateCartCount();
-        } else {
-        showNotification(data.message || 'Failed to add to cart', 'error');
-        }
-    } catch (err) {
-        console.error(err);
-        showNotification('Server error. Try again later.', 'error');
-    }
-    }
-
-
-    // 🧾 Reserve product
-    async function reserveProduct(productId) {
-    if (!requireLogin('reserve products')) return;
-
-    const quantity = 1;
-    const userId = sessionStorage.getItem('user_id');
-
-    try {
-        const res = await fetch('/reservations/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_id: productId, quantity, user_id: userId })
-        });
-
-        const contentType = res.headers.get("content-type") || "";
-        if (!contentType.includes("application/json")) {
-        showNotification('Session expired. Please log in again.', 'error');
-        window.location.href = '/login';
-        return;
-        }
-
-        const data = await res.json();
-        if (data.success) {
-        showNotification(`Product reserved! Status: ${data.status}`, 'success');
-        updateReserveButton(productId, data.status);
-        } else {
-        showNotification(data.message || 'Reservation failed', 'error');
-        }
-    } catch (err) {
-        console.error('❌ Reservation error:', err);
-        showNotification('Server error. Try again later.', 'error');
-    }
-    }
-
-    // 🟢 Update reserve button based on backend status
-    function updateReserveButton(productId, status) {
-    const button = document.querySelector(`[data-id="${productId}"] .reserve-btn`);
-    if (!button) return;
-
-    const colors = {
-        pending: 'linear-gradient(135deg, #facc15 0%, #eab308 100%)',
-        approved: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-        completed: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-        rejected: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-    };
-
-    button.textContent = status.charAt(0).toUpperCase() + status.slice(1);
-    button.style.background = colors[status] || colors.pending;
-    button.disabled = status !== 'pending';
-    }
-
-    // 🔄 Load user reservations (on page load)
-    async function loadUserReservations() {
-    const userId = sessionStorage.getItem('user_id');
-    if (!userId) return;
-
-    try {
-        const res = await fetch(`/reservations/user/${userId}`);
-        const data = await res.json();
-        if (data.success && Array.isArray(data.reservations)) {
-        data.reservations.forEach(r => updateReserveButton(r.product_id, r.status));
-        }
-    } catch (err) {
-        console.error('Error loading reservations:', err);
-    }
-    }
-
-    // ❤️ Add to wishlist (local only)
-    function addToWishlist(productId) {
-    if (!requireLogin('add items to wishlist')) return;
-
-    const card = document.querySelector(`[data-id="${productId}"]`);
-    const productName = card.querySelector('.product-title').textContent;
-    const productPrice = parseFloat(card.querySelector('.product-price').textContent.replace('₱', ''));
-
-    let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-    const existingItem = wishlist.find(item => item.id === productId);
-
-    if (!existingItem) {
-        wishlist.push({ id: productId, name: productName, price: productPrice, addedAt: new Date().toISOString() });
-        localStorage.setItem('wishlist', JSON.stringify(wishlist));
-        showNotification('❤️ Added to wishlist!', 'success');
-        updateWishlistButton(productId, true);
-    } else {
-        showNotification('Already in wishlist!', 'info');
-    }
-    }
-
-    // 🔔 Notification pop-up
-    function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        border-radius: 12px;
-        color: white;
-        font-weight: 600;
-        z-index: 10000;
-        transform: translateX(100%);
-        transition: transform 0.3s ease;
-        max-width: 300px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    `;
-
-    const colors = {
-        success: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-        error: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-        info: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-        default: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)'
-    };
-    notification.style.background = colors[type] || colors.default;
-
-    document.body.appendChild(notification);
-    setTimeout(() => (notification.style.transform = 'translateX(0)'), 100);
-    setTimeout(() => {
-        notification.style.transform = 'translateX(100%)';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
-    }
-
+    // 🛒 Cart Functions
     async function updateCartCountFromBackend() {
         try {
             const res = await fetch('/cart/count');
@@ -302,32 +123,447 @@
         }
     }
 
-    // Call it on page load
-    updateCartCountFromBackend();
-
     // Optional: auto-update every 10-15 seconds
-    setInterval(updateCartCountFromBackend, 15000);
+    function startCartCountInterval() {
+        setInterval(updateCartCountFromBackend, 15000);
+    }
 
+    async function checkLoginStatus() {
+        try {
+            const res = await fetch("/login/status");
+            if (!res.ok) return false;
+            const data = await res.json();
+            if (data.success) {
+                // Optionally cache the user_id locally for quicker access
+                sessionStorage.setItem("user_id", data.user_id || "");
+                sessionStorage.setItem("username", data.username || "");
+                return true;
+            }
+            return false;
+        } catch (err) {
+            console.error("Error checking login:", err);
+            return false;
+        }
+    }
 
-    // ❤️ Update wishlist button
+    // Require login before restricted actions
+    async function requireLogin(action) {
+        const isLoggedIn = await checkLoginStatus();
+        if (!isLoggedIn) {
+            alert(`Please log in to ${action}.`);
+            window.location.href = '/login';
+            return false;
+        }
+        return true;
+    }
+
+    // 🛒 Add to Cart (uses backend)
+    async function addToCart(productId) {
+        if (!(await requireLogin('add items to cart'))) return;
+
+        const quantity = 1;
+
+        try {
+            const res = await fetch('/cart/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ product_id: productId, quantity })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                showNotification('Added to cart!', 'success');
+                updateCartCountFromBackend(); // Update cart count after adding
+            } else {
+                showNotification(data.message || 'Failed to add to cart', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showNotification('Server error. Try again later.', 'error');
+        }
+    }
+    // 🧾 Reserve product
+    async function reserveProduct(productId) {
+        if (!(await requireLogin('reserve products'))) return;
+
+        const quantity = 1;
+        const userId = sessionStorage.getItem('user_id');
+
+        try {
+            const res = await fetch('/reservations/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ product_id: productId, quantity, user_id: userId })
+            });
+
+            const contentType = res.headers.get("content-type") || "";
+            if (!contentType.includes("application/json")) {
+                showNotification('Session expired. Please log in again.', 'error');
+                window.location.href = '/login';
+                return;
+            }
+
+            const data = await res.json();
+            if (data.success) {
+                showNotification(`Product reserved! Status: ${data.status}`, 'success');
+                updateReserveButton(productId, data.status);
+            } else {
+                showNotification(data.message || 'Reservation failed', 'error');
+            }
+        } catch (err) {
+            console.error('❌ Reservation error:', err);
+            showNotification('Server error. Try again later.', 'error');
+        }
+    }
+    //  Update reserve button based on backend status
+    function updateReserveButton(productId, status) {
+        const button = document.querySelector(`[data-id="${productId}"] .reserve-btn`);
+        if (!button) return;
+
+        const colors = {
+            pending: 'linear-gradient(135deg, #facc15 0%, #eab308 100%)',
+            approved: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+            completed: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+            rejected: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+        };
+
+        button.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        button.style.background = colors[status] || colors.pending;
+        button.disabled = status !== 'pending';
+    }
+    // 🔄 Load user reservations (on page load)
+    async function loadUserReservations() {
+        const userId = sessionStorage.getItem('user_id');
+        if (!userId) return;
+
+        try {
+            const res = await fetch(`/reservations/user/${userId}`);
+            const data = await res.json();
+            if (data.success && Array.isArray(data.reservations)) {
+                data.reservations.forEach(r => updateReserveButton(r.product_id, r.status));
+            }
+        } catch (err) {
+            console.error('Error loading reservations:', err);
+        }
+    }
+    // 🔔 Notification pop-up
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 10000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            max-width: 300px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        `;
+
+        const colors = {
+            success: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+            error: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+            info: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+            default: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)'
+        };
+        notification.style.background = colors[type] || colors.default;
+
+        document.body.appendChild(notification);
+        setTimeout(() => (notification.style.transform = 'translateX(0)'), 100);
+        setTimeout(() => {
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    // ❤️ Enhanced Wishlist Functionality with Undo
+    let lastWishlistAction = null;
+
+    function addToWishlist(productId) {
+        if (!requireLogin('add items to wishlist')) return;
+
+        const card = document.querySelector(`[data-id="${productId}"]`);
+        const productName = card.querySelector('.product-title').textContent;
+        const productPrice = parseFloat(card.querySelector('.product-price').textContent.replace('₱', ''));
+        const button = card.querySelector('.wishlist-btn');
+
+        let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        const existingIndex = wishlist.findIndex(item => item.id === productId);
+
+        if (existingIndex === -1) {
+            // Add to wishlist
+            const wishlistItem = { 
+                id: productId, 
+                name: productName, 
+                price: productPrice, 
+                addedAt: new Date().toISOString() 
+            };
+            wishlist.push(wishlistItem);
+            localStorage.setItem('wishlist', JSON.stringify(wishlist));
+            
+            // Animate addition
+            animateWishlistAdd(button);
+            updateWishlistButton(productId, true);
+            
+            // Store last action for undo
+            lastWishlistAction = {
+                type: 'add',
+                productId: productId,
+                productName: productName,
+                timestamp: Date.now()
+            };
+            
+            // Show undo notification
+            showUndoNotification(`❤️ "${productName}" added to wishlist!`);
+            
+        } else {
+            // Remove from wishlist
+            const removedItem = wishlist[existingIndex];
+            wishlist.splice(existingIndex, 1);
+            localStorage.setItem('wishlist', JSON.stringify(wishlist));
+            
+            // Animate removal
+            animateWishlistRemove(button);
+            updateWishlistButton(productId, false);
+            
+            // Store last action for undo
+            lastWishlistAction = {
+                type: 'remove',
+                productId: productId,
+                productName: productName,
+                timestamp: Date.now()
+            };
+            
+            // Show undo notification
+            showUndoNotification(`💔 "${productName}" removed from wishlist!`);
+        }
+    }
+
+    // Undo last wishlist action
+    function undoLastWishlistAction() {
+        if (!lastWishlistAction) return;
+        
+        const { type, productId, productName } = lastWishlistAction;
+        const card = document.querySelector(`[data-id="${productId}"]`);
+        const button = card?.querySelector('.wishlist-btn');
+        
+        let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        
+        if (type === 'add') {
+            // Undo add = remove
+            const index = wishlist.findIndex(item => item.id === productId);
+            if (index !== -1) {
+                wishlist.splice(index, 1);
+                localStorage.setItem('wishlist', JSON.stringify(wishlist));
+                if (button) {
+                    animateWishlistRemove(button);
+                    updateWishlistButton(productId, false);
+                }
+                showNotification(`❌ Undo: "${productName}" removed from wishlist`, 'info');
+            }
+        } else if (type === 'remove') {
+            // Undo remove = add back
+            const productPrice = parseFloat(card?.querySelector('.product-price')?.textContent.replace('₱', '') || 0);
+            wishlist.push({ 
+                id: productId, 
+                name: productName, 
+                price: productPrice, 
+                addedAt: new Date().toISOString() 
+            });
+            localStorage.setItem('wishlist', JSON.stringify(wishlist));
+            if (button) {
+                animateWishlistAdd(button);
+                updateWishlistButton(productId, true);
+            }
+            showNotification(`❤️ Undo: "${productName}" added back to wishlist`, 'success');
+        }
+        
+        lastWishlistAction = null;
+    }
+
+    // Animation functions
+    function animateWishlistAdd(button) {
+        button.classList.remove('removing', 'favorited');
+        button.classList.add('adding');
+        
+        // Add ripple effect
+        const ripple = document.createElement('span');
+        ripple.className = 'ripple';
+        button.appendChild(ripple);
+        
+        setTimeout(() => {
+            button.classList.remove('adding');
+            button.classList.add('favorited', 'pulse');
+            setTimeout(() => {
+                button.classList.remove('pulse');
+                ripple.remove();
+            }, 600);
+        }, 600);
+    }
+
+    function animateWishlistRemove(button) {
+        button.classList.remove('adding', 'favorited', 'pulse');
+        button.classList.add('removing');
+        
+        setTimeout(() => {
+            button.classList.remove('removing');
+        }, 600);
+    }
+
+    // Enhanced undo notification
+    function showUndoNotification(message) {
+        const notification = document.createElement('div');
+        notification.className = 'notification notification-info undo-notification';
+        notification.innerHTML = `
+            <span>${message}</span>
+            <button class="undo-btn" onclick="undoLastWishlistAction()">Undo</button>
+        `;
+        
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 16px;
+            color: white;
+            font-weight: 600;
+            z-index: 10000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            max-width: 400px;
+            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        `;
+
+        document.body.appendChild(notification);
+        
+        // Slide in
+        setTimeout(() => (notification.style.transform = 'translateX(0)'), 100);
+        
+        // Auto remove after 5 seconds
+        const autoRemove = setTimeout(() => {
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
+        
+        // Clear auto-remove if user hovers
+        notification.addEventListener('mouseenter', () => clearTimeout(autoRemove));
+        notification.addEventListener('mouseleave', () => {
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        });
+    }
+
+    // ❤️ Update wishlist button state
     function updateWishlistButton(productId, isInWishlist) {
-    const button = document.querySelector(`[data-id="${productId}"] .wishlist-btn`);
-    if (button && isInWishlist) {
-        button.textContent = '♥';
-        button.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+        const button = document.querySelector(`[data-id="${productId}"] .wishlist-btn`);
+        if (button) {
+            if (isInWishlist) {
+                button.classList.add('favorited');
+            } else {
+                button.classList.remove('favorited');
+            }
+        }
     }
+    // 🛒 Update cart totals (for cart modal)
+    async function updateCartTotals() {
+        try {
+            const res = await fetch('/cart/totals');
+            const data = await res.json();
+            if (data.success) {
+                // Update subtotal, tax, shipping, total elements
+                const subtotalEl = document.getElementById('cartSubtotal');
+                const taxEl = document.getElementById('cartTax');
+                const shippingEl = document.getElementById('cartShipping');
+                const totalEl = document.getElementById('cartTotal');
+                
+                if (subtotalEl) subtotalEl.textContent = `₱${data.subtotal?.toFixed(2) || '0.00'}`;
+                if (taxEl) taxEl.textContent = `₱${data.tax?.toFixed(2) || '0.00'}`;
+                if (shippingEl) shippingEl.textContent = `₱${data.shipping?.toFixed(2) || '0.00'}`;
+                if (totalEl) totalEl.textContent = `₱${data.total?.toFixed(2) || '0.00'}`;
+            }
+        } catch (err) {
+            console.error('Error updating cart totals:', err);
+        }
     }
 
+    // 🛒 Update cart item quantity
+    async function updateCartItem(productId, quantity) {
+        try {
+            const res = await fetch('/cart/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ product_id: productId, quantity })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                await updateCartCountFromBackend();
+                await updateCartTotals();
+                showNotification('Cart updated!', 'success');
+            } else {
+                showNotification(data.message || 'Failed to update cart', 'error');
+            }
+        } catch (err) {
+            console.error('Error updating cart item:', err);
+            showNotification('Server error. Try again later.', 'error');
+        }
+    }
+
+    // 🛒 Remove item from cart
+    async function removeCartItem(productId) {
+        try {
+            const res = await fetch('/cart/remove', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ product_id: productId })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                await updateCartCountFromBackend();
+                await updateCartTotals();
+                showNotification('Item removed from cart!', 'success');
+                
+                // Remove the item from DOM if cart modal is open
+                const cartItem = document.querySelector(`[data-cart-item="${productId}"]`);
+                if (cartItem) {
+                    cartItem.remove();
+                }
+                
+                // If cart is empty, show empty message
+                const cartItemsContainer = document.querySelector('.cart-items');
+                if (cartItemsContainer && cartItemsContainer.children.length === 0) {
+                    cartItemsContainer.innerHTML = '<p class="empty-cart">Your cart is empty</p>';
+                }
+            } else {
+                showNotification(data.message || 'Failed to remove item', 'error');
+            }
+        } catch (err) {
+            console.error('Error removing cart item:', err);
+            showNotification('Server error. Try again later.', 'error');
+        }
+    }
     // 🚀 On page load
     document.addEventListener('DOMContentLoaded', async () => {
-    await updateCartCountFromBackend();
-    await loadUserReservations();
+        await updateCartCountFromBackend();
+        await loadUserReservations();
+        startCartCountInterval();
 
-    const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-    wishlist.forEach(w => updateWishlistButton(w.id, true));
+        // Initialize wishlist buttons
+        const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        wishlist.forEach(w => updateWishlistButton(w.id, true));
     });
     </script>
-
     <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
     <script>
     document.addEventListener("DOMContentLoaded", async () => {
@@ -540,7 +776,10 @@
                             <div class="product-actions">
                                 <button class="add-to-cart" onclick="addToCart(${p.product_id})">Add to Cart</button>
                                 <button class="reserve-btn" onclick="reserveProduct(${p.product_id})">Reserve</button>
-                                <button class="wishlist-btn" onclick="addToWishlist(${p.product_id})">♥</button>
+                                <button class="wishlist-btn" onclick="addToWishlist(${p.product_id})">
+                                    <img src="/static/images/heart2.ico" class="wishlist-icon default-heart" alt="Add to wishlist">
+                                    <img src="/static/images/heart1.ico" class="wishlist-icon active-heart" alt="Remove from wishlist">
+                                </button>
                             </div>
                         </div>
                     </div>`;
