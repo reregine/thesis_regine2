@@ -346,9 +346,32 @@ def update_cart_quantity(cart_id):
         if not cart_item:
             return jsonify({"success": False, "message": "Cart item not found"}), 404
 
+        #ADD STOCK VALIDATION ON SERVER SIDE TOO
+        product = IncubateeProduct.query.get(cart_item.product_id)
+        if not product:
+            return jsonify({"success": False, "message": "Product not found"}), 404
+
+        if qty > (product.stock_amount or 0):
+            return jsonify({"success": False, "message": f"Only {product.stock_amount} items available in stock"}), 400
+
         cart_item.quantity = qty
         db.session.commit()
 
         return jsonify({"success": True, "message": "Quantity updated"}), 200
     except Exception as e:
+        db.session.rollback()
         return jsonify({"success": False, "message": str(e)}), 500
+    
+@cart_bp.route("/product-stock/<int:product_id>", methods=["GET"])
+def get_product_stock(product_id):
+    """Get current stock amount for a product"""
+    try:
+        product = IncubateeProduct.query.get(product_id)
+        if not product:
+            return jsonify({"success": False, "message": "Product not found"}), 404
+
+        return jsonify({"success": True, "stock_amount": product.stock_amount or 0,"product_name": product.name}), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error fetching product stock: {e}")
+        return jsonify({"success": False, "message": "Server error"}), 500
