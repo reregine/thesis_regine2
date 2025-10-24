@@ -182,39 +182,68 @@
             showNotification('Server error. Try again later.', 'error');
         }
     }
-    // 🧾 Reserve product
-    async function reserveProduct(productId) {
-        if (!(await requireLogin('reserve products'))) return;
+        // Update reservation function to handle stock validation
+        async function reserveProduct(productId) {
+            if (!(await requireLogin('reserve products'))) return;
 
-        const quantity = 1;
-        const userId = sessionStorage.getItem('user_id');
+            // Check stock availability before proceeding
+            try {
+                const stockRes = await fetch(`/shop/product/${productId}/stock`);
+                const stockData = await stockRes.json();
+                
+                if (!stockData.success) {
+                    showNotification('Error checking product availability', 'error');
+                    return;
+                }
+                
+                if (stockData.product.current_stock <= 0) {
+                    showNotification('This product is out of stock', 'error');
+                    updateProductStockDisplay(); // Refresh display
+                    return;
+                }
+                
+                if (stockData.product.current_stock <= 5) {
+                    showNotification('⚠️ Low stock! Only ' + stockData.product.current_stock + ' items left', 'info');
+                }
 
-        try {
-            const res = await fetch('/reservations/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ product_id: productId, quantity, user_id: userId })
-            });
-
-            const contentType = res.headers.get("content-type") || "";
-            if (!contentType.includes("application/json")) {
-                showNotification('Session expired. Please log in again.', 'error');
-                window.location.href = '/login';
-                return;
+            } catch (err) {
+                console.error('Error checking stock:', err);
             }
 
-            const data = await res.json();
-            if (data.success) {
-                showNotification(`Product reserved! Status: ${data.status}`, 'success');
-                updateReserveButton(productId, data.status);
-            } else {
-                showNotification(data.message || 'Reservation failed', 'error');
+            const quantity = 1;
+            const userId = sessionStorage.getItem('user_id');
+
+            try {
+                const res = await fetch('/reservations/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product_id: productId, quantity, user_id: userId })
+                });
+
+                const contentType = res.headers.get("content-type") || "";
+                if (!contentType.includes("application/json")) {
+                    showNotification('Session expired. Please log in again.', 'error');
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const data = await res.json();
+                if (data.success) {
+                    showNotification(`Product reserved! Status: ${data.status}`, 'success');
+                    updateReserveButton(productId, data.status);
+                    
+                    // Refresh stock display after successful reservation
+                    setTimeout(() => {
+                        refreshProductStocks();
+                    }, 1000);
+                } else {
+                    showNotification(data.message || 'Reservation failed', 'error');
+                }
+            } catch (err) {
+                console.error('❌ Reservation error:', err);
+                showNotification('Server error. Try again later.', 'error');
             }
-        } catch (err) {
-            console.error('❌ Reservation error:', err);
-            showNotification('Server error. Try again later.', 'error');
         }
-    }
     //  Update reserve button based on backend status
     function updateReserveButton(productId, status) {
         const button = document.querySelector(`[data-id="${productId}"] .reserve-btn`);
@@ -739,7 +768,37 @@
             }, 200);
         }
 
-        /* Product rendering */
+        // 📦 Stock Availability Functions
+        function getStockStatus(stockCount) {
+            if (stockCount === 0) return { text: 'Out of Stock', class: 'out-of-stock' };
+            if (stockCount <= 5) return { text: 'Low Stock', class: 'low-stock' };
+            if (stockCount <= 20) return { text: 'In Stock', class: 'in-stock' };
+            return { text: 'High Stock', class: 'high-stock' };
+        }
+
+        function updateProductStockDisplay() {
+            // This would be called after successful reservations to update stock display
+            const productCards = document.querySelectorAll('.product-card');
+            productCards.forEach(card => {
+                const productId = card.dataset.id;
+                // Fetch updated stock info for each product
+                fetch(`/shop/product/${productId}/stock`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            const stockInfo = data.product;
+                            const stockElement = card.querySelector('.product-stock');
+                            if (stockElement) {
+                                const status = getStockStatus(stockInfo.current_stock);
+                                stockElement.textContent = `${status.text} (${stockInfo.current_stock} available)`;
+                                stockElement.className = `product-stock ${status.class}`;
+                            }
+                        }
+                    })
+                    .catch(err => console.error('Error updating stock display:', err));
+            });
+        }
+        // Update the renderProducts function to use stock_amount
         function renderProducts(products) {
             if (!products.length) {
                 productGrid.innerHTML = `<p style="text-align:center;color:#999;">No matching products found.</p>`;
@@ -751,6 +810,8 @@
                     ? `/${p.image_path}`
                     : "{{ url_for('static', filename='images/no-image.png') }}";
 
+                const stockStatus = getStockStatus(p.stock_amount || 0); // This now uses stock_amount from the backend
+                
                 let extraInfo = "";
                 if (p.expiration_date && p.expiration_date !== "No Expiry") {
                     extraInfo = `<div class="product-expiry">Expiration: ${p.expiration_date}</div>`;
@@ -764,6 +825,7 @@
                     <div class="product-card" data-id="${p.product_id}">
                         <div class="product-image">
                             <img src="${imgSrc}" alt="${p.name}">
+                            <div class="stock-badge ${stockStatus.class}">${stockStatus.text}</div>
                         </div>
                         <div class="product-info">
                             <div class="product-category">${p.category || "Uncategorized"}</div>
@@ -771,11 +833,16 @@
                             <p class="product-description">${p.details}</p>
                             <div class="product-details">
                                 <div class="product-price">₱${parseFloat(p.price_per_stocks).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                <div class="product-stock">${p.stock_amount} stock available</div>
                                 ${extraInfo}
                             </div>
                             <div class="product-actions">
-                                <button class="add-to-cart" onclick="addToCart(${p.product_id})">Add to Cart</button>
-                                <button class="reserve-btn" onclick="reserveProduct(${p.product_id})">Reserve</button>
+                                <button class="add-to-cart" onclick="addToCart(${p.product_id})" ${(p.stock_amount || 0) === 0 ? 'disabled' : ''}>
+                                    ${(p.stock_amount || 0) === 0 ? 'Out of Stock' : 'Add to Cart'}
+                                </button>
+                                <button class="reserve-btn" onclick="reserveProduct(${p.product_id})" ${(p.stock_amount || 0) === 0 ? 'disabled' : ''}>
+                                    ${(p.stock_amount || 0) === 0 ? 'Unavailable' : 'Reserve'}
+                                </button>
                                 <button class="wishlist-btn" onclick="addToWishlist(${p.product_id})">
                                     <img src="/static/images/heart2.ico" class="wishlist-icon default-heart" alt="Add to wishlist">
                                     <img src="/static/images/heart1.ico" class="wishlist-icon active-heart" alt="Remove from wishlist">
@@ -784,6 +851,19 @@
                         </div>
                     </div>`;
             }).join("");
+        }
+
+        // Call this after successful reservations to update stock display
+        async function refreshProductStocks() {
+            try {
+                const res = await fetch('/shop/product-availability');
+                const data = await res.json();
+                if (data.success) {
+                    updateProductStockDisplay();
+                }
+            } catch (err) {
+                console.error('Error refreshing product stocks:', err);
+            }
         }
     });
     </script>

@@ -186,3 +186,31 @@ def delete_reservation(reservation_id):
         db.session.rollback()
         current_app.logger.error(f"Error deleting reservation: {e}")
         return jsonify({"error": "Server error"}), 500
+
+@reservation_bp.route("/<int:reservation_id>/approve", methods=["POST"])
+def approve_reservation(reservation_id):
+    """Approve reservation and update product stock."""
+    try:
+        reservation = Reservation.query.get(reservation_id)
+        if not reservation:
+            return jsonify({"success": False, "error": "Reservation not found"})
+        
+        product = IncubateeProduct.query.get(reservation.product_id)
+        if not product:
+            return jsonify({"success": False, "error": "Product not found"})
+        
+        # Check if enough stock is available
+        if product.stock_amount < reservation.quantity:
+            return jsonify({"success": False, "error": "Insufficient stock"})
+        
+        # Update stock amount
+        product.stock_amount -= reservation.quantity
+        reservation.status = "approved"
+        
+        db.session.commit()
+        
+        return jsonify({"success": True, "message": "Reservation approved and stock updated"})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
