@@ -34,7 +34,7 @@
       margin-bottom: 20px;
     }
 
-    /* ================= FEATURED PRODUCTS HEADER ================= */
+    /* ================= FEATURED PRODUCTS ================= */
     .section-header {
       display: flex;
       align-items: center;
@@ -51,6 +51,7 @@
       font-family: "Poppins", sans-serif;
     }
 
+    /* Product card design remains */
     .apply-btn {
       background: #539782;
       color: white;
@@ -66,6 +67,54 @@
 
     .apply-btn:hover {
       background: #407465;
+      transform: translateY(-3px);
+    }
+
+    /* ================= CALL FOR INCUBATEES ================= */
+    .call-section {
+      background-color: #f4f8f6;
+      padding: 60px 20px;
+      text-align: center;
+      font-family: "Poppins", sans-serif;
+    }
+
+    .call-content {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .call-title {
+      color: #539782;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .call-text {
+      font-size: 1rem;
+      color: #333;
+      line-height: 1.7;
+      margin-bottom: 25px;
+      text-align: justify;
+    }
+
+    .apply-now-btn {
+      background-color: #539782;
+      color: #fff;
+      border: none;
+      padding: 12px 30px;
+      font-weight: 600;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    .apply-now-btn:hover {
+      background-color: #407465;
       transform: translateY(-3px);
     }
 
@@ -94,13 +143,46 @@
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
 
+    /* ================= CONTACT SECTION ================= */
+    .contact {
+      background-color: #539782;
+      color: white;
+      padding: 80px 20px;
+      font-family: "Poppins", sans-serif;
+    }
+
+    .contact-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .contact h2 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+
+    .contact p {
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+
+    .contact-info {
+      margin-top: 40px;
+    }
+
+    .contact-info i {
+      color: #fff;
+      margin-right: 10px;
+    }
+
     /* ================= RESPONSIVENESS ================= */
     @media (max-width: 768px) {
       .hero-title { font-size: 2rem; }
       .hero-subtitle { font-size: 1rem; }
       .section-title { font-size: 1.5rem; }
       .apply-btn { margin-top: 1rem; width: 100%; text-align: center; }
-      .section-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+      .call-content, .about-content { padding: 25px; }
     }
   </style>
 </head>
@@ -118,7 +200,7 @@
           <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
           <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
           <li><a href="#about" class="nav-link">ABOUT</a></li>
-          <li><a href="{{ url_for('contact.contact_page') }}" class="nav-link">CONTACTS</a></li>
+          <li><a href="#contact" class="nav-link">CONTACTS</a></li>
           <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒<span id="cartCountBadge" class="cart-count-badge">0</span></a></li>
           <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
         </ul>
@@ -139,7 +221,6 @@
     <div class="container">
       <div class="section-header">
         <h2 class="section-title">Featured Agri-Aqua Products</h2>
-        <button class="apply-btn">Apply as Incubate</button>
       </div>
 
       <div class="products-grid">
@@ -195,6 +276,25 @@
     </div>
   </section>
 
+  <!-- ================= CALL FOR INCUBATEES ================= -->
+  <section class="call-section" id="apply">
+    <div class="call-content">
+      <h2 class="call-title">𝐂𝐚𝐥𝐥 𝐟𝐨𝐫 𝐁𝐚𝐭𝐜𝐡 5 𝐈𝐧𝐜𝐮𝐛𝐚𝐭𝐞𝐞𝐬!</h2>
+      <p class="call-text">
+        Are you a passionate Innovator, Startup, MSME, Student, or Researcher with a groundbreaking Agri-Aqua technology idea?
+        Look no further! Capiz State University - Agri-Aqua Technology Business Incubator, a DOST-PCAARRD funded project, is excited to announce the opening of applications for Batch 5 Incubatees!
+      </p>
+      <p class="call-text">
+        This is your chance to be part of our supportive ecosystem, receive expert guidance, mentorship, access to funding opportunities, and a collaborative space to grow your Agri-Aqua tech startup.
+      </p>
+      <p class="call-text">
+        If you have what it takes to help the industry and positively impact our environment and communities, we want to hear from you!
+      </p>
+      <p class="call-text"><strong>Application Period:</strong> October 10 – 24, 2025</p>
+      <button class="apply-now-btn">Apply Now</button>
+    </div>
+  </section>
+
   <!-- ================= ABOUT SECTION ================= -->
   <section id="about" class="about">
     <div class="container">
@@ -210,6 +310,19 @@
         <p>
           ATBI continues to empower innovators to create positive social and economic impacts within the agriculture and aquaculture sectors.
         </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CONTACT SECTION ================= -->
+  <section class="contact" id="contact">
+    <div class="contact-container">
+      <h2>Contact Us</h2>
+      <p>Capiz State University - Agri-Aqua Technology Business Incubator</p>
+      <div class="contact-info">
+        <p><i class="fas fa-map-marker-alt"></i> Roxas City, Capiz, Philippines</p>
+        <p><i class="fas fa-envelope"></i> atbi@capissu.edu.ph</p>
+        <p><i class="fas fa-phone"></i> +63 912 345 6789</p>
       </div>
     </div>
   </section>
