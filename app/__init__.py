@@ -3,6 +3,7 @@ from .config import Config
 from .extension import db, migrate
 from .routes.reservation import reservation_bp
 from .routes.cart import cart_bp
+from .routes.favorites import favorites_bp
 from .routes import home, incubatee_showroom, layouts, shop, notification, reports, showroom, login, admin, contact
 
 def create_app(config_class=Config):
@@ -26,4 +27,5 @@ def create_app(config_class=Config):
     app.register_blueprint(admin.admin_bp)
     app.register_blueprint(contact.contact_bp) 
     app.register_blueprint(cart_bp) 
+    app.register_blueprint(favorites_bp)
     return app

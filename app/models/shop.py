@@ -24,3 +24,8 @@ class Shop:
         return (
             IncubateeProduct.query.filter(
                 or_(db.func.lower(IncubateeProduct.name).like(search),db.func.lower(IncubateeProduct.products).like(search),db.func.lower(IncubateeProduct.category).like(search),db.func.lower(IncubateeProduct.details).like(search),)).order_by(IncubateeProduct.added_on.desc()).all())
+        
+    @staticmethod
+    def get_product_by_id(product_id):
+        """Get a specific product by ID."""
+        return IncubateeProduct.query.filter_by(product_id=product_id).first()
