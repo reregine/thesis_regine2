@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -9,81 +9,11 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
-    /* ==============================
-       GLOBAL BASE STYLES
-       ============================== */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: "Montserrat", "Poppins", sans-serif;
-      color: #333;
-      line-height: 1.6;
-      background-color: #f9f9f9;
-    }
-
-    /* ==============================
-       HEADER DESIGN (unchanged)
-       ============================== */
-    .header {
-      background-color: #539782;
-      padding: 15px 0;
-      position: sticky;
-      top: 0;
-      width: 100%;
-      z-index: 1000;
-    }
-
-    .header-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 90%;
-      margin: 0 auto;
-    }
-
-    .nav-list {
-      display: flex;
-      list-style: none;
-      gap: 25px;
-    }
-
-    .nav-link {
-      color: white;
-      font-weight: 600;
-      text-decoration: none;
-      transition: 0.3s;
-    }
-
-    .nav-link:hover {
-      color: #e0e0e0;
-    }
-
-    .cart-btn {
-      position: relative;
-    }
-
-    .cart-count-badge {
-      position: absolute;
-      top: -8px;
-      right: -12px;
-      background-color: #ff5c5c;
-      color: white;
-      font-size: 12px;
-      border-radius: 50%;
-      padding: 3px 6px;
-      display: none;
-    }
-
-    /* ==============================
-       HERO SECTION (Modernized)
-       ============================== */
+    /* ================= HERO SECTION ================= */
     .hero {
-      background: linear-gradient(135deg, #5aa58a 0%, #4a8f7a 100%);
+      background-color: #539782;
       color: white;
+      font-family: "Poppins", sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -91,183 +21,166 @@
       text-align: center;
       height: 100vh;
       padding: 0 20px;
-      box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.1);
     }
 
     .hero-title {
       font-size: 3rem;
       font-weight: 700;
-      letter-spacing: 1px;
       margin-bottom: 10px;
     }
 
     .hero-subtitle {
-      font-size: 1.25rem;
-      color: #eaf6f2;
-      margin-bottom: 25px;
+      font-size: 1.2rem;
+      margin-bottom: 20px;
     }
 
-    .apply-btn {
-      background: #ffffff;
-      color: #4f9078;
-      border: none;
-      padding: 14px 34px;
-      border-radius: 50px;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .apply-btn:hover {
-      background: #e6e6e6;
-      transform: translateY(-2px);
-    }
-
-    /* ==============================
-       SHOP SECTION
-       ============================== */
-    .shop {
-      padding: 80px 20px;
-      background-color: #fff;
+    /* ================= FEATURED PRODUCTS ================= */
+    .section-header {
       text-align: center;
+      margin: 60px 0 30px;
     }
 
     .section-title {
-      font-size: 2rem;
+      font-size: 2.2rem;
       font-weight: 700;
-      color: #4f9078;
-      margin-bottom: 15px;
-    }
-
-    /* Apply button positioned beside title */
-    .section-header {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 15px;
-      flex-wrap: wrap;
-      margin-bottom: 40px;
-    }
-
-    .products-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 25px;
-      width: 90%;
-      margin: 0 auto;
-    }
-
-    .product-card {
-      background: #f9f9f9;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-      padding: 20px;
-      transition: transform 0.3s ease;
-    }
-
-    .product-card:hover {
-      transform: translateY(-5px);
-    }
-
-    .product-image img {
-      width: 100%;
-      height: auto;
-      border-radius: 12px;
-    }
-
-    .product-info {
-      margin-top: 10px;
-    }
-
-    .product-title {
-      font-size: 1.2rem;
-      font-weight: 600;
       color: #333;
+      font-family: "Poppins", sans-serif;
+      text-align: center;
     }
 
-    .product-price {
+    /* ================= CALL FOR INCUBATEES ================= */
+    .call-section {
+      background-color: #f4f8f6;
+      padding: 60px 20px;
+      text-align: center;
+      font-family: "Poppins", sans-serif;
+    }
+
+    .call-content {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .call-title {
       color: #539782;
-      font-weight: bold;
-      margin-top: 5px;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 20px;
     }
 
-    .add-to-cart {
-      margin-top: 10px;
+    .call-text {
+      font-size: 1rem;
+      color: #333;
+      line-height: 1.7;
+      margin-bottom: 25px;
+      text-align: justify;
+    }
+
+    .apply-now-btn {
       background-color: #539782;
-      color: white;
+      color: #fff;
       border: none;
-      padding: 10px 18px;
+      padding: 12px 30px;
+      font-weight: 600;
       border-radius: 30px;
       cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s ease;
+      transition: 0.3s ease;
     }
 
-    .add-to-cart:hover {
-      background-color: #437a67;
+    .apply-now-btn:hover {
+      background-color: #407465;
+      transform: translateY(-3px);
     }
 
-    /* ==============================
-       ABOUT SECTION
-       ============================== */
+    /* ================= ABOUT SECTION ================= */
     .about {
+      background-color: #ffffff;
       padding: 80px 20px;
-      background-color: #f4f8f7;
+      color: #333;
+      font-family: "Poppins", sans-serif;
       text-align: center;
     }
 
     .about .section-title {
+      margin-bottom: 40px;
+      color: #539782;
       font-size: 2rem;
       font-weight: 700;
-      color: #4f9078;
-      margin-bottom: 25px;
     }
 
     .about-content {
-      width: 80%;
+      max-width: 900px;
       margin: 0 auto;
-      font-size: 1rem;
-      color: #333;
       line-height: 1.8;
+      font-size: 1rem;
+      color: #444;
+      text-align: justify;
+      background: #f9fbfa;
+      padding: 40px 50px;
+      border-radius: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
-    .about-content p {
-      margin-bottom: 18px;
+    /* ================= CONTACT SECTION ================= */
+    .contact {
+      background-color: #f8fdfa;
+      padding: 80px 20px;
+      font-family: "Poppins", sans-serif;
+      color: #333;
+      text-align: center;
     }
 
-    /* ==============================
-       RESPONSIVE DESIGN
-       ============================== */
+    .contact h2 {
+      font-size: 2rem;
+      color: #539782;
+      margin-bottom: 30px;
+      font-weight: 700;
+    }
+
+    .contact-info {
+      max-width: 700px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      text-align: left;
+    }
+
+    .contact p {
+      font-size: 1rem;
+      line-height: 1.8;
+      margin: 12px 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .contact-icon {
+      font-size: 1.5rem;
+      color: #539782;
+      margin-right: 15px;
+    }
+
+    /* ================= RESPONSIVE ================= */
     @media (max-width: 768px) {
-      .hero-title {
-        font-size: 2.2rem;
-      }
-      .hero-subtitle {
-        font-size: 1rem;
-      }
-      .apply-btn {
-        padding: 12px 28px;
-        font-size: 0.95rem;
-      }
-      .section-header {
-        flex-direction: column;
-      }
-      .about-content {
-        width: 95%;
-      }
+      .hero-title { font-size: 2rem; }
+      .hero-subtitle { font-size: 1rem; }
+      .section-title { font-size: 1.6rem; }
+      .about-content, .contact-info { padding: 25px; }
     }
   </style>
 </head>
+
 <body>
-  <!-- ==============================
-       HEADER
-       ============================== -->
+  <!-- ================= HEADER ================= -->
   <header class="header">
     <div class="header-container">
       <div class="logo">
-        <img src="{{ url_for('static', filename='images/agrilogo.png') }}" alt="ATBI logo" class="logo-img" style="height:50px;">
+        <img src="{{ url_for('static', filename='images/agrilogo.png') }}" alt="ATBI logo" class="logo-img">
       </div>
       <nav class="nav-menu">
         <ul class="nav-list">
@@ -275,7 +188,7 @@
           <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
           <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
           <li><a href="#about" class="nav-link">ABOUT</a></li>
-          <li><a href="{{ url_for('contact.contact_page') }}" class="nav-link">CONTACTS</a></li>
+          <li><a href="#contact" class="nav-link">CONTACTS</a></li>
           <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒<span id="cartCountBadge" class="cart-count-badge">0</span></a></li>
           <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
         </ul>
@@ -283,114 +196,126 @@
     </div>
   </header>
 
-  <!-- ==============================
-       HERO SECTION
-       ============================== -->
+  <!-- ================= HERO SECTION ================= -->
   <section class="hero" id="home">
     <div class="hero-container">
       <h1 class="hero-title">Welcome to Agri-Aqua Mart</h1>
       <p class="hero-subtitle">Your Smart, Fresh, and Sustainable Goods</p>
-      <button class="apply-btn">Apply as Incubate</button>
     </div>
   </section>
 
-  <!-- ==============================
-       SHOP SECTION
-       ============================== -->
+  <!-- ================= SHOP SECTION ================= -->
   <section class="shop" id="shop">
-    <div class="container">
-      <div class="section-header">
-        <h2 class="section-title">Featured Agri-Aqua Products</h2>
-        <button class="apply-btn">Apply as Incubate</button>
+    <div class="section-header">
+      <h2 class="section-title">Featured Agri-Aqua Products</h2>
+    </div>
+
+    <div class="products-grid">
+      <!-- Product cards remain unchanged -->
+      <div class="product-card">
+        <div class="product-image">
+          <img src="{{ url_for('static', filename='images/smart_irrigation.png') }}" alt="Smart Irrigation System">
+        </div>
+        <div class="product-info">
+          <h3 class="product-title">Smart Irrigation System</h3>
+          <p class="product-price">$299.99</p>
+          <p class="product-expiry">Expiration: Dec 2026</p>
+          <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
+        </div>
       </div>
-      <div class="products-grid">
-        <div class="product-card">
-          <div class="product-image">
-            <img src="{{ url_for('static', filename='images/smart_irrigation.png') }}" alt="Smart Irrigation System">
-          </div>
-          <div class="product-info">
-            <h3 class="product-title">Smart Irrigation System</h3>
-            <p class="product-price">$299.99</p>
-            <p class="product-expiry">Expiration: Dec 2026</p>
-            <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
-          </div>
-        </div>
 
-        <div class="product-card">
-          <div class="product-image">
-            <img src="{{ url_for('static', filename='images/aquaponics_kit.png') }}" alt="Aquaponics Kit">
-          </div>
-          <div class="product-info">
-            <h3 class="product-title">Aquaponics Starter Kit</h3>
-            <p class="product-price">$199.99</p>
-            <p class="product-expiry">Expiration: Nov 2026</p>
-            <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
-          </div>
+      <div class="product-card">
+        <div class="product-image">
+          <img src="{{ url_for('static', filename='images/aquaponics_kit.png') }}" alt="Aquaponics Kit">
         </div>
-
-        <div class="product-card">
-          <div class="product-image">
-            <img src="{{ url_for('static', filename='images/soil_IoT.png') }}" alt="Soil Sensor">
-          </div>
-          <div class="product-info">
-            <h3 class="product-title">IoT Soil Sensor</h3>
-            <p class="product-price">$89.99</p>
-            <p class="product-expiry">Expiration: Oct 2026</p>
-            <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
-          </div>
+        <div class="product-info">
+          <h3 class="product-title">Aquaponics Starter Kit</h3>
+          <p class="product-price">$199.99</p>
+          <p class="product-expiry">Expiration: Nov 2026</p>
+          <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
         </div>
+      </div>
 
-        <div class="product-card">
-          <div class="product-image">
-            <img src="{{ url_for('static', filename='images/smart_fish.png') }}" alt="Fish Feed Optimizer">
-          </div>
-          <div class="product-info">
-            <h3 class="product-title">Smart Fish Feed Optimizer</h3>
-            <p class="product-price">$159.99</p>
-            <p class="product-expiry">Expiration: Jan 2027</p>
-            <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
-          </div>
+      <div class="product-card">
+        <div class="product-image">
+          <img src="{{ url_for('static', filename='images/soil_IoT.png') }}" alt="Soil Sensor">
+        </div>
+        <div class="product-info">
+          <h3 class="product-title">IoT Soil Sensor</h3>
+          <p class="product-price">$89.99</p>
+          <p class="product-expiry">Expiration: Oct 2026</p>
+          <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image">
+          <img src="{{ url_for('static', filename='images/smart_fish.png') }}" alt="Fish Feed Optimizer">
+        </div>
+        <div class="product-info">
+          <h3 class="product-title">Smart Fish Feed Optimizer</h3>
+          <p class="product-price">$159.99</p>
+          <p class="product-expiry">Expiration: Jan 2027</p>
+          <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ==============================
-       ABOUT SECTION
-       ============================== -->
+  <!-- ================= CALL FOR INCUBATEES ================= -->
+  <section class="call-section" id="apply">
+    <div class="call-content">
+      <h2 class="call-title">𝐂𝐚𝐥𝐥 𝐟𝐨𝐫 𝐁𝐚𝐭𝐜𝐡 5 𝐈𝐧𝐜𝐮𝐛𝐚𝐭𝐞𝐞𝐬!</h2>
+      <p class="call-text">
+        Are you a passionate Innovator, Startup, MSME, Student, or Researcher with a groundbreaking Agri-Aqua technology idea?
+        Look no further! Capiz State University - Agri-Aqua Technology Business Incubator, a DOST-PCAARRD funded project, is excited to announce the opening of applications for Batch 5 Incubatees!
+      </p>
+      <p class="call-text">
+        This is your chance to be part of our supportive ecosystem, receive expert guidance, mentorship, access to funding opportunities, and a collaborative space to grow your Agri-Aqua tech startup.
+      </p>
+      <p class="call-text">
+        If you have what it takes to help the industry and positively impact our environment and communities, we want to hear from you!
+      </p>
+      <p class="call-text"><strong>Application Period:</strong> October 10 – 24, 2025</p>
+      <button class="apply-now-btn">Apply Now</button>
+    </div>
+  </section>
+
+  <!-- ================= ABOUT SECTION ================= -->
   <section id="about" class="about">
-    <div class="container">
-      <h2 class="section-title">About ATBI</h2>
-      <div class="about-content">
-        <p>
-          The Agri-Aqua Technology Business Incubator (ATBI) is dedicated to supporting innovative entrepreneurs in agribusiness and aquaculture. 
-          We provide mentorship, technical support, and market access to help startups grow and thrive.
-        </p>
-        <p>
-          Our mission is to promote sustainable food systems and empower local farmers, innovators, and communities through innovation and collaboration.
-        </p>
-        <p>
-          ATBI partners with universities, government, and private sectors to transform research and ideas into viable, market-ready solutions.
-        </p>
-      </div>
+    <h2 class="section-title">About ATBI</h2>
+    <div class="about-content">
+      <p>
+        The Agri-Aqua Technology Business Incubator (ATBI) is a platform dedicated to nurturing agribusiness and aquaculture startups.
+        We provide mentorship, technical assistance, and access to sustainable market opportunities.
+      </p>
+      <p>
+        Our goal is to foster innovation, sustainability, and food security through collaboration with universities, experts, and local entrepreneurs.
+      </p>
+      <p>
+        ATBI continues to empower innovators to create positive social and economic impacts within the agriculture and aquaculture sectors.
+      </p>
     </div>
   </section>
 
-  <!-- ==============================
-       CART MODAL (unchanged)
-       ============================== -->
-  <div id="cartModal" class="cart-modal">
-    <div class="cart-modal-content">
-      <div id="cartContent"></div>
+  <!-- ================= CONTACT SECTION ================= -->
+  <section class="contact" id="contact">
+    <h2>Contact Us</h2>
+    <div class="contact-info">
+      <p><i class="fas fa-map-marker-alt contact-icon"></i> Roxas City, Capiz, Philippines</p>
+      <p><i class="fas fa-envelope contact-icon"></i> atbi@capissu.edu.ph</p>
+      <p><i class="fas fa-phone contact-icon"></i> +63 912 345 6789</p>
     </div>
-  </div>
+  </section>
 
   <script>
+    // Fetch and update cart count
     async function updateCartCountFromBackend() {
       try {
         const res = await fetch('/cart/count');
         const contentType = res.headers.get('content-type') || '';
         if (!contentType.includes('application/json')) return;
+
         const data = await res.json();
         if (data.success) {
           const count = data.count || 0;
@@ -405,13 +330,9 @@
       }
     }
 
-    // Call it on page load
     updateCartCountFromBackend();
-
-    // Auto-update every 15 seconds
     setInterval(updateCartCountFromBackend, 15000);
   </script>
-
   <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
 </body>
 </html>
