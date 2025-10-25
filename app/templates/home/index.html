@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -7,13 +7,18 @@
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/agrilogo.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
-    /* ================= HERO SECTION ================= */
+    html {
+      scroll-behavior: smooth; /* enables smooth scrolling */
+    }
+
+    /* ============ HERO SECTION ============ */
     .hero {
-      background-color: #539782;
-      color: white;
-      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #6fb394, #4e8c72);
+      color: #fdfdfd;
+      font-family: "Manrope", sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -24,31 +29,53 @@
     }
 
     .hero-title {
-      font-size: 3rem;
+      font-size: 3.2rem;
       font-weight: 700;
       margin-bottom: 10px;
+      color: #ffffff;
+      letter-spacing: 1px;
     }
 
     .hero-subtitle {
       font-size: 1.2rem;
+      color: #e7f5ef;
+      font-family: "Nunito", sans-serif;
       margin-bottom: 20px;
     }
 
-    /* ================= FEATURED PRODUCTS ================= */
+    /* ============ FEATURED PRODUCTS ============ */
     .section-header {
       text-align: center;
       margin-bottom: 2rem;
     }
 
     .section-title {
-      font-size: 2.2rem;
+      font-size: 2rem;
       font-weight: 700;
       color: #333;
       margin: 0;
       font-family: "Poppins", sans-serif;
     }
 
-    /* ================= CALL FOR INCUBATEES ================= */
+    .apply-btn {
+      background: #539782;
+      color: white;
+      border: none;
+      padding: 10px 26px;
+      border-radius: 30px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: "Poppins", sans-serif;
+      transition: all 0.3s ease;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    }
+
+    .apply-btn:hover {
+      background: #407465;
+      transform: translateY(-3px);
+    }
+
+    /* ============ CALL FOR INCUBATEES ============ */
     .call-section {
       background-color: #f4f8f6;
       padding: 60px 20px;
@@ -96,113 +123,97 @@
       transform: translateY(-3px);
     }
 
-    /* ================= ABOUT SECTION ================= */
+    /* ============ ABOUT SECTION ============ */
     .about {
-      background: linear-gradient(135deg, #f8fdfa, #eaf3ef);
+      background-color: #f9f9f9;
       padding: 80px 20px;
       color: #333;
       font-family: "Poppins", sans-serif;
+      line-height: 1.8;
     }
 
     .about .section-title {
       text-align: center;
       margin-bottom: 40px;
       color: #539782;
-      font-size: 2rem;
       font-weight: 700;
     }
 
-    .about-wrapper {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 40px;
-      flex-wrap: wrap;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-
     .about-content {
-      flex: 1;
-      min-width: 300px;
-      background: white;
-      padding: 40px;
-      border-radius: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      line-height: 1.8;
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 40px 50px;
+      border-radius: 16px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.08);
       text-align: justify;
+      font-size: 1rem;
     }
 
-    .about-image {
-      flex: 1;
-      min-width: 300px;
-    }
-
-    .about-image img {
-      width: 100%;
-      border-radius: 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-
-    /* ================= CONTACT SECTION ================= */
+    /* ============ CONTACT SECTION ============ */
     .contact {
-      background: #ffffff;
-      padding: 100px 20px;
-      font-family: "Poppins", sans-serif;
+      background-color: #f4f8f6;
       color: #333;
+      padding: 80px 20px;
+      font-family: "Poppins", sans-serif;
+      text-align: center;
     }
 
     .contact-container {
-      max-width: 1100px;
+      max-width: 800px;
       margin: 0 auto;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 40px;
-      align-items: center;
-    }
-
-    .contact-info {
-      text-align: left;
+      background: #fff;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
 
     .contact h2 {
-      font-size: 2.2rem;
-      color: #539782;
+      font-size: 2rem;
       margin-bottom: 20px;
+      color: #539782;
+      font-weight: 700;
     }
 
     .contact p {
       font-size: 1rem;
       line-height: 1.8;
+    }
+
+    .contact-info {
+      margin-top: 30px;
+      text-align: left;
+    }
+
+    .contact-info p {
       margin: 10px 0;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    .contact-icon {
-      font-size: 1.5rem;
+    .contact-info i {
       color: #539782;
-      margin-right: 15px;
+      font-size: 1.2rem;
+      width: 25px;
+      text-align: center;
     }
 
-    .contact-map iframe {
-      width: 100%;
-      height: 300px;
-      border: none;
-      border-radius: 15px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-
-    /* ================= RESPONSIVE ================= */
+    /* ============ RESPONSIVE DESIGN ============ */
     @media (max-width: 768px) {
-      .hero-title { font-size: 2rem; }
+      .hero-title { font-size: 2.3rem; }
       .hero-subtitle { font-size: 1rem; }
       .section-title { font-size: 1.5rem; }
-      .call-content, .about-content { padding: 25px; }
+      .apply-btn, .apply-now-btn { width: 100%; text-align: center; }
+      .about-content, .contact-container { padding: 25px; }
+      .contact-info { text-align: center; }
     }
   </style>
 </head>
 
 <body>
-  <!-- ================= HEADER ================= -->
+  <!-- HEADER -->
   <header class="header">
     <div class="header-container">
       <div class="logo">
@@ -222,7 +233,7 @@
     </div>
   </header>
 
-  <!-- ================= HERO SECTION ================= -->
+  <!-- HERO -->
   <section class="hero" id="home">
     <div class="hero-container">
       <h1 class="hero-title">Welcome to Agri-Aqua Mart</h1>
@@ -230,155 +241,82 @@
     </div>
   </section>
 
-  <!-- ================= SHOP SECTION ================= -->
+  <!-- FEATURED PRODUCTS -->
   <section class="shop" id="shop">
     <div class="container">
       <div class="section-header">
         <h2 class="section-title">Featured Agri-Aqua Products</h2>
       </div>
-
       <div class="products-grid">
-        <!-- Product cards remain unchanged -->
-        <div class="product-card">
-          <div class="product-image">
-            <img src="{{ url_for('static', filename='images/smart_irrigation.png') }}" alt="Smart Irrigation System">
-          </div>
-          <div class="product-info">
-            <h3 class="product-title">Smart Irrigation System</h3>
-            <p class="product-price">$299.99</p>
-            <p class="product-expiry">Expiration: Dec 2026</p>
-            <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
-          </div>
-        </div>
-
-        <div class="product-card">
-          <div class="product-image">
-            <img src="{{ url_for('static', filename='images/aquaponics_kit.png') }}" alt="Aquaponics Kit">
-          </div>
-          <div class="product-info">
-            <h3 class="product-title">Aquaponics Starter Kit</h3>
-            <p class="product-price">$199.99</p>
-            <p class="product-expiry">Expiration: Nov 2026</p>
-            <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
-          </div>
-        </div>
-
-        <div class="product-card">
-          <div class="product-image">
-            <img src="{{ url_for('static', filename='images/soil_IoT.png') }}" alt="Soil Sensor">
-          </div>
-          <div class="product-info">
-            <h3 class="product-title">IoT Soil Sensor</h3>
-            <p class="product-price">$89.99</p>
-            <p class="product-expiry">Expiration: Oct 2026</p>
-            <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
-          </div>
-        </div>
-
-        <div class="product-card">
-          <div class="product-image">
-            <img src="{{ url_for('static', filename='images/smart_fish.png') }}" alt="Fish Feed Optimizer">
-          </div>
-          <div class="product-info">
-            <h3 class="product-title">Smart Fish Feed Optimizer</h3>
-            <p class="product-price">$159.99</p>
-            <p class="product-expiry">Expiration: Jan 2027</p>
-            <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
-          </div>
-        </div>
+        <!-- Product cards here -->
       </div>
     </div>
   </section>
 
-  <!-- ================= CALL FOR INCUBATEES ================= -->
+  <!-- CALL FOR INCUBATEES -->
   <section class="call-section" id="apply">
     <div class="call-content">
       <h2 class="call-title">𝐂𝐚𝐥𝐥 𝐟𝐨𝐫 𝐁𝐚𝐭𝐜𝐡 5 𝐈𝐧𝐜𝐮𝐛𝐚𝐭𝐞𝐞𝐬!</h2>
       <p class="call-text">
         Are you a passionate Innovator, Startup, MSME, Student, or Researcher with a groundbreaking Agri-Aqua technology idea?
-        Look no further! Capiz State University - Agri-Aqua Technology Business Incubator, a DOST-PCAARRD funded project, is excited to announce the opening of applications for Batch 5 Incubatees!
+        Capiz State University - Agri-Aqua Technology Business Incubator (DOST-PCAARRD Funded Project) invites applications for Batch 5 Incubatees.
       </p>
       <p class="call-text">
-        This is your chance to be part of our supportive ecosystem, receive expert guidance, mentorship, access to funding opportunities, and a collaborative space to grow your Agri-Aqua tech startup.
-      </p>
-      <p class="call-text">
-        If you have what it takes to help the industry and positively impact our environment and communities, we want to hear from you!
+        Join our ecosystem for expert mentorship, funding access, and collaborative opportunities that help turn your ideas into reality.
       </p>
       <p class="call-text"><strong>Application Period:</strong> October 10 – 24, 2025</p>
       <button class="apply-now-btn">Apply Now</button>
     </div>
   </section>
 
-  <!-- ================= ABOUT SECTION ================= -->
+  <!-- ABOUT -->
   <section id="about" class="about">
-    <h2 class="section-title">About ATBI</h2>
-    <div class="about-wrapper">
-      <div class="about-image">
-        <img src="{{ url_for('static', filename='images/about_agri.png') }}" alt="About ATBI">
-      </div>
+    <div class="container">
+      <h2 class="section-title">About ATBI</h2>
       <div class="about-content">
         <p>
-          The Agri-Aqua Technology Business Incubator (ATBI) is a platform dedicated to nurturing agribusiness and aquaculture startups.
-          We provide mentorship, technical assistance, and access to sustainable market opportunities.
+          The Agri-Aqua Technology Business Incubator (ATBI) supports local innovators and startups in agriculture and aquaculture through technical mentorship, business development, and access to market opportunities.
         </p>
         <p>
-          Our goal is to foster innovation, sustainability, and food security through collaboration with universities, experts, and local entrepreneurs.
+          Our mission is to empower entrepreneurs to promote sustainable growth, innovation, and food security. ATBI serves as a bridge between researchers, universities, and industries to accelerate Agri-Aqua technologies.
         </p>
         <p>
-          ATBI continues to empower innovators to create positive social and economic impacts within the agriculture and aquaculture sectors.
+          With continuous support from DOST-PCAARRD, ATBI helps transform ideas into viable enterprises that create real community impact.
         </p>
       </div>
     </div>
   </section>
 
-  <!-- ================= CONTACT SECTION ================= -->
+  <!-- CONTACT -->
   <section class="contact" id="contact">
     <div class="contact-container">
+      <h2>Contact Us</h2>
+      <p>We’d love to hear from you. Reach out to us for inquiries or partnership opportunities.</p>
       <div class="contact-info">
-        <h2>Contact Us</h2>
-        <p><i class="fas fa-map-marker-alt contact-icon"></i> Roxas City, Capiz, Philippines</p>
-        <p><i class="fas fa-envelope contact-icon"></i> atbi@capissu.edu.ph</p>
-        <p><i class="fas fa-phone contact-icon"></i> +63 912 345 6789</p>
-      </div>
-      <div class="contact-map">
-        <iframe src="https://www.google.com/maps/embed?pb=!1m18!..." allowfullscreen="" loading="lazy"></iframe>
+        <p><i class="fas fa-map-marker-alt"></i> Roxas City, Capiz, Philippines</p>
+        <p><i class="fas fa-envelope"></i> atbi@capissu.edu.ph</p>
+        <p><i class="fas fa-phone"></i> +63 912 345 6789</p>
       </div>
     </div>
   </section>
 
-  <!-- ================= CART MODAL ================= -->
-  <div id="cartModal" class="cart-modal">
-    <div class="cart-modal-content">
-      <div id="cartContent"></div>
-    </div>
-  </div>
-
   <script>
-    // Fetch and update cart count
     async function updateCartCountFromBackend() {
       try {
-          const res = await fetch('/cart/count');
-          const contentType = res.headers.get('content-type') || '';
-          if (!contentType.includes('application/json')) return;
-
-          const data = await res.json();
-          if (data.success) {
-            const count = data.count || 0;
-            const badge = document.getElementById('cartCountBadge');
-            if (badge) {
-              badge.textContent = count;
-              badge.style.display = count > 0 ? 'inline-block' : 'none';
-            }
-          }
+        const res = await fetch('/cart/count');
+        const data = await res.json();
+        if (data.success) {
+          const badge = document.getElementById('cartCountBadge');
+          badge.textContent = data.count || 0;
+          badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+        }
       } catch (err) {
-          console.error('Error fetching cart count:', err);
+        console.error('Error fetching cart count:', err);
       }
     }
-
     updateCartCountFromBackend();
     setInterval(updateCartCountFromBackend, 15000);
   </script>
-
   <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
 </body>
 </html>
