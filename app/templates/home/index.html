@@ -1,4 +1,4 @@
-<!DOCTYPE html>  
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -36,38 +36,16 @@
 
     /* ================= FEATURED PRODUCTS ================= */
     .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
+      text-align: center;
       margin-bottom: 2rem;
     }
 
     .section-title {
-      font-size: 2rem;
+      font-size: 2.2rem;
       font-weight: 700;
       color: #333;
       margin: 0;
       font-family: "Poppins", sans-serif;
-    }
-
-    /* Product card design remains */
-    .apply-btn {
-      background: #539782;
-      color: white;
-      border: none;
-      padding: 10px 26px;
-      border-radius: 30px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: "Poppins", sans-serif;
-      transition: all 0.3s ease;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-    }
-
-    .apply-btn:hover {
-      background: #407465;
-      transform: translateY(-3px);
     }
 
     /* ================= CALL FOR INCUBATEES ================= */
@@ -120,68 +98,104 @@
 
     /* ================= ABOUT SECTION ================= */
     .about {
-      background-color: #f9f9f9;
+      background: linear-gradient(135deg, #f8fdfa, #eaf3ef);
       padding: 80px 20px;
       color: #333;
       font-family: "Poppins", sans-serif;
-      line-height: 1.8;
     }
 
     .about .section-title {
       text-align: center;
       margin-bottom: 40px;
       color: #539782;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .about-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      flex-wrap: wrap;
+      max-width: 1100px;
+      margin: 0 auto;
     }
 
     .about-content {
-      max-width: 900px;
-      margin: 0 auto;
-      text-align: justify;
+      flex: 1;
+      min-width: 300px;
       background: white;
       padding: 40px;
       border-radius: 20px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      line-height: 1.8;
+      text-align: justify;
+    }
+
+    .about-image {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .about-image img {
+      width: 100%;
+      border-radius: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
     /* ================= CONTACT SECTION ================= */
     .contact {
-      background-color: #539782;
-      color: white;
-      padding: 80px 20px;
+      background: #ffffff;
+      padding: 100px 20px;
       font-family: "Poppins", sans-serif;
+      color: #333;
     }
 
     .contact-container {
-      max-width: 1000px;
+      max-width: 1100px;
       margin: 0 auto;
-      text-align: center;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 40px;
+      align-items: center;
+    }
+
+    .contact-info {
+      text-align: left;
     }
 
     .contact h2 {
-      font-size: 2rem;
+      font-size: 2.2rem;
+      color: #539782;
       margin-bottom: 20px;
     }
 
     .contact p {
       font-size: 1rem;
       line-height: 1.8;
+      margin: 10px 0;
     }
 
-    .contact-info {
-      margin-top: 40px;
+    .contact-icon {
+      font-size: 1.5rem;
+      color: #539782;
+      margin-right: 15px;
     }
 
-    .contact-info i {
-      color: #fff;
-      margin-right: 10px;
+    .contact-map iframe {
+      width: 100%;
+      height: 300px;
+      border: none;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
 
-    /* ================= RESPONSIVENESS ================= */
+    /* ================= RESPONSIVE ================= */
     @media (max-width: 768px) {
       .hero-title { font-size: 2rem; }
       .hero-subtitle { font-size: 1rem; }
       .section-title { font-size: 1.5rem; }
-      .apply-btn { margin-top: 1rem; width: 100%; text-align: center; }
       .call-content, .about-content { padding: 25px; }
     }
   </style>
@@ -297,11 +311,14 @@
 
   <!-- ================= ABOUT SECTION ================= -->
   <section id="about" class="about">
-    <div class="container">
-      <h2 class="section-title">About ATBI</h2>
+    <h2 class="section-title">About ATBI</h2>
+    <div class="about-wrapper">
+      <div class="about-image">
+        <img src="{{ url_for('static', filename='images/about_agri.png') }}" alt="About ATBI">
+      </div>
       <div class="about-content">
         <p>
-          The Agri-Aqua Technology Business Incubator (ATBI) is a platform dedicated to nurturing agribusiness and aquaculture startups. 
+          The Agri-Aqua Technology Business Incubator (ATBI) is a platform dedicated to nurturing agribusiness and aquaculture startups.
           We provide mentorship, technical assistance, and access to sustainable market opportunities.
         </p>
         <p>
@@ -317,12 +334,14 @@
   <!-- ================= CONTACT SECTION ================= -->
   <section class="contact" id="contact">
     <div class="contact-container">
-      <h2>Contact Us</h2>
-      <p>Capiz State University - Agri-Aqua Technology Business Incubator</p>
       <div class="contact-info">
-        <p><i class="fas fa-map-marker-alt"></i> Roxas City, Capiz, Philippines</p>
-        <p><i class="fas fa-envelope"></i> atbi@capissu.edu.ph</p>
-        <p><i class="fas fa-phone"></i> +63 912 345 6789</p>
+        <h2>Contact Us</h2>
+        <p><i class="fas fa-map-marker-alt contact-icon"></i> Roxas City, Capiz, Philippines</p>
+        <p><i class="fas fa-envelope contact-icon"></i> atbi@capissu.edu.ph</p>
+        <p><i class="fas fa-phone contact-icon"></i> +63 912 345 6789</p>
+      </div>
+      <div class="contact-map">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!..." allowfullscreen="" loading="lazy"></iframe>
       </div>
     </div>
   </section>
