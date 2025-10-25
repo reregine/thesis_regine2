@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -7,18 +7,83 @@
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/agrilogo.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
-    html {
-      scroll-behavior: smooth; /* enables smooth scrolling */
+    /* ==============================
+       GLOBAL BASE STYLES
+       ============================== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    /* ============ HERO SECTION ============ */
+    body {
+      font-family: "Montserrat", "Poppins", sans-serif;
+      color: #333;
+      line-height: 1.6;
+      background-color: #f9f9f9;
+    }
+
+    /* ==============================
+       HEADER DESIGN (unchanged)
+       ============================== */
+    .header {
+      background-color: #539782;
+      padding: 15px 0;
+      position: sticky;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+    }
+
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 90%;
+      margin: 0 auto;
+    }
+
+    .nav-list {
+      display: flex;
+      list-style: none;
+      gap: 25px;
+    }
+
+    .nav-link {
+      color: white;
+      font-weight: 600;
+      text-decoration: none;
+      transition: 0.3s;
+    }
+
+    .nav-link:hover {
+      color: #e0e0e0;
+    }
+
+    .cart-btn {
+      position: relative;
+    }
+
+    .cart-count-badge {
+      position: absolute;
+      top: -8px;
+      right: -12px;
+      background-color: #ff5c5c;
+      color: white;
+      font-size: 12px;
+      border-radius: 50%;
+      padding: 3px 6px;
+      display: none;
+    }
+
+    /* ==============================
+       HERO SECTION (Modernized)
+       ============================== */
     .hero {
-      background: linear-gradient(135deg, #6fb394, #4e8c72);
-      color: #fdfdfd;
-      font-family: "Manrope", sans-serif;
+      background: linear-gradient(135deg, #5aa58a 0%, #4a8f7a 100%);
+      color: white;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -26,198 +91,183 @@
       text-align: center;
       height: 100vh;
       padding: 0 20px;
+      box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.1);
     }
 
     .hero-title {
-      font-size: 3.2rem;
+      font-size: 3rem;
       font-weight: 700;
-      margin-bottom: 10px;
-      color: #ffffff;
       letter-spacing: 1px;
+      margin-bottom: 10px;
     }
 
     .hero-subtitle {
-      font-size: 1.2rem;
-      color: #e7f5ef;
-      font-family: "Nunito", sans-serif;
-      margin-bottom: 20px;
+      font-size: 1.25rem;
+      color: #eaf6f2;
+      margin-bottom: 25px;
     }
 
-    /* ============ FEATURED PRODUCTS ============ */
-    .section-header {
+    .apply-btn {
+      background: #ffffff;
+      color: #4f9078;
+      border: none;
+      padding: 14px 34px;
+      border-radius: 50px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .apply-btn:hover {
+      background: #e6e6e6;
+      transform: translateY(-2px);
+    }
+
+    /* ==============================
+       SHOP SECTION
+       ============================== */
+    .shop {
+      padding: 80px 20px;
+      background-color: #fff;
       text-align: center;
-      margin-bottom: 2rem;
     }
 
     .section-title {
       font-size: 2rem;
       font-weight: 700;
-      color: #333;
-      margin: 0;
-      font-family: "Poppins", sans-serif;
+      color: #4f9078;
+      margin-bottom: 15px;
     }
 
-    .apply-btn {
-      background: #539782;
+    /* Apply button positioned beside title */
+    .section-header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 25px;
+      width: 90%;
+      margin: 0 auto;
+    }
+
+    .product-card {
+      background: #f9f9f9;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      transition: transform 0.3s ease;
+    }
+
+    .product-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .product-image img {
+      width: 100%;
+      height: auto;
+      border-radius: 12px;
+    }
+
+    .product-info {
+      margin-top: 10px;
+    }
+
+    .product-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .product-price {
+      color: #539782;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .add-to-cart {
+      margin-top: 10px;
+      background-color: #539782;
       color: white;
       border: none;
-      padding: 10px 26px;
+      padding: 10px 18px;
       border-radius: 30px;
-      font-weight: 600;
       cursor: pointer;
-      font-family: "Poppins", sans-serif;
+      font-weight: 600;
       transition: all 0.3s ease;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.15);
     }
 
-    .apply-btn:hover {
-      background: #407465;
-      transform: translateY(-3px);
+    .add-to-cart:hover {
+      background-color: #437a67;
     }
 
-    /* ============ CALL FOR INCUBATEES ============ */
-    .call-section {
-      background-color: #f4f8f6;
-      padding: 60px 20px;
-      text-align: center;
-      font-family: "Poppins", sans-serif;
-    }
-
-    .call-content {
-      max-width: 900px;
-      margin: 0 auto;
-      background: white;
-      padding: 40px;
-      border-radius: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-
-    .call-title {
-      color: #539782;
-      font-size: 1.8rem;
-      font-weight: 700;
-      margin-bottom: 20px;
-    }
-
-    .call-text {
-      font-size: 1rem;
-      color: #333;
-      line-height: 1.7;
-      margin-bottom: 25px;
-      text-align: justify;
-    }
-
-    .apply-now-btn {
-      background-color: #539782;
-      color: #fff;
-      border: none;
-      padding: 12px 30px;
-      font-weight: 600;
-      border-radius: 30px;
-      cursor: pointer;
-      transition: 0.3s ease;
-    }
-
-    .apply-now-btn:hover {
-      background-color: #407465;
-      transform: translateY(-3px);
-    }
-
-    /* ============ ABOUT SECTION ============ */
+    /* ==============================
+       ABOUT SECTION
+       ============================== */
     .about {
-      background-color: #f9f9f9;
       padding: 80px 20px;
-      color: #333;
-      font-family: "Poppins", sans-serif;
-      line-height: 1.8;
+      background-color: #f4f8f7;
+      text-align: center;
     }
 
     .about .section-title {
-      text-align: center;
-      margin-bottom: 40px;
-      color: #539782;
+      font-size: 2rem;
       font-weight: 700;
+      color: #4f9078;
+      margin-bottom: 25px;
     }
 
     .about-content {
-      max-width: 900px;
+      width: 80%;
       margin: 0 auto;
-      background: #fff;
-      padding: 40px 50px;
-      border-radius: 16px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.08);
-      text-align: justify;
       font-size: 1rem;
-    }
-
-    /* ============ CONTACT SECTION ============ */
-    .contact {
-      background-color: #f4f8f6;
       color: #333;
-      padding: 80px 20px;
-      font-family: "Poppins", sans-serif;
-      text-align: center;
-    }
-
-    .contact-container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: #fff;
-      padding: 40px;
-      border-radius: 16px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-
-    .contact h2 {
-      font-size: 2rem;
-      margin-bottom: 20px;
-      color: #539782;
-      font-weight: 700;
-    }
-
-    .contact p {
-      font-size: 1rem;
       line-height: 1.8;
     }
 
-    .contact-info {
-      margin-top: 30px;
-      text-align: left;
+    .about-content p {
+      margin-bottom: 18px;
     }
 
-    .contact-info p {
-      margin: 10px 0;
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .contact-info i {
-      color: #539782;
-      font-size: 1.2rem;
-      width: 25px;
-      text-align: center;
-    }
-
-    /* ============ RESPONSIVE DESIGN ============ */
+    /* ==============================
+       RESPONSIVE DESIGN
+       ============================== */
     @media (max-width: 768px) {
-      .hero-title { font-size: 2.3rem; }
-      .hero-subtitle { font-size: 1rem; }
-      .section-title { font-size: 1.5rem; }
-      .apply-btn, .apply-now-btn { width: 100%; text-align: center; }
-      .about-content, .contact-container { padding: 25px; }
-      .contact-info { text-align: center; }
+      .hero-title {
+        font-size: 2.2rem;
+      }
+      .hero-subtitle {
+        font-size: 1rem;
+      }
+      .apply-btn {
+        padding: 12px 28px;
+        font-size: 0.95rem;
+      }
+      .section-header {
+        flex-direction: column;
+      }
+      .about-content {
+        width: 95%;
+      }
     }
   </style>
 </head>
-
 <body>
-  <!-- HEADER -->
+  <!-- ==============================
+       HEADER
+       ============================== -->
   <header class="header">
     <div class="header-container">
       <div class="logo">
-        <img src="{{ url_for('static', filename='images/agrilogo.png') }}" alt="ATBI logo" class="logo-img">
+        <img src="{{ url_for('static', filename='images/agrilogo.png') }}" alt="ATBI logo" class="logo-img" style="height:50px;">
       </div>
       <nav class="nav-menu">
         <ul class="nav-list">
@@ -225,7 +275,7 @@
           <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
           <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
           <li><a href="#about" class="nav-link">ABOUT</a></li>
-          <li><a href="#contact" class="nav-link">CONTACTS</a></li>
+          <li><a href="{{ url_for('contact.contact_page') }}" class="nav-link">CONTACTS</a></li>
           <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒<span id="cartCountBadge" class="cart-count-badge">0</span></a></li>
           <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
         </ul>
@@ -233,90 +283,135 @@
     </div>
   </header>
 
-  <!-- HERO -->
+  <!-- ==============================
+       HERO SECTION
+       ============================== -->
   <section class="hero" id="home">
     <div class="hero-container">
       <h1 class="hero-title">Welcome to Agri-Aqua Mart</h1>
       <p class="hero-subtitle">Your Smart, Fresh, and Sustainable Goods</p>
+      <button class="apply-btn">Apply as Incubate</button>
     </div>
   </section>
 
-  <!-- FEATURED PRODUCTS -->
+  <!-- ==============================
+       SHOP SECTION
+       ============================== -->
   <section class="shop" id="shop">
     <div class="container">
       <div class="section-header">
         <h2 class="section-title">Featured Agri-Aqua Products</h2>
+        <button class="apply-btn">Apply as Incubate</button>
       </div>
       <div class="products-grid">
-        <!-- Product cards here -->
+        <div class="product-card">
+          <div class="product-image">
+            <img src="{{ url_for('static', filename='images/smart_irrigation.png') }}" alt="Smart Irrigation System">
+          </div>
+          <div class="product-info">
+            <h3 class="product-title">Smart Irrigation System</h3>
+            <p class="product-price">$299.99</p>
+            <p class="product-expiry">Expiration: Dec 2026</p>
+            <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <div class="product-image">
+            <img src="{{ url_for('static', filename='images/aquaponics_kit.png') }}" alt="Aquaponics Kit">
+          </div>
+          <div class="product-info">
+            <h3 class="product-title">Aquaponics Starter Kit</h3>
+            <p class="product-price">$199.99</p>
+            <p class="product-expiry">Expiration: Nov 2026</p>
+            <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <div class="product-image">
+            <img src="{{ url_for('static', filename='images/soil_IoT.png') }}" alt="Soil Sensor">
+          </div>
+          <div class="product-info">
+            <h3 class="product-title">IoT Soil Sensor</h3>
+            <p class="product-price">$89.99</p>
+            <p class="product-expiry">Expiration: Oct 2026</p>
+            <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
+          </div>
+        </div>
+
+        <div class="product-card">
+          <div class="product-image">
+            <img src="{{ url_for('static', filename='images/smart_fish.png') }}" alt="Fish Feed Optimizer">
+          </div>
+          <div class="product-info">
+            <h3 class="product-title">Smart Fish Feed Optimizer</h3>
+            <p class="product-price">$159.99</p>
+            <p class="product-expiry">Expiration: Jan 2027</p>
+            <button class="add-to-cart"><i class="fas fa-cart-plus"></i> Add to Cart</button>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- CALL FOR INCUBATEES -->
-  <section class="call-section" id="apply">
-    <div class="call-content">
-      <h2 class="call-title">𝐂𝐚𝐥𝐥 𝐟𝐨𝐫 𝐁𝐚𝐭𝐜𝐡 5 𝐈𝐧𝐜𝐮𝐛𝐚𝐭𝐞𝐞𝐬!</h2>
-      <p class="call-text">
-        Are you a passionate Innovator, Startup, MSME, Student, or Researcher with a groundbreaking Agri-Aqua technology idea?
-        Capiz State University - Agri-Aqua Technology Business Incubator (DOST-PCAARRD Funded Project) invites applications for Batch 5 Incubatees.
-      </p>
-      <p class="call-text">
-        Join our ecosystem for expert mentorship, funding access, and collaborative opportunities that help turn your ideas into reality.
-      </p>
-      <p class="call-text"><strong>Application Period:</strong> October 10 – 24, 2025</p>
-      <button class="apply-now-btn">Apply Now</button>
-    </div>
-  </section>
-
-  <!-- ABOUT -->
+  <!-- ==============================
+       ABOUT SECTION
+       ============================== -->
   <section id="about" class="about">
     <div class="container">
       <h2 class="section-title">About ATBI</h2>
       <div class="about-content">
         <p>
-          The Agri-Aqua Technology Business Incubator (ATBI) supports local innovators and startups in agriculture and aquaculture through technical mentorship, business development, and access to market opportunities.
+          The Agri-Aqua Technology Business Incubator (ATBI) is dedicated to supporting innovative entrepreneurs in agribusiness and aquaculture. 
+          We provide mentorship, technical support, and market access to help startups grow and thrive.
         </p>
         <p>
-          Our mission is to empower entrepreneurs to promote sustainable growth, innovation, and food security. ATBI serves as a bridge between researchers, universities, and industries to accelerate Agri-Aqua technologies.
+          Our mission is to promote sustainable food systems and empower local farmers, innovators, and communities through innovation and collaboration.
         </p>
         <p>
-          With continuous support from DOST-PCAARRD, ATBI helps transform ideas into viable enterprises that create real community impact.
+          ATBI partners with universities, government, and private sectors to transform research and ideas into viable, market-ready solutions.
         </p>
       </div>
     </div>
   </section>
 
-  <!-- CONTACT -->
-  <section class="contact" id="contact">
-    <div class="contact-container">
-      <h2>Contact Us</h2>
-      <p>We’d love to hear from you. Reach out to us for inquiries or partnership opportunities.</p>
-      <div class="contact-info">
-        <p><i class="fas fa-map-marker-alt"></i> Roxas City, Capiz, Philippines</p>
-        <p><i class="fas fa-envelope"></i> atbi@capissu.edu.ph</p>
-        <p><i class="fas fa-phone"></i> +63 912 345 6789</p>
-      </div>
+  <!-- ==============================
+       CART MODAL (unchanged)
+       ============================== -->
+  <div id="cartModal" class="cart-modal">
+    <div class="cart-modal-content">
+      <div id="cartContent"></div>
     </div>
-  </section>
+  </div>
 
   <script>
     async function updateCartCountFromBackend() {
       try {
         const res = await fetch('/cart/count');
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) return;
         const data = await res.json();
         if (data.success) {
+          const count = data.count || 0;
           const badge = document.getElementById('cartCountBadge');
-          badge.textContent = data.count || 0;
-          badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+          if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+          }
         }
       } catch (err) {
         console.error('Error fetching cart count:', err);
       }
     }
+
+    // Call it on page load
     updateCartCountFromBackend();
+
+    // Auto-update every 15 seconds
     setInterval(updateCartCountFromBackend, 15000);
   </script>
+
   <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
 </body>
 </html>
