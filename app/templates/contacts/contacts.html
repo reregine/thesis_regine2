@@ -4,232 +4,634 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Contact Us - ATBI</title>
-
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <style>
-    /* ======== GLOBAL RESET ======== */
+    /* ======== GLOBAL RESET & BASE STYLES ======== */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
 
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
     body {
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4f7f4;
-      color: #333;
+      font-family: 'Inter', 'Segoe UI Emoji', 'Noto Color Emoji', 'Arial Unicode MS', sans-serif;
       line-height: 1.6;
+      color: #1a1a1a;
+      overflow-x: hidden;
+      background: linear-gradient(135deg, #f0f9ff 0%, #ecfdf5 50%, #f0fdf4 100%);
+      min-height: 100vh;
     }
 
     /* ======== HEADER ======== */
-    header {
-      background-color: #006400;
-      color: white;
-      text-align: center;
-      padding: 1.5rem 1rem;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 1rem 0;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      border-bottom: 1px solid rgba(34, 197, 94, 0.1);
     }
 
-    header h1 {
-      font-size: 2rem;
-      font-weight: 600;
-      letter-spacing: 0.5px;
+    .header-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+
+    .logo-img {
+      height: 50px;
+      width: auto;
+      border-radius: 8px;
+      transition: transform 0.3s ease;
+    }
+
+    .logo-img:hover {
+      transform: scale(1.05);
+    }
+
+    .nav-menu {
+      display: flex;
+      align-items: center;
+    }
+
+    .nav-list {
+      display: flex;
+      list-style: none;
+      gap: 2rem;
+      margin: 0;
+      padding: 0;
+    }
+
+    .nav-link {
+      display: inline-block;
+      position: relative;
+      color: #1a1a1a;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      padding: 0.6rem 1.2rem;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .nav-link:hover {
+      background: rgba(34, 197, 94, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #22c55e, #16a34a, #22c55e);
+      transition: all 0.4s ease;
+      transform: translateX(-50%);
+      border-radius: 2px;
+    }
+
+    .nav-link:hover::after {
+      width: 80%;
+      box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
     }
 
     /* ======== MAIN CONTENT ======== */
     main {
-      max-width: 1000px;
-      margin: 40px auto;
-      padding: 20px;
+      max-width: 1200px;
+      margin: 100px auto 40px;
+      padding: 0 20px;
     }
 
-    .contact-info {
-      background: white;
-      border-radius: 10px;
-      padding: 25px;
+    .page-header {
       text-align: center;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-      margin-bottom: 40px;
+      margin-bottom: 3rem;
     }
 
-    .contact-info h2 {
-      color: #006400;
-      margin-bottom: 15px;
-      font-size: 1.5rem;
+    .page-title {
+      font-size: 3rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.05);
     }
 
-    .contact-info p {
-      font-size: 1.05rem;
-      margin-bottom: 8px;
-    }
-
-    /* ======== CONTACT FORM ======== */
-    .contact-form {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    .page-subtitle {
+      font-size: 1.2rem;
+      color: #4b5563;
       max-width: 600px;
       margin: 0 auto;
     }
 
-    .contact-form h2 {
-      color: #006400;
-      text-align: center;
-      margin-bottom: 20px;
-      font-size: 1.5rem;
+    /* ======== CONTACT GRID ======== */
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 3rem;
+      margin-bottom: 4rem;
     }
 
-    .contact-form label {
+    /* Contact Info Card */
+    .contact-info-card {
+      background: white;
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .contact-info-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    }
+
+    .contact-info-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(34, 197, 94, 0.15);
+    }
+
+    .contact-info-card h2 {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+      color: #1a1a1a;
+      font-weight: 700;
+    }
+
+    .contact-details {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .contact-item:hover {
+      background: rgba(34, 197, 94, 0.05);
+      transform: translateX(5px);
+    }
+
+    .contact-icon {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    }
+
+    .contact-text {
+      flex: 1;
+    }
+
+    .contact-text h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+      color: #1a1a1a;
+    }
+
+    .contact-text p {
+      color: #4b5563;
+      font-size: 1rem;
+    }
+
+    /* Contact Form */
+    .contact-form-card {
+      background: white;
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .contact-form-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    }
+
+    .contact-form-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(34, 197, 94, 0.15);
+    }
+
+    .contact-form-card h2 {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+      color: #1a1a1a;
+      font-weight: 700;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
       display: block;
       font-weight: 600;
-      margin-bottom: 6px;
-      color: #333;
+      margin-bottom: 0.5rem;
+      color: #1a1a1a;
+      font-size: 0.95rem;
     }
 
-    .contact-form input,
-    .contact-form textarea {
+    .form-control {
       width: 100%;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
+      padding: 1rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
       font-size: 1rem;
-      margin-bottom: 15px;
-      transition: border-color 0.3s ease;
+      transition: all 0.3s ease;
+      background: #fafafa;
+      font-family: inherit;
     }
 
-    .contact-form input:focus,
-    .contact-form textarea:focus {
-      border-color: #006400;
+    .form-control:focus {
       outline: none;
-    }
-
-    .contact-form textarea {
-      height: 130px;
-      resize: none;
-    }
-
-    .contact-form button {
-      width: 100%;
-      padding: 12px;
-      background-color: #006400;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background-color 0.3s ease;
-    }
-
-    .contact-form button:hover {
-      background-color: #228B22;
-    }
-
-    /* ======== FOOTER ======== */
-    footer {
-      background-color: #333;
-      color: #fff;
-      text-align: center;
-      padding: 20px;
-      margin-top: 50px;
-      font-size: 0.95rem;
-    }
-
-    /* ======== BACK TO HOME BUTTON ======== */
-    .back-home {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 1000;
-    }
-
-    .back-home a {
-      display: inline-block;
-      background-color: #006400;
-      color: #fff;
-      text-decoration: none;
-      padding: 12px 18px;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      transition: background 0.3s ease, transform 0.2s ease;
-    }
-
-    .back-home a:hover {
-      background-color: #228B22;
+      border-color: #22c55e;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+      background: white;
       transform: translateY(-2px);
     }
 
-    /* ======== RESPONSIVENESS ======== */
+    .form-control::placeholder {
+      color: #9ca3af;
+    }
+
+    textarea.form-control {
+      height: 140px;
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    .submit-button {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color: white;
+      border: none;
+      padding: 1.2rem 2.5rem;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .submit-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .submit-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(34, 197, 94, 0.4);
+    }
+
+    .submit-button:hover::before {
+      left: 100%;
+    }
+
+    .submit-button:active {
+      transform: translateY(-1px);
+    }
+
+    /* ======== MAP SECTION ======== */
+    .map-section {
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.1);
+      margin-bottom: 4rem;
+    }
+
+    .map-header {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color: white;
+      padding: 1.5rem 2rem;
+    }
+
+    .map-header h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .map-placeholder {
+      height: 300px;
+      background: linear-gradient(135deg, #f0f9ff, #ecfdf5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #4b5563;
+      font-size: 1.1rem;
+    }
+
+    .map-placeholder i {
+      font-size: 3rem;
+      color: #22c55e;
+      margin-bottom: 1rem;
+    }
+
+    /* ======== FOOTER ======== */
+    .footer {
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+      color: white;
+      text-align: center;
+      padding: 2rem 0;
+      border-top: 1px solid rgba(34, 197, 94, 0.2);
+      margin-top: 4rem;
+    }
+
+    /* ======== RESPONSIVE DESIGN ======== */
+    @media (max-width: 1024px) {
+      .contact-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+      
+      .page-title {
+        font-size: 2.5rem;
+      }
+    }
+
     @media (max-width: 768px) {
-      header h1 {
-        font-size: 1.8rem;
-      }
-
       main {
-        margin: 20px auto;
-        padding: 15px;
+        margin: 120px auto 30px;
+        padding: 0 15px;
       }
-
-      .contact-info, .contact-form {
-        padding: 20px;
+      
+      .page-title {
+        font-size: 2.2rem;
       }
+      
+      .page-subtitle {
+        font-size: 1.1rem;
+      }
+      
+      .contact-info-card,
+      .contact-form-card {
+        padding: 2rem;
+      }
+      
+      .contact-item {
+        padding: 0.8rem;
+      }
+      
+      .contact-icon {
+        width: 45px;
+        height: 45px;
+        font-size: 1.1rem;
+      }
+    }
 
-      .contact-form button {
-        font-size: 0.95rem;
+    @media (max-width: 600px) {
+      .contact-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .page-title {
+        font-size: 2rem;
+      }
+      
+      .contact-info-card,
+      .contact-form-card {
+        padding: 1.5rem;
+      }
+      
+      .contact-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.8rem;
+      }
+      
+      .contact-icon {
+        align-self: center;
       }
     }
 
     @media (max-width: 480px) {
-      .contact-info h2, .contact-form h2 {
-        font-size: 1.3rem;
+      .page-title {
+        font-size: 1.8rem;
       }
+      
+      .page-subtitle {
+        font-size: 1rem;
+      }
+      
+      .contact-info-card h2,
+      .contact-form-card h2 {
+        font-size: 1.5rem;
+      }
+      
+      .form-control {
+        padding: 0.8rem;
+      }
+      
+      .submit-button {
+        padding: 1rem 2rem;
+        font-size: 1rem;
+      }
+    }
 
-      .contact-form input,
-      .contact-form textarea {
-        font-size: 0.95rem;
+    /* Animation */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
       }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .contact-info-card,
+    .contact-form-card,
+    .map-section {
+      animation: fadeInUp 0.6s ease-out;
     }
   </style>
 </head>
 
 <body>
-  <header>
-    <h1>Contact Us</h1>
+  <!-- ================= HEADER ================= -->
+  <header class="header">
+    <div class="header-container">
+      <div class="logo">
+        <img src="{{ url_for('static', filename='images/agrilogo.png') }}" alt="ATBI logo" class="logo-img">
+      </div>
+      <nav class="nav-menu">
+        <ul class="nav-list">
+          <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
+          <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
+          <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
+          <li><a href="{{ url_for('about.about_page')}}" class="nav-link">ABOUT</a></li>
+          <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
+          <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒<span id="cartCountBadge" class="cart-count-badge">0</span></a></li>
+          <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
+        </ul>
+      </nav>
+    </div>
   </header>
 
   <main>
-    <section class="contact-info">
-      <h2>ATBI Office</h2>
-      <p><strong>Address:</strong> Brgy. Dayao, Roxas City, Capiz, Philippines</p>
-      <p><strong>Phone:</strong> +63 912 345 6789</p>
-      <p><strong>Email:</strong> atbi@capsu.com</p>
-    </section>
+    <!-- ================= PAGE HEADER ================= -->
+    <div class="page-header">
+      <h1 class="page-title">Get In Touch</h1>
+      <p class="page-subtitle">We'd love to hear from you. Send us a message and we'll respond as soon as possible.</p>
+    </div>
 
-    <section class="contact-form">
-      <h2>Send Us a Message</h2>
-      <form action="#" method="post">
-        <label for="name">Full Name</label>
-        <input type="text" id="name" name="name" placeholder="Your Name" required>
+    <!-- ================= CONTACT GRID ================= -->
+    <div class="contact-grid">
+      <!-- Contact Information -->
+      <div class="contact-info-card">
+        <h2>Contact Information</h2>
+        <div class="contact-details">
+          <div class="contact-item">
+            <div class="contact-icon">
+              <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <div class="contact-text">
+              <h3>Address</h3>
+              <p>Brgy. Dayao, Roxas City, Capiz, Philippines</p>
+            </div>
+          </div>
+          
+          <div class="contact-item">
+            <div class="contact-icon">
+              <i class="fas fa-phone"></i>
+            </div>
+            <div class="contact-text">
+              <h3>Phone</h3>
+              <p>+63 912 345 6789</p>
+            </div>
+          </div>
+          
+          <div class="contact-item">
+            <div class="contact-icon">
+              <i class="fas fa-envelope"></i>
+            </div>
+            <div class="contact-text">
+              <h3>Email</h3>
+              <p>atbi@capsu.com</p>
+            </div>
+          </div>
+          
+          <div class="contact-item">
+            <div class="contact-icon">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="contact-text">
+              <h3>Office Hours</h3>
+              <p>Monday - Friday: 8:00 AM - 5:00 PM</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <label for="email">Email Address</label>
-        <input type="email" id="email" name="email" placeholder="your@email.com" required>
+      <!-- Contact Form -->
+      <div class="contact-form-card">
+        <h2>Send Us a Message</h2>
+        <form action="#" method="post">
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" name="name" class="form-control" placeholder="Your Name" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" class="form-control" placeholder="your@email.com" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" name="subject" class="form-control" placeholder="What is this regarding?" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" class="form-control" placeholder="Write your message here..." required></textarea>
+          </div>
+          
+          <button type="submit" class="submit-button">
+            <i class="fas fa-paper-plane"></i> Send Message
+          </button>
+        </form>
+      </div>
+    </div>
 
-        <label for="message">Message</label>
-        <textarea id="message" name="message" placeholder="Write your message here..." required></textarea>
-
-        <button type="submit">Send Message</button>
-      </form>
-    </section>
+    <!-- ================= MAP SECTION ================= -->
+    <div class="map-section">
+      <div class="map-header">
+        <h2><i class="fas fa-map-pin"></i> Find Our Location</h2>
+      </div>
+      <div class="map-placeholder">
+        <div style="text-align: center;">
+          <i class="fas fa-map-marked-alt"></i>
+          <p>Interactive Map Location</p>
+          <p style="font-size: 0.9rem; margin-top: 0.5rem;">Brgy. Dayao, Roxas City, Capiz</p>
+        </div>
+      </div>
+    </div>
   </main>
 
-  <footer>
-    <p>&copy; 2025 ATBI. All Rights Reserved.</p>
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer">
+    <p>&copy; 2025 ATBI - Agri-Aqua Technology Business Incubator. All Rights Reserved.</p>
   </footer>
-
-  <!-- Floating Back to Home Button -->
-  <div class="back-home">
-    <a href="{{ url_for('home.index') }}">← Back to Home</a>
-  </div>
 </body>
 </html>
