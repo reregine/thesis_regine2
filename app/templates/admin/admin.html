@@ -6,13 +6,18 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
   <title>Admin - Incubatee Management</title>
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/agrilogo.png') }}">
-
 </head>
 <body>
   <!-- 🌿 Header with Logout and Add Incubatee -->
   <div class="header">
     <h1>🏢 ATBI Admin Dashboard</h1>
     <div class="header-actions">
+      <button class="sales-report-btn" id="openSalesReportModal">
+        <span class="icon">📊</span> Sales Report
+      </button>
+      <button class="view-orders-btn" id="openOrdersModal">
+        <span class="icon">📋</span> View Orders
+      </button>
       <button class="add-incubatee-btn" id="openIncubateeModal">
         <span class="icon">➕</span> Add Incubatee
       </button>
@@ -74,6 +79,114 @@
           <button type="submit" class="btn-save">Save</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Orders Modal -->
+  <div id="ordersModal" class="modal">
+    <div class="modal-content large-modal">
+      <div class="modal-header">
+        <h2>📋 Order Reservations</h2>
+        <button class="close-btn" id="closeOrdersModalTop">&times;</button>
+      </div>
+      
+      <div class="filter-bar">
+        <label for="orderStatusFilter">Filter by Status:</label>
+        <select id="orderStatusFilter" class="filter-select">
+          <option value="all">All Orders</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="completed">Completed</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+
+      <div class="orders-container">
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>User ID</th>
+              <th>Product</th>
+              <th>Quantity</th>
+              <th>Price</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Reserved Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="orders-list">
+            <!-- Orders will be populated here -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" id="closeOrdersModalBottom">Close</button>
+      </div>
+    </div>
+  </div>
+  <!-- Sales Report Modal -->
+  <div id="salesReportModal" class="modal">
+    <div class="modal-content large-modal">
+      <div class="modal-header">
+        <h2>📊 Sales Report</h2>
+        <button class="close-btn" id="closeSalesReportModalTop">&times;</button>
+      </div>
+      
+      <div class="filter-bar">
+        <label for="reportDate">Select Date:</label>
+        <input type="date" id="reportDate" class="filter-select" value="{{ formattedDate }}">
+        <button class="btn-generate" onclick="generateSalesReport()">Generate Report</button>
+        <button class="btn-export" onclick="exportSalesReport()">Export to CSV</button>
+      </div>
+
+      <div class="sales-summary">
+        <div class="summary-cards">
+          <div class="summary-card">
+            <div class="summary-value" id="totalSales">₱0.00</div>
+            <div class="summary-label">Total Sales</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-value" id="totalOrders">0</div>
+            <div class="summary-label">Total Orders</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-value" id="completedOrders">0</div>
+            <div class="summary-label">Completed Orders</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-value" id="totalProducts">0</div>
+            <div class="summary-label">Products Sold</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="orders-container">
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>User ID</th>
+              <th>Product</th>
+              <th>Quantity</th>
+              <th>Unit Price</th>
+              <th>Total Price</th>
+              <th>Status</th>
+              <th>Reserved Date</th>
+              <th>Completed Date</th>
+            </tr>
+          </thead>
+          <tbody id="sales-report-list">
+            <!-- Sales report data will be populated here -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" id="closeSalesReportModalBottom">Close</button>
+      </div>
     </div>
   </div>
 
@@ -195,484 +308,7 @@
     </div>
   </div>
 
-<script>
-    // Auto display today's date
-    const today = new Date();
-    const formattedDate = today.toISOString().split('T')[0]; 
-    document.getElementById("current-date").innerText = formattedDate;
-
-    // Load products when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-      loadProducts();
-    });
-    let allProducts = []; // store all products globally
-
-    // Function to load all products from database
-    function loadProducts() {
-      fetch("/admin/get-products")
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            allProducts = data.products; // store all
-            displayProducts(allProducts);
-          } else {
-            console.error("Error loading products:", data.error);
-            showEmptyState();
-          }
-        })
-        .catch(error => {
-          console.error("Error fetching products:", error);
-          showEmptyState();
-        });
-    }
-
-    // Category filter event
-    document.getElementById("categoryFilter").addEventListener("change", (e) => {
-      const selectedCategory = e.target.value;
-      if (selectedCategory === "all") {
-        displayProducts(allProducts);
-      } else {
-        const filtered = allProducts.filter(p => p.category === selectedCategory);
-        displayProducts(filtered);
-      }
-    });
-    // Function to display products in the table
-    function displayProducts(products) {
-      const tableBody = document.getElementById("product-list");
-      
-      if (products.length === 0) {
-        showEmptyState();
-        return;
-      }
-
-      tableBody.innerHTML = products.map(product => `
-        <tr>
-          <td>${escapeHtml(product.name)}</td>
-          <td>${escapeHtml(product.stock_no)}</td>
-          <td>${escapeHtml(product.products)}</td>
-          <td>${product.stock_amount}</td>
-          <td>₱${product.price_per_stocks.toFixed(2)}</td>
-          <td>
-            ${product.image_path ? 
-              `<img src="/${product.image_path}" width="60" style="border-radius:6px;" alt="${escapeHtml(product.name)}">` : 
-              'No Image'
-            }
-          </td>
-          <td>${product.expiration_date}</td>
-          <td>${product.warranty ? product.warranty : "—"}</td>
-          <td>${product.added_on}</td>
-          <td>
-            <button class="btn-delete" onclick="deleteProduct(${product.incubatee_id})" title="Delete product">
-              <span class="btn-delete-icon">🗑️</span>
-              <span class="btn-delete-text">Delete</span>
-            </button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    // Function to show empty state
-    function showEmptyState() {
-      const tableBody = document.getElementById("product-list");
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="9" style="text-align:center; color:#777; padding:20px;">
-            No products added yet. Add your first product using the form on the left.
-          </td>
-        </tr>
-      `;
-    }
-
-    // Helper function to prevent XSS
-    function escapeHtml(unsafe) {
-      return unsafe
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    // Validation: Stock Number → Only numbers and dash
-    document.getElementById("stock_no").addEventListener("input", function() {
-      this.value = this.value.replace(/[^0-9-]/g, "");
-    });
-
-    // Validation: Offered Services → Only letters and spaces
-    document.getElementById("products").addEventListener("input", function() {
-      this.value = this.value.replace(/[^a-zA-Z\s]/g, "");
-    });
-
-    // Preview uploaded image
-    document.getElementById("product_image").addEventListener("change", function(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const preview = document.getElementById("preview-img");
-          preview.src = e.target.result;
-          preview.style.display = "block";
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-
-    // Handle form submission
-    document.getElementById("incubateeForm").addEventListener("submit", function(event) {
-      event.preventDefault();
-
-      if (!this.checkValidity()) {
-        this.reportValidity();
-        return;
-      }
-
-      const saveBtn = this.querySelector(".btn");
-      saveBtn.classList.add("btn-loading");
-      saveBtn.textContent = "Saving...";
-      
-      const formData = new FormData();
-      formData.append("incubatee_id", document.getElementById("incubatee_id").value);
-      formData.append("name", document.getElementById("name").value);
-      formData.append("stock_no", document.getElementById("stock_no").value);
-      formData.append("products", document.getElementById("products").value);
-      formData.append("stock_amount", document.getElementById("stock_amount").value);
-      formData.append("price_per_stocks", document.getElementById("price_per_stocks").value);
-      formData.append("details", document.getElementById("details").value);
-      formData.append("category", document.getElementById("category").value);
-      formData.append("warranty", document.getElementById("warranty").value);
-      formData.append("expiration_date", document.getElementById("expiration_date").value);
-      formData.append("added_on", formattedDate);
-
-      // Append the image file
-      const imageFile = document.getElementById("product_image").files[0];
-      if (imageFile) {
-        formData.append("product_image", imageFile);
-      }
-
-      // Send to backend
-      fetch("/admin/add-product", {
-        method: "POST",
-        body: formData
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          // Reset form
-          this.reset();
-          document.getElementById("preview-img").style.display = "none";
-          
-          // Reload the product list to show the new product
-          loadProducts();
-          
-          // Show success message
-          alert("✅ Product saved successfully!");
-        } else {
-          alert("⚠️ Error saving product: " + data.error);
-        }
-      })
-      .catch(error => {
-        console.error("Error:", error);
-        alert("⚠️ Failed to connect to server.");
-      })
-      .finally(() => {
-        saveBtn.classList.remove("btn-loading");
-        saveBtn.textContent = "Save Product";
-      });
-    });
-
-    // Enhanced delete product function with loading state
-    function deleteProduct(productId) {
-      if (confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
-        const deleteBtn = event.target.closest('.btn-delete');
-        
-        // Add loading state
-        if (deleteBtn) {
-          deleteBtn.classList.add('loading');
-          deleteBtn.innerHTML = '<span class="btn-delete-icon">🗑️</span><span class="btn-delete-text">Deleting...</span>';
-        }
-        
-        fetch(`/admin/delete-product/${productId}`, {
-          method: "DELETE"
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            // Show success message
-            showNotification('✅ Product deleted successfully!', 'success');
-            loadProducts(); // Reload the list
-          } else {
-            showNotification('⚠️ Error deleting product: ' + data.error, 'error');
-          }
-        })
-        .catch(error => {
-          console.error("Error:", error);
-          showNotification('⚠️ Failed to delete product.', 'error');
-        })
-        .finally(() => {
-          // Remove loading state
-          if (deleteBtn) {
-            deleteBtn.classList.remove('loading');
-            deleteBtn.innerHTML = '<span class="btn-delete-icon">🗑️</span><span class="btn-delete-text">Delete</span>';
-          }
-        });
-      }
-    }
-
-    // Optional: Notification function for better UX
-    function showNotification(message, type = 'info') {
-      const notification = document.createElement('div');
-      notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        border-radius: 8px;
-        color: white;
-        font-weight: 600;
-        z-index: 1000;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        transform: translateX(100%);
-        transition: transform 0.3s ease;
-        ${type === 'success' ? 'background: linear-gradient(135deg, #22c55e, #16a34a);' : ''}
-        ${type === 'error' ? 'background: linear-gradient(135deg, #e63946, #d90429);' : ''}
-        ${type === 'info' ? 'background: linear-gradient(135deg, #3b82f6, #1d4ed8);' : ''}
-      `;
-      
-      notification.textContent = message;
-      document.body.appendChild(notification);
-      
-      // Animate in
-      setTimeout(() => notification.style.transform = 'translateX(0)', 100);
-      
-      // Auto remove after 3 seconds
-      setTimeout(() => {
-        notification.style.transform = 'translateX(100%)';
-        setTimeout(() => notification.remove(), 300);
-      }, 3000);
-    }
-    // Logout functionality (keep your existing code)
-    function logout() {
-      document.getElementById("logout-modal").classList.remove("hidden");
-    }
-
-    document.getElementById("confirm-logout").addEventListener("click", function() {
-      fetch('/login/logout', {
-        method: 'GET',
-        credentials: 'include'
-      })
-      .then(response => {
-        window.location.href = '/login/';
-      })
-      .catch(error => {
-        console.error('Logout error:', error);
-        window.location.href = '/login/';
-      });
-    });
-
-    document.getElementById("cancel-logout").addEventListener("click", function() {
-      document.getElementById("logout-modal").classList.add("hidden");
-    });
-
-    // 🎯 Modal open/close logic
-    const incubateeModal = document.getElementById("incubateeModal");
-    const openIncubateeModal = document.getElementById("openIncubateeModal");
-    const closeIncubateeModalTop = document.getElementById("closeIncubateeModalTop");
-    const closeIncubateeModalBottom = document.getElementById("closeIncubateeModalBottom");
-
-    // Open modal
-    if (openIncubateeModal) {
-      openIncubateeModal.addEventListener("click", () => {
-        incubateeModal.classList.add("active");
-      });
-    }
-
-    // Close modal from both buttons
-    [closeIncubateeModalTop, closeIncubateeModalBottom].forEach(btn => {
-      if (btn) {
-        btn.addEventListener("click", () => {
-          incubateeModal.classList.remove("active");
-        });
-      }
-    });
-
-    // Close modal when clicking outside
-    if (incubateeModal) {
-      incubateeModal.addEventListener("click", (e) => {
-        if (e.target === incubateeModal) {
-          incubateeModal.classList.remove("active");
-        }
-      });
-    }
-    document.addEventListener("DOMContentLoaded", () => {
-      const form = document.getElementById("incubateeAddForm");
-      const modal = document.getElementById("incubateeModal");
-      const incubateeSelect = document.getElementById("incubatee_id"); // dropdown in Add Product modal
-
-      // Handle form submission (Add Incubatee)
-      if (form) {
-        form.addEventListener("submit", async (e) => {
-          e.preventDefault();
-
-          const formData = {
-            first_name: document.getElementById("first_name").value.trim(),
-            middle_name: document.getElementById("middle_name").value.trim(),
-            last_name: document.getElementById("last_name").value.trim(),
-            company_name: document.getElementById("company_name").value.trim(),
-            email: document.getElementById("email").value.trim(),
-            phone_number: document.getElementById("phone_number").value.trim(),
-            contact_info: document.getElementById("contact_info").value.trim(),
-            batch: document.getElementById("batch").value.trim()
-          };
-
-          try {
-            const res = await fetch("/admin/add-incubatee", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(formData)
-            });
-
-            const data = await res.json();
-
-            if (data.success) {
-              showToast("✅ Incubatee added successfully!", "success");
-              form.reset();
-              modal.classList.remove("active");
-
-              // 🔄 Refresh dropdown instantly
-              await refreshIncubateeDropdown(incubateeSelect);
-            } else {
-              showToast("❌ " + (data.error || "Failed to add incubatee."), "error");
-            }
-          } catch (err) {
-            console.error("Error:", err);
-            showToast("⚠️ Error adding incubatee. Please try again.", "error");
-          }
-        });
-      }
-
-      // 🔁 Fetch incubatees again for dropdown
-      async function refreshIncubateeDropdown(selectEl) {
-        if (!selectEl) return;
-
-        try {
-          const res = await fetch("/admin/get-incubatees");
-          const data = await res.json();
-
-          if (data.success && data.incubatees.length > 0) {
-            selectEl.innerHTML = `<option value="">-- Select Incubatee --</option>`;
-            data.incubatees.forEach((i) => {
-              const option = document.createElement("option");
-              option.value = i.incubatee_id;
-              option.textContent = `${i.last_name}, ${i.first_name} (${i.company_name || "No Company"})`;
-              selectEl.appendChild(option);
-            });
-          } else {
-            selectEl.innerHTML = `<option value="">No incubatees found</option>`;
-          }
-        } catch (err) {
-          console.error("Error refreshing dropdown:", err);
-        }
-      }
-
-      // ✨ Nice Toast Notification
-      function showToast(message, type = "info") {
-        const toast = document.createElement("div");
-        toast.textContent = message;
-        toast.className = `toast toast-${type}`;
-        document.body.appendChild(toast);
-
-        // basic styles
-        toast.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: ${type === "success" ? "#16a34a" : type === "error" ? "#dc2626" : "#2563eb"};
-          color: white;
-          padding: 10px 18px;
-          border-radius: 8px;
-          font-weight: 600;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-          opacity: 0;
-          transform: translateY(-10px);
-          transition: all 0.3s ease;
-          z-index: 2000;
-        `;
-        setTimeout(() => {
-          toast.style.opacity = "1";
-          toast.style.transform = "translateY(0)";
-        }, 50);
-
-        setTimeout(() => {
-          toast.style.opacity = "0";
-          toast.style.transform = "translateY(-10px)";
-          setTimeout(() => toast.remove(), 300);
-        }, 2500);
-      }
-    });
-
-document.addEventListener("DOMContentLoaded", async () => {
-  const searchContainer = document.querySelector(".incubatee-search-container");
-  const searchInput = document.getElementById("incubateeSearch");
-  const dropdown = document.getElementById("incubateeDropdown");
-  const hiddenInput = document.getElementById("incubatee_id");
-
-  if (!searchInput || !dropdown || !hiddenInput) return;
-
-  let incubatees = [];
-
-  // 🔹 Fetch incubatees from backend
-  try {
-    const res = await fetch("/admin/get-incubatees");
-    const data = await res.json();
-    if (data.success) incubatees = data.incubatees;
-  } catch (err) {
-    console.error("❌ Failed to load incubatees", err);
-  }
-
-  // 🔹 Show filtered list as user types
-  searchInput.addEventListener("input", () => {
-    const query = searchInput.value.toLowerCase().trim();
-    dropdown.innerHTML = "";
-
-    if (!query) {
-      dropdown.classList.add("hidden");
-      return;
-    }
-
-    const filtered = incubatees.filter(i =>
-      `${i.first_name} ${i.last_name} ${i.company_name || ""}`
-        .toLowerCase()
-        .includes(query)
-    );
-
-    if (filtered.length === 0) {
-      dropdown.innerHTML = `<div class="dropdown-item empty">No matches found</div>`;
-    } else {
-      filtered.forEach(i => {
-        const item = document.createElement("div");
-        item.classList.add("dropdown-item");
-        item.textContent = `${i.first_name} ${i.last_name} (${i.company_name || "No Company"})`;
-        item.dataset.id = i.incubatee_id;
-        item.addEventListener("click", () => {
-          searchInput.value = item.textContent;
-          hiddenInput.value = item.dataset.id;
-          dropdown.classList.add("hidden");
-        });
-        dropdown.appendChild(item);
-      });
-    }
-
-    dropdown.classList.remove("hidden");
-  });
-
-  // 🔹 Hide dropdown when clicking outside
-  document.addEventListener("click", (e) => {
-    if (!searchContainer.contains(e.target)) {
-      dropdown.classList.add("hidden");
-    }
-  });
-});
-
-</script>
+  <!-- Include the external JavaScript file -->
+  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>
 </html>

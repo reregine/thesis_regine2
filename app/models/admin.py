@@ -46,6 +46,6 @@ class IncubateeProduct(db.Model):
 
     # 🔧 Add this line
     reservations = db.relationship("Reservation", back_populates="product", cascade="all, delete-orphan")
-
+    sales_reports = db.relationship("SalesReport", back_populates="product", cascade="all, delete-orphan")
     def __repr__(self):
         return f"<IncubateeProduct {self.name}>"

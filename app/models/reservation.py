@@ -17,8 +17,8 @@ class Reservation(db.Model):
     updated_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    user = db.relationship("User",back_populates="reservations",foreign_keys=[user_id])
-    product = db.relationship("IncubateeProduct",back_populates="reservations",foreign_keys=[product_id])
-
+    user = db.relationship("User", back_populates="reservations", foreign_keys=[user_id])
+    product = db.relationship("IncubateeProduct", back_populates="reservations", foreign_keys=[product_id])
+    sales_report = db.relationship("SalesReport", back_populates="reservation", uselist=False, cascade="all, delete-orphan")
     def __repr__(self):
         return f"<Reservation {self.reservation_id}>"

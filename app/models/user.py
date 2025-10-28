@@ -10,9 +10,8 @@ class User(db.Model):
     password_hash = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
-    # 🔧 Add this line
     reservations = db.relationship("Reservation", back_populates="user", cascade="all, delete-orphan")
-
+    sales_reports = db.relationship("SalesReport", back_populates="user", cascade="all, delete-orphan")
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 

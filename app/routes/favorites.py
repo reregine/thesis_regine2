@@ -2,7 +2,6 @@ from flask import Blueprint, jsonify, request, session, url_for
 from ..extension import db
 from ..models.favorites import Favorite
 from ..models.admin import IncubateeProduct
-from ..models.user import User
 
 favorites_bp = Blueprint("favorites_bp", __name__, url_prefix="/favorites")
 

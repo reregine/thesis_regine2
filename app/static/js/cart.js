@@ -216,7 +216,7 @@ function attachCartScripts(container) {
     async function initializeStatusTabs(container) {
         const tabs = container.querySelectorAll(".status-tab");
         
-        // 🟢 FIX: Ensure user ID is available before loading counts
+        // FIX: Ensure user ID is available before loading counts
         let userId = getUserId();
         if (!userId) {
             userId = await fetchUserInfo();
@@ -339,15 +339,7 @@ function attachCartScripts(container) {
                         
                         // FIXED: Using Intl.DateTimeFormat with Asia/Manila timezone
                         const reservedDate = new Date(reservation.reserved_at);
-                        const formattedDate = new Intl.DateTimeFormat('en-US', {
-                            timeZone: 'Asia/Manila',
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
-                        }).format(reservedDate);
+                        const formattedDate = new Intl.DateTimeFormat('en-US', {timeZone: 'Asia/Manila',year: 'numeric',month: 'short',day: 'numeric',hour: '2-digit', minute: '2-digit',hour12: true}).format(reservedDate);
                         
                         return `
                         <div class="reservation-item">

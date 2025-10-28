@@ -4,7 +4,7 @@ from .extension import db, migrate
 from .routes.reservation import reservation_bp
 from .routes.cart import cart_bp
 from .routes.favorites import favorites_bp
-from .routes import home, incubatee_showroom, layouts, shop, notification, reports, showroom, login, admin, contact, about
+from .routes import home, incubatee_showroom, layouts, shop, notification, showroom, login, admin, contact, about
 
 def create_app(config_class=Config):
     app = Flask(__name__, template_folder="templates", static_folder="static")
@@ -21,7 +21,6 @@ def create_app(config_class=Config):
     app.register_blueprint(layouts.layouts_bp)  
     app.register_blueprint(login.login_bp)
     app.register_blueprint(notification.notif_bp)
-    app.register_blueprint(reports.report_bp)
     app.register_blueprint(reservation_bp)
     app.register_blueprint(shop.shop_bp)  
     app.register_blueprint(showroom.showroom_bp)

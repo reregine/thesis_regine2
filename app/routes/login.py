@@ -30,11 +30,7 @@ def authenticate():
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session['admin_logged_in'] = True
             session['admin_username'] = username
-            return jsonify({
-                'success': True,
-                'message': '✅ Login successful! Welcome Admin!',
-                'redirect_url': url_for('admin.admin_dashboard')
-            })
+            return jsonify({'success': True,'message': '✅ Login successful! Welcome Admin!','redirect_url': url_for('admin.admin_dashboard')})
 
         # Normal user login
         user = User.query.filter_by(username=username).first()

@@ -1,9 +1,11 @@
+
 from flask import Blueprint, jsonify, request, session, current_app, render_template, redirect, url_for
 from ..extension import db
 from ..models.cart import Cart
 from ..models.reservation import Reservation
 from ..models.admin import IncubateeProduct
-from datetime import datetime, timezone
+import datetime
+from ..routes.reservation import process_product_reservations
 
 cart_bp = Blueprint("cart_bp", __name__, url_prefix="/cart")
 
@@ -229,20 +231,11 @@ def get_cart_totals():
         shipping = 0
         total = subtotal
 
-        return jsonify({
-            'success': True,
-            'subtotal': float(subtotal),
-            'tax': float(tax),
-            'shipping': float(shipping),
-            'total': float(total)
-        })
+        return jsonify({'success': True,'subtotal': float(subtotal),'tax': float(tax),'shipping': float(shipping),'total': float(total)})
 
     except Exception as e:
         current_app.logger.error(f"Error calculating cart totals: {e}")
-        return jsonify({
-            'success': False,
-            'message': f'Error calculating totals: {str(e)}'
-        }), 500
+        return jsonify({'success': False,'message': f'Error calculating totals: {str(e)}'}), 500
 
 @cart_bp.route("/reserve", methods=["POST"])
 def reserve_selected_items():
@@ -261,22 +254,60 @@ def reserve_selected_items():
         if not selected_items:
             return jsonify({"success": False, "message": "No valid items found"}), 404
 
-        # FIX: Use server's local time
-        current_time = datetime.now()
-
+        # Prepare items for bulk reservation
+        reservation_items = []
         for item in selected_items:
-            reservation = Reservation(user_id=user_id,product_id=item.product_id,quantity=item.quantity,status="pending",reserved_at=current_time)
+            reservation_items.append({
+                "product_id": item.product_id,
+                "quantity": item.quantity
+            })
+
+        # Use the bulk reservation endpoint
+        bulk_data = {"user_id": user_id,"items": reservation_items}
+        
+        # Create reservations using the bulk endpoint
+        reservation_results = []
+        for item in selected_items:
+            # Create individual reservation
+            reservation = Reservation(user_id=user_id,product_id=item.product_id,quantity=item.quantity,status="pending",reserved_at=datetime.utcnow())
             db.session.add(reservation)
-            db.session.delete(item)  # remove from cart after reservation
+            reservation_results.append({"cart_id": item.cart_id,"product_id": item.product_id,"reservation": reservation})
 
         db.session.commit()
-        return jsonify({"success": True, "message": "Items reserved successfully"})
+
+        # Process each product's reservation queue
+        processed_products = set(item.product_id for item in selected_items)
+        for product_id in processed_products:
+            process_product_reservations(product_id)
+
+        # Remove successfully processed items from cart
+        success_count = 0
+        for result in reservation_results:
+            db.session.refresh(result["reservation"])
+            if result["reservation"].status in ["approved", "pending"]:
+                cart_item = Cart.query.get(result["cart_id"])
+                if cart_item:
+                    db.session.delete(cart_item)
+                    success_count += 1
+
+        db.session.commit()
+
+        # Get final status of all reservations
+        final_results = []
+        for result in reservation_results:
+            final_results.append({
+                "product_id": result["product_id"],
+                "reservation_id": result["reservation"].reservation_id,
+                "status": result["reservation"].status,
+                "reason": result["reservation"].rejected_reason if result["reservation"].status == "rejected" else None})
+
+        return jsonify({"success": True, "message": f"Processed {success_count} items successfully","results": final_results})
 
     except Exception as e:
-        current_app.logger.error(f"Error reserving items: {e}")
         db.session.rollback()
+        current_app.logger.error(f"Error reserving items: {e}")
         return jsonify({"success": False, "message": "Server error"}), 500
-
+    
 @cart_bp.route("/cancel-reservation/<int:reservation_id>", methods=["POST"])
 def cancel_reservation(reservation_id):
     try:
