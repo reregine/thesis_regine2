@@ -4,7 +4,7 @@ from ..extension import db
 from ..models.cart import Cart
 from ..models.reservation import Reservation
 from ..models.admin import IncubateeProduct
-import datetime
+from datetime import datetime, timezone
 from ..routes.reservation import process_product_reservations
 
 cart_bp = Blueprint("cart_bp", __name__, url_prefix="/cart")
@@ -269,7 +269,7 @@ def reserve_selected_items():
         reservation_results = []
         for item in selected_items:
             # Create individual reservation
-            reservation = Reservation(user_id=user_id,product_id=item.product_id,quantity=item.quantity,status="pending",reserved_at=datetime.utcnow())
+            reservation = Reservation(user_id=user_id,product_id=item.product_id,quantity=item.quantity,status="pending",reserved_at=datetime.now(timezone.utc))
             db.session.add(reservation)
             reservation_results.append({"cart_id": item.cart_id,"product_id": item.product_id,"reservation": reservation})
 

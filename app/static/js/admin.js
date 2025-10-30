@@ -2,6 +2,10 @@
 let allProducts = [];
 const today = new Date();
 const formattedDate = today.toISOString().split('T')[0]; 
+// Auto-cancellation timeout in milliseconds (1 minute for testing)
+//const AUTO_CANCEL_TIMEOUT = 60 * 1000; // 1 minute
+// For production, use: 
+const AUTO_CANCEL_TIMEOUT = 3 * 24 * 60 * 60 * 1000; // 3 days
 
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -12,14 +16,13 @@ function initializeAdmin() {
     // Auto display today's date
     document.getElementById("current-date").innerText = formattedDate;
 
-    // Load products when page loads
-    loadProducts();
+    loadProducts(); // Load products when page loads
 
-    // Initialize event listeners
-    initializeEventListeners();
+    initializeEventListeners(); // Initialize event listeners
     
-    // Initialize incubatee search
-    initializeIncubateeSearch();
+    initializeIncubateeSearch(); // Initialize incubatee search
+
+    startAutoCancellationChecker();  // Start auto-cancellation checker
 }
 
 function initializeEventListeners() {
@@ -571,7 +574,51 @@ function initializeOrdersModal() {
     });
 }
 
-// Load all orders with optional status filter
+//new function to start the auto-cancellation checker
+function startAutoCancellationChecker() {
+    // Check every 30 seconds for reservations that need to be auto-cancelled
+    setInterval(() => {
+        checkAndAutoCancelReservations();
+    }, 30000); // Check every 30 seconds
+    
+    // Also check immediately when admin page loads
+    checkAndAutoCancelReservations();
+}
+
+// New function to check and auto-cancel overdue reservations
+async function checkAndAutoCancelReservations() {
+    try {
+        const response = await fetch('/reservations/check-overdue', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                timeout_ms: AUTO_CANCEL_TIMEOUT
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.rejected_count > 0) {
+            console.log(`Auto-rejected ${data.rejected_count} overdue reservations`);
+            
+            // Show notification
+            showNotification(`⚠️ Auto-rejected ${data.rejected_count} overdue reservations`, "info");
+            
+            // If orders modal is open, refresh the orders list
+            const ordersModal = document.getElementById("ordersModal");
+            if (ordersModal && ordersModal.classList.contains("active")) {
+                const currentFilter = document.getElementById("orderStatusFilter").value;
+                loadAllOrders(currentFilter);
+            }
+        }
+    } catch (error) {
+        console.error('Error in auto-rejection check:', error);
+    }
+}
+
+// Update the loadAllOrders function to include auto-cancellation check
 function loadAllOrders(status = 'all') {
     const ordersList = document.getElementById("orders-list");
     ordersList.innerHTML = '<tr><td colspan="9" class="empty-orders">Loading orders...</td></tr>';
@@ -606,6 +653,9 @@ function loadAllOrders(status = 'all') {
             }
 
             displayOrders(filteredReservations);
+            
+            // Check for reservations that need auto-cancellation
+            checkReservationsForAutoCancel(processedReservations);
         })
         .catch(error => {
             console.error("Error loading orders:", error);
@@ -613,7 +663,26 @@ function loadAllOrders(status = 'all') {
         });
 }
 
-// Display orders in the table - Updated for automatic approval
+// New function to check reservations client-side and trigger auto-cancellation
+function checkReservationsForAutoCancel(reservations) {
+    const now = new Date().getTime();
+    const overdueReservations = reservations.filter(reservation => {
+        if (reservation.status !== 'approved') return false;
+        
+        const reservedTime = new Date(reservation.reserved_at).getTime();
+        const timeDiff = now - reservedTime;
+        
+        return timeDiff > AUTO_CANCEL_TIMEOUT;
+    });
+    
+    if (overdueReservations.length > 0) {
+        console.log(`Found ${overdueReservations.length} overdue reservations for auto-cancellation`);
+        // Trigger server-side auto-cancellation
+        checkAndAutoCancelReservations();
+    }
+}
+
+// Display orders in the table - Updated for automatic approval and overdue handling
 function displayOrders(reservations) {
     const ordersList = document.getElementById("orders-list");
     
@@ -623,24 +692,58 @@ function displayOrders(reservations) {
     }
 
     ordersList.innerHTML = reservations.map(reservation => {
-        // Determine status display
+        // Calculate time remaining for auto-cancellation
+        const reservedTime = new Date(reservation.reserved_at).getTime();
+        const now = new Date().getTime();
+        const timeDiff = now - reservedTime;
+        const timeRemaining = AUTO_CANCEL_TIMEOUT - timeDiff;
+        
+        // Check if reservation is overdue
+        const isOverdue = timeRemaining <= 0;
+        
+        let timeWarning = '';
         let statusDisplay = '';
+        
         if (reservation.status === 'pending') {
-            statusDisplay = '<span style="color: #d97706; font-weight: 600;">Pending Auto-Approval</span>';
+            statusDisplay = '<span class="status-pending">Pending Auto-Approval</span>';
         } else if (reservation.status === 'approved') {
-            statusDisplay = `
-                <button class="btn-pickup" onclick="completeReservation(${reservation.reservation_id})" title="Mark as Picked Up">
-                    🎁 Pick Up
-                </button>
-            `;
+            if (isOverdue) {
+                // Overdue - disable pickup button and show overdue warning
+                statusDisplay = `
+                    <button class="btn-pickup btn-disabled" disabled title="Overdue - Cannot pick up">
+                        ⚠️ Overdue
+                    </button>
+                    <div class="time-warning overdue">
+                        ⚠️ Will be auto-rejected soon
+                    </div>
+                `;
+            } else {
+                // Not overdue - show pickup button with countdown
+                const minutesRemaining = Math.ceil(timeRemaining / (60 * 1000));
+                timeWarning = `<div class="time-warning countdown">
+                    ⏰ Auto-reject in ${minutesRemaining} min
+                </div>`;
+                
+                statusDisplay = `
+                    <button class="btn-pickup" onclick="completeReservation(${reservation.reservation_id})" title="Mark as Picked Up">
+                        🎁 Pick Up
+                    </button>
+                    ${timeWarning}
+                `;
+            }
         } else if (reservation.status === 'completed') {
-            statusDisplay = '<span style="color: #059669; font-weight: 600;">Completed</span>';
+            statusDisplay = '<span class="status-completed">Completed</span>';
         } else if (reservation.status === 'rejected') {
-            statusDisplay = '<span style="color: #dc2626; font-weight: 600;">Rejected: ' + (reservation.rejected_reason || 'Insufficient stock') + '</span>';
+            // Check if it's an auto-rejected reservation due to timeout
+            if (reservation.rejected_reason && reservation.rejected_reason.includes('Not picked up on time')) {
+                statusDisplay = '<span class="status-auto-rejected">Auto-Rejected (Not Picked Up)</span>';
+            } else {
+                statusDisplay = '<span class="status-rejected">Rejected: ' + (reservation.rejected_reason || 'Insufficient stock') + '</span>';
+            }
         }
 
         return `
-        <tr>
+        <tr class="${isOverdue && reservation.status === 'approved' ? 'row-overdue' : ''} ${reservation.status === 'rejected' && reservation.rejected_reason && reservation.rejected_reason.includes('Not picked up on time') ? 'row-auto-rejected' : ''}">
             <td>#${reservation.reservation_id}</td>
             <td>${reservation.user_id}</td>
             <td><strong>${escapeHtml(reservation.product_name)}</strong></td>
@@ -662,6 +765,7 @@ function displayOrders(reservations) {
         `;
     }).join('');
 }
+
 // Complete reservation (pick up)
 function completeReservation(reservationId) {
     if (!confirm("Mark this order as completed/picked up?")) return;

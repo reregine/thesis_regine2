@@ -1,9 +1,12 @@
-from flask import Blueprint, request, jsonify, session, current_app, url_for
+from flask import Blueprint, request, jsonify, session, current_app, url_for, Response
 from ..extension import db
 from ..models.reservation import Reservation
 from ..models.admin import IncubateeProduct
 from ..models.sales_report import SalesReport 
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+import time
+import csv
+from io import StringIO
 
 reservation_bp = Blueprint("reservation_bp", __name__, url_prefix="/reservations")
 
@@ -47,7 +50,7 @@ def process_product_reservations(product_id):
             if available_stock >= reservation.quantity:
                 # Enough stock - approve reservation and deduct stock
                 reservation.status = "approved"
-                reservation.approved_at = datetime.utcnow()
+                reservation.approved_at = datetime.now(timezone.utc)
                 available_stock -= reservation.quantity
                 product.stock_amount = available_stock
                 
@@ -55,7 +58,7 @@ def process_product_reservations(product_id):
             else:
                 # Not enough stock - reject reservation
                 reservation.status = "rejected"
-                reservation.rejected_at = datetime.utcnow()
+                reservation.rejected_at = datetime.now(timezone.utc)
                 reservation.rejected_reason = "Insufficient stock - product out of stock"
                 
                 current_app.logger.info(f"Reservation {reservation.reservation_id} auto-rejected. "f"Requested: {reservation.quantity}, Available: {available_stock}")
@@ -91,14 +94,14 @@ def create_reservation():
         current_stock = product.stock_amount or 0
         if current_stock <= 0:
             # Immediately reject if no stock
-            reservation = Reservation(user_id=user_id,product_id=product_id,quantity=quantity,status="rejected",reserved_at=datetime.utcnow(),rejected_at=datetime.utcnow(),rejected_reason="Product out of stock")
+            reservation = Reservation(user_id=user_id,product_id=product_id,quantity=quantity,status="rejected",reserved_at=datetime.now(timezone.utc),rejected_at=datetime.now(timezone.utc),rejected_reason="Product out of stock")
             db.session.add(reservation)
             db.session.commit()
             
             return jsonify({"message": "Reservation created but rejected - product out of stock","reservation_id": reservation.reservation_id,"status": "rejected","reason": "Product out of stock"}), 201
 
         # Create reservation as pending first
-        reservation = Reservation(user_id=user_id,product_id=product_id,quantity=quantity,status="pending",reserved_at=datetime.utcnow())
+        reservation = Reservation(user_id=user_id,product_id=product_id,quantity=quantity,status="pending",reserved_at=datetime.now(timezone.utc))
         db.session.add(reservation)
         db.session.commit()
 
@@ -146,12 +149,12 @@ def create_bulk_reservations():
             # Check if product has no stock
             current_stock = product.stock_amount or 0
             if current_stock <= 0:
-                reservation = Reservation(user_id=user_id,product_id=product_id,quantity=quantity,status="rejected",reserved_at=datetime.utcnow(),rejected_at=datetime.utcnow(),rejected_reason="Product out of stock")
+                reservation = Reservation(user_id=user_id,product_id=product_id,quantity=quantity,status="rejected",reserved_at=datetime.now(timezone.utc),rejected_at=datetime.now(timezone.utc),rejected_reason="Product out of stock")
                 db.session.add(reservation)
                 results.append({"product_id": product_id,"reservation_id": reservation.reservation_id,"status": "rejected","message": "Product out of stock"})
             else:
                 # Create as pending
-                reservation = Reservation(user_id=user_id,product_id=product_id,quantity=quantity,status="pending",reserved_at=datetime.utcnow())
+                reservation = Reservation(user_id=user_id,product_id=product_id,quantity=quantity,status="pending",reserved_at=datetime.now(timezone.utc))
                 db.session.add(reservation)
                 results.append({"product_id": product_id,"reservation_id": reservation.reservation_id,"status": "pending"})
                 processed_products.add(product_id)
@@ -206,14 +209,14 @@ def update_reservation_status(reservation_id):
 
         # Update reservation status
         reservation.status = new_status
-        reservation.completed_at = datetime.utcnow()
+        reservation.completed_at = datetime.now(timezone.utc)
 
         # Create sales report entry
         sales_report = SalesReport(reservation_id=reservation.reservation_id,
             product_id=reservation.product_id,user_id=reservation.user_id,product_name=product.name,
             quantity=reservation.quantity,unit_price=product.price_per_stocks,total_price=product.price_per_stocks * reservation.quantity,
-            sale_date=datetime.utcnow().date(),  # Today's date
-            completed_at=datetime.utcnow())
+            sale_date=datetime.now(timezone.utc).date(),  # Today's date
+            completed_at=datetime.now(timezone.utc))
         
         db.session.add(sales_report)
         db.session.commit()
@@ -437,15 +440,9 @@ def get_sales_report():
         # Prepare report data - using Reservation's completed_at
         report_data = []
         for sale_report, reservation in sales_data:
-            report_data.append({
-                "sales_id": sale_report.sales_id,
-                "reservation_id": sale_report.reservation_id,
-                "user_id": sale_report.user_id,
-                "product_name": sale_report.product_name,
-                "quantity": sale_report.quantity,
-                "unit_price": float(sale_report.unit_price),
-                "total_price": float(sale_report.total_price),
-                "sale_date": sale_report.sale_date.strftime("%Y-%m-%d"),
+            report_data.append({"sales_id": sale_report.sales_id,"reservation_id": sale_report.reservation_id,
+                "user_id": sale_report.user_id,"product_name": sale_report.product_name,"quantity": sale_report.quantity,
+                "unit_price": float(sale_report.unit_price),"total_price": float(sale_report.total_price),"sale_date": sale_report.sale_date.strftime("%Y-%m-%d"),
                 "reserved_at": reservation.reserved_at.strftime("%Y-%m-%d %H:%M:%S"),
                 "completed_at": reservation.completed_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.completed_at else None,
                 "status": reservation.status})
@@ -471,17 +468,11 @@ def export_sales_report():
         target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
         
         # Get sales data with joined reservation info
-        sales_data = (
-            db.session.query(SalesReport, Reservation)
+        sales_data = (db.session.query(SalesReport, Reservation)
             .join(Reservation, SalesReport.reservation_id == Reservation.reservation_id)
             .filter(SalesReport.sale_date == target_date)
             .order_by(Reservation.completed_at.asc())
-            .all()
-        )
-        
-        # Create CSV content
-        import csv
-        from io import StringIO
+            .all())
         
         output = StringIO()
         writer = csv.writer(output)
@@ -491,21 +482,13 @@ def export_sales_report():
         
         # Write data - FIXED: Remove peso sign, export only numbers
         for sale_report, reservation in sales_data:
-            writer.writerow([
-                sale_report.sales_id,
-                sale_report.reservation_id,
-                sale_report.user_id,
-                sale_report.product_name,
-                sale_report.quantity,
+            writer.writerow([sale_report.sales_id,sale_report.reservation_id,sale_report.user_id,sale_report.product_name,sale_report.quantity,
                 float(sale_report.unit_price),  # FIXED: No peso sign, just the number
                 float(sale_report.total_price),  # FIXED: No peso sign, just the number
                 sale_report.sale_date.strftime("%Y-%m-%d"),
                 reservation.reserved_at.strftime("%Y-%m-%d %H:%M:%S"),
                 reservation.completed_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.completed_at else "N/A",
                 reservation.status])
-        
-        # Prepare response
-        from flask import Response
         response = Response(output.getvalue(),mimetype="text/csv",headers={"Content-Disposition": f"attachment;filename=sales-report-{date_str}.csv","Content-type": "text/csv"})
         
         return response
@@ -520,7 +503,7 @@ def get_sales_summary():
     """Get overall sales summary for dashboard"""
     try:
         # Today's sales
-        today = datetime.utcnow().date()
+        today = datetime.now(timezone.utc).date()
         today_sales = db.session.query(db.func.sum(SalesReport.total_price)).filter(SalesReport.sale_date == today).scalar() or 0
         
         # This month's sales
@@ -556,8 +539,7 @@ def get_sales_by_date_range():
         end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
         
         # Get daily sales for the date range
-        daily_sales = db.session.query(
-            SalesReport.sale_date,
+        daily_sales = db.session.query(SalesReport.sale_date,
             db.func.sum(SalesReport.total_price).label('daily_total'),
             db.func.count(SalesReport.sales_id).label('order_count'),
             db.func.sum(SalesReport.quantity).label('product_count')).filter(
@@ -565,14 +547,61 @@ def get_sales_by_date_range():
         
         sales_data = []
         for day in daily_sales:
-            sales_data.append({
-                "date": day.sale_date.strftime("%Y-%m-%d"),
-                "total_sales": float(day.daily_total or 0),
-                "order_count": day.order_count,
-                "product_count": day.product_count or 0})
+            sales_data.append({"date": day.sale_date.strftime("%Y-%m-%d"),"total_sales": float(day.daily_total or 0),
+                "order_count": day.order_count,"product_count": day.product_count or 0})
         
         return jsonify({"success": True,"sales_data": sales_data,"start_date": start_date_str,"end_date": end_date_str}), 200
         
     except Exception as e:
         current_app.logger.error(f"Error getting sales by date range: {e}")
         return jsonify({"success": False, "error": "Server error"}), 500
+    
+# AUTO-CANCEL OVERDUE RESERVATIONS
+@reservation_bp.route("/check-overdue", methods=["POST"])
+def check_overdue_reservations():
+    """
+    Auto-cancel reservations that haven't been picked up within the specified time
+    Uses timeout_ms parameter to determine how old reservations should be auto-cancelled
+    """
+    try:
+        data = request.get_json()
+        timeout_ms = data.get("timeout_ms", 60 * 1000)  # Default 1 minute for testing
+        
+        # Calculate the cutoff time
+        cutoff_time = datetime.now() - timedelta(milliseconds=timeout_ms)
+        
+        # Find approved reservations older than the cutoff time
+        overdue_reservations = Reservation.query.filter(Reservation.status == "approved",Reservation.reserved_at < cutoff_time).all()
+        
+        rejected_count = 0
+        
+        # Reject each overdue reservation
+        for reservation in overdue_reservations:
+            try:
+                # Get product to restore stock
+                product = IncubateeProduct.query.get(reservation.product_id)
+                if product:
+                    # Restore stock
+                    product.stock_amount = (product.stock_amount or 0) + reservation.quantity
+                
+                # Update reservation status to rejected instead of deleting
+                reservation.status = "rejected"
+                reservation.rejected_at = datetime.now()
+                reservation.rejected_reason = "Not picked up on time"
+                
+                rejected_count += 1
+                current_app.logger.info(f"Auto-rejected reservation {reservation.reservation_id}, restored {reservation.quantity} units to product {product.product_id}")
+                
+            except Exception as e:
+                current_app.logger.error(f"Error processing reservation {reservation.reservation_id}: {e}")
+                continue
+        
+        db.session.commit()
+        
+        return jsonify({"success": True,"rejected_count": rejected_count,"message": f"Auto-rejected {rejected_count} overdue reservations","cutoff_time": cutoff_time.strftime("%Y-%m-%d %H:%M:%S"),"timeout_minutes": timeout_ms / (60 * 1000)}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error in auto-rejection: {e}")
+        return jsonify({"success": False,"error": "Failed to process auto-rejection"}), 500
+    
