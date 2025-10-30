@@ -105,6 +105,7 @@ This manually start the server
 cd D:\programs\Postgres18\bin
 pg_ctl -D "D:\programs\Postgres18\data" start
 
+thesisregine
 Databases Table
 -- ======================================
 -- INCUBATEES TABLE (you already have this)

@@ -209,7 +209,6 @@ def add_incubatee():
             middle_name=data.get("middle_name"),
             contact_info=data.get("contact_info"),
             batch=data.get("batch"),
-            new_field=data.get("new_field"),
             company_name=data.get("company_name"),
             email=data.get("email"),
             phone_number=data.get("phone_number")
