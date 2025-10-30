@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 load_dotenv()
-from flask import Flask
+from flask import Flask, session
 from .config import Config
 from .extension import db, migrate
 from .routes.reservation import reservation_bp
@@ -30,4 +30,13 @@ def create_app(config_class=Config):
     app.register_blueprint(contact.contact_bp) 
     app.register_blueprint(cart_bp) 
     app.register_blueprint(favorites_bp)
+    
+    @app.context_processor
+    def inject_user_data():
+        return dict(
+            user_logged_in=session.get('user_logged_in'),
+            admin_logged_in=session.get('admin_logged_in'),
+            username=session.get('username'),
+            admin_username=session.get('admin_username'))
     return app
+

@@ -8,5 +8,10 @@ def index():
     if not session.get("user_logged_in") and not session.get("admin_logged_in"):
         return redirect(url_for("login.login"))  # back to login page
     
+    # Pass login status to template
+    user_logged_in = session.get("user_logged_in")
+    admin_logged_in = session.get("admin_logged_in")
+    username = session.get("username")
+    
     # This will render templates/home/index.html
-    return render_template("home/index.html")
+    return render_template("home/index.html", user_logged_in=user_logged_in,admin_logged_in=admin_logged_in,username=username)

@@ -25,12 +25,26 @@
           <li><a href="{{ url_for('about.about_page') }}" class="nav-link">ABOUT</a></li>
           <li><a href="{{ url_for('contact.contact_page') }}" class="nav-link">CONTACTS</a></li>
           <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒<span id="cartCountBadge" class="cart-count-badge">0</span></a></li>
-          <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
+          <!-- Dynamic Login/Logout Button -->
+          {% if user_logged_in or admin_logged_in %}
+              <li>
+                  <a href="{{ url_for('login.logout') }}" class="nav-link logout-btn">
+                      LOGOUT
+                  </a>
+              </li>
+          {% else %}
+              <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
+          {% endif %}
         </ul>
       </nav>
     </div>
   </header>
-
+    <!-- 🛒 CART MODAL CONTAINER -->
+    <div id="cartModal" class="cart-modal">
+    <div class="cart-modal-content">
+        <div id="cartContent"></div> <!-- cart.html will load here -->
+    </div>
+    </div>
   <!-- ================= HERO SECTION ================= -->
   <section class="hero" id="home">
     <div class="hero-container">
@@ -226,7 +240,7 @@
       </div>
     </div>
   </footer>
-
+  <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
   <script>
     // Fetch and update cart count
     async function updateCartCountFromBackend() {
@@ -252,6 +266,5 @@
     updateCartCountFromBackend();
     setInterval(updateCartCountFromBackend, 15000);
   </script>
-  <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
 </body>
 </html>

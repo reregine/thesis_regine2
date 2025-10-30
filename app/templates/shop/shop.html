@@ -32,11 +32,17 @@
                     <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
                     <li><a href="{{ url_for('about.about_page')}}" class="nav-link">ABOUT</a></li>
                     <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
-                    <!-- Cart button with special styling -->
                     <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒<span id="cartCountBadge" class="cart-count-badge">0</span></a></li>
-
-                    <!-- Login button with special styling -->
-                    <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
+                    <!-- Dynamic Login/Logout Button -->
+                    {% if user_logged_in or admin_logged_in %}
+                        <li>
+                            <a href="{{ url_for('login.logout') }}" class="nav-link logout-btn">
+                                LOGOUT
+                            </a>
+                        </li>
+                    {% else %}
+                        <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
+                    {% endif %}
                 </ul>
             </nav>
         </div>

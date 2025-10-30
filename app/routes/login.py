@@ -91,27 +91,17 @@ def register_api():
 
 @login_bp.route("/logout")
 def logout():
-    """Logout"""
+    # Clear all session data
     session.clear()
-    return redirect(url_for('login.login'))
+    return redirect(url_for("login.login"))
 
 @login_bp.route("/status", methods=["GET"])
 def login_status():
     """Return whether the current user is logged in."""
     if session.get("user_logged_in"):
-        return jsonify({
-            "success": True,
-            "user_id": session.get("user_id"),
-            "username": session.get("username"),
-            "role": "user"
-        })
+        return jsonify({"success": True,"user_id": session.get("user_id"),"username": session.get("username"),"role": "user"      })
     elif session.get("admin_logged_in"):
-        return jsonify({
-            "success": True,
-            "admin": True,
-            "username": session.get("admin_username"),
-            "role": "admin"
-        })
+        return jsonify({"success": True,"admin": True,"username": session.get("admin_username"),"role": "admin"})
     else:
         return jsonify({"success": False, "message": "Not logged in"}), 401
 
