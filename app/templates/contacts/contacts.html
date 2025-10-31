@@ -6,6 +6,7 @@
   <title>Contact Us - ATBI</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
   <style>
     /* ======== GLOBAL RESET & BASE STYLES ======== */
     * {
@@ -532,11 +533,15 @@
           {% else %}
               <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
           {% endif %}
+          <li><a href="javascript:void(0)" onclick="openUserDashboard()" class="nav-link dashboard-btn"><i class="fas fa-user"></i> DASHBOARD</a></li>
         </ul>
       </nav>
     </div>
   </header>
-
+    <!-- ================= DASHBOARD MODAL ================= -->
+    <div id="dashboardModal" class="dashboard-modal">
+        <!-- Dashboard content will be loaded here dynamically -->
+    </div>
   <main>
     <!-- ================= PAGE HEADER ================= -->
     <div class="page-header">
@@ -642,5 +647,6 @@
   <footer class="footer">
     <p>&copy; 2025 ATBI - Agri-Aqua Technology Business Incubator. All Rights Reserved.</p>
   </footer>
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>
 </html>

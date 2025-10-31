@@ -216,8 +216,7 @@ def get_cart_totals():
             db.session.query(Cart, IncubateeProduct)
             .join(IncubateeProduct, Cart.product_id == IncubateeProduct.product_id)
             .filter(Cart.user_id == user_id)
-            .all()
-        )
+            .all())
 
         subtotal = 0
         for cart, product in cart_items:
@@ -257,10 +256,7 @@ def reserve_selected_items():
         # Prepare items for bulk reservation
         reservation_items = []
         for item in selected_items:
-            reservation_items.append({
-                "product_id": item.product_id,
-                "quantity": item.quantity
-            })
+            reservation_items.append({"product_id": item.product_id,"quantity": item.quantity})
 
         # Use the bulk reservation endpoint
         bulk_data = {"user_id": user_id,"items": reservation_items}
