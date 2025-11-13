@@ -1,0 +1,185 @@
+<!-- Dashboard Modal Content -->
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1><i class="fas fa-user-circle"></i> User Dashboard</h1>
+            <button class="close-dashboard">&times;</button>
+        </div>
+        <div class="user-welcome">
+            <div class="welcome-text">
+                <h2>Welcome back, <span id="dashboardUsername">{{ username or 'User' }}</span>!</h2>
+                <p>Manage your reservations and profile</p>
+            </div>
+            <div class="quick-stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="pendingReservations">0</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="approvedReservations">0</div>
+                    <div class="stat-label">Ready for Pickup</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="totalReservations">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area - Three Column Layout -->
+    <div class="dashboard-main">
+        <!-- Dashboard Navigation -->
+        <div class="dashboard-nav">
+            <button class="nav-btn active" data-tab="reservations">
+                <i class="fas fa-clipboard-list"></i>
+                My Reservations
+            </button>
+            <button class="nav-btn" data-tab="profile">
+                <i class="fas fa-user-edit"></i>
+                Profile Settings
+            </button>
+            <button class="nav-btn" data-tab="notifications">
+                <i class="fas fa-bell"></i>
+                Notifications
+                <span class="notification-badge" id="notificationCount">0</span>
+            </button>
+        </div>
+
+        <!-- Content Area (Navigation + Content + Sidebar) -->
+        <div class="dashboard-content-area">
+            <!-- Main Content -->
+            <div class="dashboard-content">
+                <!-- Reservations Tab -->
+                <div id="reservations-tab" class="tab-content active">
+                    <div class="tab-header">
+                        <h3>My Reservations</h3>
+                        <div class="filter-controls">
+                            <select id="reservationFilter" class="filter-select">
+                                <option value="all">All Reservations</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Ready for Pickup</option>
+                                <option value="completed">Completed</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="reservations-list" id="reservationsList">
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading your reservations...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Tab -->
+                <div id="profile-tab" class="tab-content">
+                    <div class="tab-header">
+                        <h3>Profile Settings</h3>
+                    </div>
+                    
+                    <div class="profile-section">
+                        <div class="profile-card">
+                            <h4><i class="fas fa-user"></i> Personal Information</h4>
+                            <form id="profileForm" class="profile-form">
+                                <div class="form-group">
+                                    <label for="username">Username</label>
+                                    <input type="text" id="username" name="username" value="{{ username }}" readonly>
+                                    <small>Username cannot be changed</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">Email Address</label>
+                                    <input type="email" id="email" name="email" placeholder="Add your email address">
+                                </div>
+                                <div class="form-group">
+                                    <label for="phone">Phone Number</label>
+                                    <input type="tel" id="phone" name="phone" placeholder="Add your phone number">
+                                </div>
+                                <button type="submit" class="save-btn">
+                                    <i class="fas fa-save"></i> Save Changes
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="profile-card">
+                            <h4><i class="fas fa-lock"></i> Change Password</h4>
+                            <form id="passwordForm" class="profile-form">
+                                <div class="form-group">
+                                    <label for="currentPassword">Current Password</label>
+                                    <input type="password" id="currentPassword" name="currentPassword" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="newPassword">New Password</label>
+                                    <input type="password" id="newPassword" name="newPassword" required>
+                                    <div class="password-strength">
+                                        <div class="strength-bar"></div>
+                                        <small>Password strength: <span id="strengthText">Weak</span></small>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirmPassword">Confirm New Password</label>
+                                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                                </div>
+                                <button type="submit" class="save-btn">
+                                    <i class="fas fa-key"></i> Update Password
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications Tab -->
+                <div id="notifications-tab" class="tab-content">
+                    <div class="tab-header">
+                        <h3>Notifications</h3>
+                        <button class="clear-all-btn" id="clearNotifications">
+                            <i class="fas fa-trash"></i> Clear All
+                        </button>
+                    </div>
+                    
+                    <div class="notifications-list" id="notificationsList">
+                        <div class="empty-state">
+                            <i class="fas fa-bell-slash"></i>
+                            <p>No notifications yet</p>
+                            <small>You'll see important updates here</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pickup Information Sidebar -->
+            <div class="pickup-sidebar">
+                <div class="sidebar-header">
+                    <h4><i class="fas fa-map-marker-alt"></i> Pickup Information</h4>
+                </div>
+                <div class="sidebar-content">
+                    <div class="location-card">
+                        <h5>ATBI Office Location</h5>
+                        <p><i class="fas fa-building"></i> Capiz State University</p>
+                        <p><i class="fas fa-map-pin"></i> Roxas City, Capiz, Philippines</p>
+                        <p><i class="fas fa-clock"></i> Mon-Fri: 8:00 AM - 5:00 PM</p>
+                        <p><i class="fas fa-phone"></i> +63 912 345 6789</p>
+                    </div>
+                    
+                    <div class="instructions-card">
+                        <h5>Pickup Instructions</h5>
+                        <ol>
+                            <li>Bring valid ID for verification</li>
+                            <li>Show reservation confirmation</li>
+                            <li>Check items before leaving</li>
+                            <li>Pay any remaining balance (if applicable)</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="map-placeholder">
+                        <i class="fas fa-map"></i>
+                        <p>Campus Map</p>
+                        <small>ATBI Building, Main Campus</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

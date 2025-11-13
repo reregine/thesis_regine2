@@ -185,7 +185,29 @@ body {
     transform: translateY(-1px);
     color: white !important;
 }
+/* Logout Button Styles */
+.logout-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border: 2px solid #ef4444;
+    margin-left: 1rem;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
 
+.logout-btn:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    border-color: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+    scale: 1.05;
+    color: white !important;
+}
+
+.logout-btn:active {
+    background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+    transform: translateY(-1px);
+    color: white !important;
+}
 /* Shop Button Styles */
 .shop-btn {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);

@@ -5,363 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>About Us - ATBI</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/about.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <style>
-    /* ======== GLOBAL RESET ======== */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', 'Segoe UI Emoji', 'Noto Color Emoji', 'Arial Unicode MS', sans-serif;
-      line-height: 1.6;
-      color: #1a1a1a;
-      overflow-x: hidden;
-      background: linear-gradient(135deg, #f0f9ff 0%, #ecfdf5 50%, #f0fdf4 100%);
-      min-height: 100vh;
-    }
-
-    /* ======== MAIN CONTENT ======== */
-    main {
-      max-width: 1200px;
-      margin: 100px auto 40px;
-      padding: 0 20px;
-    }
-
-    .page-header {
-      text-align: center;
-      margin-bottom: 3rem;
-      position: relative;
-    }
-
-    .page-title {
-      font-size: 3rem;
-      font-weight: 800;
-      margin-bottom: 1rem;
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.05);
-    }
-
-    .page-subtitle {
-      font-size: 1.2rem;
-      color: #4b5563;
-      max-width: 700px;
-      margin: 0 auto;
-    }
-
-    /* ======== ABOUT CONTENT ======== */
-    .about-content {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 3rem;
-      margin-bottom: 4rem;
-    }
-
-    .about-section {
-      background: white;
-      border-radius: 20px;
-      padding: 2.5rem;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-      border: 1px solid rgba(34, 197, 94, 0.1);
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .about-section::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 4px;
-      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-    }
-
-    .about-section:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 15px 40px rgba(34, 197, 94, 0.15);
-    }
-
-    .about-section h2 {
-      font-size: 1.8rem;
-      margin-bottom: 1.5rem;
-      color: #1a1a1a;
-      font-weight: 700;
-      text-align: center;
-    }
-
-    .about-section p {
-      font-size: 1.1rem;
-      line-height: 1.7;
-      color: #4b5563;
-      margin-bottom: 1.5rem;
-      text-align: justify;
-    }
-
-    /* ======== MISSION & VISION ======== */
-    .mission-vision {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 2rem;
-      margin-top: 2rem;
-    }
-
-    .mission, .vision {
-      background: linear-gradient(135deg, #f8fafc 0%, #f0fdf4 100%);
-      border-radius: 16px;
-      padding: 2rem;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-      border: 1px solid rgba(34, 197, 94, 0.1);
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .mission::before, .vision::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 4px;
-      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-    }
-
-    .mission:hover, .vision:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(34, 197, 94, 0.2);
-    }
-
-    .mission h3, .vision h3 {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-      color: #1a1a1a;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-    }
-
-    .mission h3::before {
-      content: '🎯';
-      font-size: 1.8rem;
-    }
-
-    .vision h3::before {
-      content: '🔭';
-      font-size: 1.8rem;
-    }
-
-    .mission p, .vision p {
-      font-size: 1.05rem;
-      line-height: 1.7;
-      color: #4b5563;
-      text-align: left;
-    }
-
-    /* ======== VALUES SECTION ======== */
-    .values-section {
-      margin-top: 3rem;
-    }
-
-    .values-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      margin-top: 2rem;
-    }
-
-    .value-item {
-      background: white;
-      border-radius: 16px;
-      padding: 1.5rem;
-      text-align: center;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-      border: 1px solid rgba(34, 197, 94, 0.1);
-      transition: all 0.3s ease;
-    }
-
-    .value-item:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(34, 197, 94, 0.2);
-    }
-
-    .value-icon {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .value-item h4 {
-      font-size: 1.2rem;
-      margin-bottom: 0.8rem;
-      color: #1a1a1a;
-      font-weight: 600;
-    }
-
-    .value-item p {
-      font-size: 0.95rem;
-      color: #4b5563;
-      text-align: center;
-    }
-
-    /* ======== STATS SECTION ======== */
-    .stats-section {
-      margin-top: 4rem;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 2rem;
-      margin-top: 2rem;
-    }
-
-    .stat-item {
-      background: white;
-      padding: 2rem;
-      border-radius: 20px;
-      text-align: center;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-      transition: all 0.3s ease;
-      border: 1px solid rgba(34, 197, 94, 0.1);
-    }
-
-    .stat-item:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 15px 35px rgba(34, 197, 94, 0.15);
-    }
-
-    .stat-number {
-      font-size: 2.5rem;
-      font-weight: 800;
-      color: #22c55e;
-      margin-bottom: 0.5rem;
-    }
-
-    .stat-label {
-      color: #666;
-      font-weight: 600;
-      font-size: 1rem;
-    }
-
-    /* ======== RESPONSIVE DESIGN ======== */
-    @media (max-width: 1024px) {
-      .page-title {
-        font-size: 2.5rem;
-      }
-      
-      .mission-vision {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 768px) {
-      main {
-        margin: 120px auto 30px;
-        padding: 0 15px;
-      }
-      
-      .page-title {
-        font-size: 2.2rem;
-      }
-      
-      .page-subtitle {
-        font-size: 1.1rem;
-      }
-      
-      .about-section {
-        padding: 2rem;
-      }
-      
-      .about-section h2 {
-        font-size: 1.6rem;
-      }
-      
-      .mission, .vision {
-        padding: 1.5rem;
-      }
-      
-      .values-grid {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      }
-    }
-
-    @media (max-width: 600px) {
-      .page-title {
-        font-size: 2rem;
-      }
-      
-      .about-section {
-        padding: 1.5rem;
-      }
-      
-      .about-section p {
-        font-size: 1rem;
-        text-align: left;
-      }
-      
-      .mission h3, .vision h3 {
-        font-size: 1.3rem;
-      }
-      
-      .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media (max-width: 480px) {
-      .page-title {
-        font-size: 1.8rem;
-      }
-      
-      .page-subtitle {
-        font-size: 1rem;
-      }
-      
-      .about-section h2 {
-        font-size: 1.4rem;
-      }
-      
-      .mission, .vision {
-        padding: 1.2rem;
-      }
-      
-      .values-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* Animation */
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .about-section, .mission, .vision, .value-item, .stat-item {
-      animation: fadeInUp 0.6s ease-out;
-    }
-  </style>
 </head>
 
 <body>
@@ -379,12 +25,25 @@
           <li><a href="{{ url_for('about.about_page')}}" class="nav-link">ABOUT</a></li>
           <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
           <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒<span id="cartCountBadge" class="cart-count-badge">0</span></a></li>
-          <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
+          <!-- Dynamic Login/Logout Button -->
+          {% if user_logged_in or admin_logged_in %}
+              <li>
+                  <a href="{{ url_for('login.logout') }}" class="nav-link logout-btn">
+                      LOGOUT
+                  </a>
+              </li>
+          {% else %}
+              <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
+          {% endif %}
+          <li><a href="javascript:void(0)" onclick="openUserDashboard()" class="nav-link dashboard-btn"><i class="fas fa-user"></i> DASHBOARD</a></li>
         </ul>
       </nav>
     </div>
   </header>
-
+    <!-- ================= DASHBOARD MODAL ================= -->
+    <div id="dashboardModal" class="dashboard-modal">
+        <!-- Dashboard content will be loaded here dynamically -->
+    </div>
   <main>
     <!-- ================= PAGE HEADER ================= -->
     <div class="page-header">
@@ -501,5 +160,6 @@
   <footer class="footer">
     <p>&copy; 2025 ATBI - Agri-Aqua Technology Business Incubator. All Rights Reserved.</p>
   </footer>
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>
 </html>

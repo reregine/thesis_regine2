@@ -10,6 +10,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/agrilogo.png') }}">
     <!-- Link to external CSS file for styling -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css') }}">
 </head>
 <body>
@@ -32,11 +33,18 @@
                     <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
                     <li><a href="{{ url_for('about.about_page')}}" class="nav-link">ABOUT</a></li>
                     <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
-                    <!-- Cart button with special styling -->
                     <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒<span id="cartCountBadge" class="cart-count-badge">0</span></a></li>
-
-                    <!-- Login button with special styling -->
-                    <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
+                    <!-- Dynamic Login/Logout Button -->
+                    {% if user_logged_in or admin_logged_in %}
+                        <li>
+                            <a href="{{ url_for('login.logout') }}" class="nav-link logout-btn">
+                                LOGOUT
+                            </a>
+                        </li>
+                    {% else %}
+                        <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
+                    {% endif %}
+                    <li><a href="javascript:void(0)" onclick="openUserDashboard()" class="nav-link dashboard-btn"><i class="fas fa-user"></i> DASHBOARD</a></li>
                 </ul>
             </nav>
         </div>
@@ -89,6 +97,9 @@
     <div class="cart-modal-content">
         <div id="cartContent"></div> <!-- cart.html will load here -->
     </div>
+    </div>
+    <div id="dashboardModal" class="dashboard-modal">
+        <!-- Dashboard content will be loaded here dynamically -->
     </div>
     <!-- Back to Home Button -->
     <a href="{{ url_for('home.index') }}" class="back-to-home">← Back to Home</a>
@@ -594,6 +605,7 @@
     });
     </script>
     <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
     <script>
     document.addEventListener("DOMContentLoaded", async () => {
         const searchBox = document.querySelector(".search-box");

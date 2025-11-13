@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, redirect, url_for
+from flask import Blueprint, jsonify, render_template, session, redirect, url_for
 
 home_bp = Blueprint("home", __name__, url_prefix="/")
 
@@ -8,5 +8,17 @@ def index():
     if not session.get("user_logged_in") and not session.get("admin_logged_in"):
         return redirect(url_for("login.login"))  # back to login page
     
+    # Pass login status to template
+    user_logged_in = session.get("user_logged_in")
+    admin_logged_in = session.get("admin_logged_in")
+    username = session.get("username")
+    
     # This will render templates/home/index.html
-    return render_template("home/index.html")
+    return render_template("home/index.html", user_logged_in=user_logged_in,admin_logged_in=admin_logged_in,username=username)
+
+@home_bp.route("/dashboard-content")
+def dashboard_content():
+    if not session.get("user_logged_in"):
+        return jsonify({"success": False, "message": "Not logged in"}), 401
+    
+    return render_template("dashboard/dashboard.html",username=session.get("username"),user_logged_in=session.get("user_logged_in"))

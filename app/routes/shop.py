@@ -6,9 +6,6 @@ shop_bp = Blueprint("shop", __name__, url_prefix="/shop")
 
 @shop_bp.route("/")
 def shop_home():
-    """Render the shop page."""
-    if not session.get("user_logged_in") and not session.get("admin_logged_in"):
-        return redirect(url_for("login.login"))
     return render_template("shop/shop.html")
 
 

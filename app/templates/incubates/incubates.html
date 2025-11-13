@@ -7,6 +7,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/agrilogo.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/incubates.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 </head>
 <body>
   <!-- Navigation Bar -->
@@ -23,7 +24,17 @@
           <li><a href="{{ url_for('about.about_page')}}" class="nav-link">ABOUT</a></li>
           <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
           <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒<span id="cartCountBadge" class="cart-count-badge">0</span></a></li>
-          <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
+          <!-- Dynamic Login/Logout Button -->
+          {% if user_logged_in or admin_logged_in %}
+              <li>
+                  <a href="{{ url_for('login.logout') }}" class="nav-link logout-btn">
+                      LOGOUT
+                  </a>
+              </li>
+          {% else %}
+              <li><a href="{{ url_for('login.login') }}" class="nav-link login-btn">LOGIN</a></li>
+          {% endif %}
+          <li><a href="javascript:void(0)" onclick="openUserDashboard()" class="nav-link dashboard-btn"><i class="fas fa-user"></i> DASHBOARD</a></li>
         </ul>
       </nav>
     </div>
@@ -185,7 +196,10 @@
       <div id="cartContent"></div>
     </div>
   </div>
-
+    <!-- ================= DASHBOARD MODAL ================= -->
+    <div id="dashboardModal" class="dashboard-modal">
+        <!-- Dashboard content will be loaded here dynamically -->
+    </div>
   <script>
     async function updateCartCountFromBackend() {
       try {
@@ -214,5 +228,6 @@
     setInterval(updateCartCountFromBackend, 15000);
   </script>
   <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>
 </html>
