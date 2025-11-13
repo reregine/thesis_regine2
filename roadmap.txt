@@ -246,6 +246,8 @@ Manually start the PostgreSQL if wala sa process ka laptop insigida mag run imo 
 cd C:\Program Files\PostgreSQL\18\bin  unahon mo ni enter sa Command prompt 
 pg_ctl start -D "C:\Program Files\PostgreSQL\18\data" dayun ini sya para mag start ang database mo 
 
+$env:APP_CONFIG="teammate"
+python run.py
 
 To fix:
 limited 
