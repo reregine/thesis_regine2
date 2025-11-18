@@ -84,15 +84,9 @@ config_dict = {
     'production': ProductionConfig
 }
 
-<<<<<<< HEAD
 # Select configuration based on environment variable
 config_name = os.environ.get('APP_CONFIG', 'local')
 Config = config_dict.get(config_name, LocalConfig)
-=======
-# Auto-detect configuration
-config_name = auto_detect_config()
-Config = config_dict.get(config_name, TeammateConfig)  # Default to TeammateConfig
->>>>>>> 9e429b20267bf0f8a100d8adc8de677b7d3fd324
 
 # Validate configuration
 if not Config.SQLALCHEMY_DATABASE_URI:
