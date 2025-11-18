@@ -31,11 +31,7 @@ def search_products():
                     p.expiration_date.strftime("%Y-%m-%d")
                     if p.expiration_date
                     else "No Expiry"
-                ),
-                "warranty": p.warranty,
-                "added_on": p.added_on.strftime("%Y-%m-%d"),
-                "image_path": p.image_path
-            })
+                ),"warranty": p.warranty,"added_on": p.added_on.strftime("%Y-%m-%d"),"image_path": p.image_path})
 
         return jsonify({"success": True, "products": result})
 
@@ -62,14 +58,10 @@ def product_availability():
                 "updated_at": product.added_on.strftime("%Y-%m-%d %H:%M:%S")
             })
         
-        return jsonify({
-            "success": True, 
-            "products": availability_data,
-            "total_products": len(availability_data),
+        return jsonify({"success": True, "products": availability_data,"total_products": len(availability_data),
             "in_stock_count": len([p for p in availability_data if p['current_stock'] > 0]),
             "low_stock_count": len([p for p in availability_data if 1 <= p['current_stock'] <= 5]),
-            "out_of_stock_count": len([p for p in availability_data if p['current_stock'] == 0])
-        })
+            "out_of_stock_count": len([p for p in availability_data if p['current_stock'] == 0])})
         
     except Exception as e:
         print("❌ Error fetching product availability:", e)
@@ -84,14 +76,12 @@ def get_product_stock(product_id):
         if not product:
             return jsonify({"success": False, "error": "Product not found"}), 404
         
-        stock_info = {
-            "product_id": product.product_id,
+        stock_info = {"product_id": product.product_id,
             "name": product.name,
             "current_stock": product.stock_amount,  # ✅ Changed to stock_amount
             "availability_status": get_availability_status(product.stock_amount),  # ✅ Changed to stock_amount
             "price": float(product.price_per_stocks),
-            "last_updated": product.added_on.strftime("%Y-%m-%d %H:%M:%S")
-        }
+            "last_updated": product.added_on.strftime("%Y-%m-%d %H:%M:%S")}
         
         return jsonify({"success": True, "product": stock_info})
         

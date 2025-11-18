@@ -975,12 +975,6 @@ html {
   transform: translateX(0);
 }
 
-/* Enhanced Cart Badge Styles */
-.cart-btn {
-    position: relative;
-    display: inline-block;
-    padding: 8px;
-}
 
 .cart-count-badge {
     position: absolute;

@@ -64,55 +64,6 @@
       transform: scale(1.05);
     }
 
-    .nav-menu {
-      display: flex;
-      align-items: center;
-    }
-
-    .nav-list {
-      display: flex;
-      list-style: none;
-      gap: 2rem;
-      margin: 0;
-      padding: 0;
-    }
-
-    .nav-link {
-      display: inline-block;
-      position: relative;
-      color: #1a1a1a;
-      text-decoration: none;
-      font-weight: 500;
-      font-size: 0.95rem;
-      padding: 0.6rem 1.2rem;
-      border-radius: 12px;
-      transition: all 0.3s ease;
-    }
-
-    .nav-link:hover {
-      background: rgba(34, 197, 94, 0.1);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
-    }
-
-    .nav-link::after {
-      content: '';
-      position: absolute;
-      bottom: 6px;
-      left: 50%;
-      width: 0;
-      height: 2px;
-      background: linear-gradient(90deg, #22c55e, #16a34a, #22c55e);
-      transition: all 0.4s ease;
-      transform: translateX(-50%);
-      border-radius: 2px;
-    }
-
-    .nav-link:hover::after {
-      width: 80%;
-      box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
-    }
-
     /* ======== MAIN CONTENT ======== */
     main {
       max-width: 1200px;
@@ -520,9 +471,9 @@
           <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
           <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
           <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
-          <li><a href="{{ url_for('about.about_page')}}" class="nav-link">ABOUT</a></li>
-          <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
-          <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒<span id="cartCountBadge" class="cart-count-badge">0</span></a></li>
+          <li><a href="{{ url_for('about.about_page') }}" class="nav-link">ABOUT</a></li>
+          <li><a href="{{ url_for('contact.contact_page') }}" class="nav-link">CONTACTS</a></li>
+          <li>  <button type="button" id="openCartBtn" class="nav-link cart-btn">🛒 <span id="cartCountBadge" class="cart-count-badge">0</span></button></li>
           <!-- Dynamic Login/Logout Button -->
           {% if user_logged_in or admin_logged_in %}
               <li>

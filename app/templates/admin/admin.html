@@ -237,6 +237,17 @@
           <label for="price_per_stocks">Price per Stock (₱) <span class="required-star">*</span></label>
           <input type="number" step="0.01" id="price_per_stocks" name="price_per_stocks" placeholder="Enter price" required>
         </div>
+        <!-- Add this form group after the price_per_stocks field -->
+        <div class="form-group">
+          <label for="pricing_unit">Pricing Unit <span class="required-star">*</span></label>
+          <select id="pricing_unit" name="pricing_unit_id" class="form-control" required>
+            <option value="" disabled selected>Select Pricing Unit</option>
+            <!-- Options will be populated dynamically -->
+          </select>
+          <button type="button" class="btn-add-unit" id="addPricingUnitBtn" style="margin-top: 5px; padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            + Add New Pricing Unit
+          </button>
+        </div>
         <div class="form-group">
           <label for="details">Product Description <span class="required-star">*</span></label>
           <textarea id="details" name="details" rows="3" placeholder="Enter product details" required></textarea>
@@ -270,9 +281,6 @@
           <option value="all" selected>All Categories</option>
           <option value="Agri-Aqua Business">Agri-Aqua Business</option>
           <option value="Food Processing Technology">Food Processing Technology</option>
-          <option value="Industrial and Engineering">Industrial and Engineering</option>
-          <option value="ICT Solution">ICT Solution</option>
-          <option value="Food Technology">Food Technology</option>
         </select>
       </div>
 
@@ -285,6 +293,7 @@
             <th>Service</th>
             <th>Stock</th>
             <th>Price</th>
+            <th>Unit</th>
             <th>Image</th>
             <th>Expiration</th>
             <th>Warranty</th>
@@ -307,7 +316,32 @@
       </div>
     </div>
   </div>
-
+  <!-- Add Pricing Unit Modal -->
+  <div id="pricingUnitModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add New Pricing Unit</h2>
+        <button class="close-btn" id="closePricingUnitModal">&times;</button>
+      </div>
+      
+      <form id="pricingUnitForm">
+        <div class="form-group">
+          <label>Unit Name</label>
+          <input type="text" id="unit_name" name="unit_name" placeholder="e.g., Per Kilo, Per Item, Per Package" required>
+        </div>
+        
+        <div class="form-group">
+          <label>Description (Optional)</label>
+          <input type="text" id="unit_description" name="unit_description" placeholder="Brief description of the unit">
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="closePricingUnitModalBottom">Cancel</button>
+          <button type="submit" class="btn-save">Save Unit</button>
+        </div>
+      </form>
+    </div>
+  </div>
   <!-- Include the external JavaScript file -->
   <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>

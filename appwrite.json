@@ -1,0 +1,53 @@
+{
+    "name": "ATBI-AgriAqua-Mart",
+    "description": "Agri-Aqua Business Incubator E-commerce Platform",
+    "repository": "https://github.com/reregine/thesis_regine2",
+    "logo": "https://thesis-regine2.appwrite.network/static/images/agrilogo.png",
+    "keywords": ["flask", "python", "ecommerce", "agriculture", "aquaculture"],
+    "env": {
+        "APP_CONFIG": {
+            "description": "Application configuration",
+            "value": "supabase"
+        },
+        "SECRET_KEY": {
+            "description": "Flask secret key",
+            "value": "generate-a-secure-random-key-here"
+        },
+        "FLASK_DEBUG": {
+            "description": "Debug mode",
+            "value": "False"
+        },
+        "DB_HOST": {
+            "description": "Supabase database host",
+            "value": "db.abcdxyz.supabase.co"
+        },
+        "DB_PORT": {
+            "description": "Supabase database port",
+            "value": "5432"
+        },
+        "DB_NAME": {
+            "description": "Supabase database name",
+            "value": "postgres"
+        },
+        "DB_USER": {
+            "description": "Supabase database username",
+            "value": "postgres"
+        },
+        "DB_PASSWORD": {
+            "description": "Supabase database password",
+            "value": "thesisregine"
+        }
+    },
+    "builds": [
+        {
+            "src": "requirements.txt",
+            "use": "@appwrite/python"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "/run.py"
+        }
+    ]
+}

@@ -5,34 +5,52 @@ class BaseConfig:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     DEBUG = os.environ.get("FLASK_DEBUG", "True").lower() == "true"
+    
+    # File upload configuration
+    UPLOAD_FOLDER = 'static/uploads'
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
 
-class YourConfig(BaseConfig):
-    """Your local development configuration"""
+class LocalConfig(BaseConfig):
+    """Local development configuration"""
     SQLALCHEMY_DATABASE_URI = "postgresql://postgres:cyla0917@localhost:5432/atbi_db"
 
 class TeammateConfig(BaseConfig):
-    """Your teammate's local development configuration"""
+    """Teammate's local development configuration"""
     SQLALCHEMY_DATABASE_URI = "postgresql://postgres:thesisregine@localhost:5432/atbi_db"
 
+class SupabaseConfig(BaseConfig):
+    """Supabase production configuration"""
+    # Get Supabase connection details from environment variables
+    DB_HOST = os.environ.get("DB_HOST", "db.abcdxyz.supabase.co")
+    DB_PORT = os.environ.get("DB_PORT", "5432")
+    DB_NAME = os.environ.get("DB_NAME", "postgres")
+    DB_USER = os.environ.get("DB_USER", "postgres")
+    DB_PASSWORD = os.environ.get("DB_PASSWORD", "thesisregine")
+    
+    # Construct the database URI
+    SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    DEBUG = False
+
 class ProductionConfig(BaseConfig):
-    """Production configuration (uses environment variables)"""
+    """Production configuration (uses DATABASE_URL environment variable)"""
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
     DEBUG = False
 
 # Configuration mapping
 config_dict = {
-    'you': YourConfig,
+    'local': LocalConfig,
     'teammate': TeammateConfig,
+    'supabase': SupabaseConfig,
     'production': ProductionConfig
 }
 
 # Select configuration based on environment variable
-config_name = os.environ.get('APP_CONFIG', 'you')
-Config = config_dict.get(config_name, YourConfig)
+config_name = os.environ.get('APP_CONFIG', 'local')
+Config = config_dict.get(config_name, LocalConfig)
 
 # Validate configuration
 if not Config.SQLALCHEMY_DATABASE_URI:
     raise ValueError(f"Database URI not configured for: {config_name}")
 
 print(f"🔧 Loaded configuration: {config_name}")
-print(f"📊 Database: {Config.SQLALCHEMY_DATABASE_URI.split('@')[-1]}")
+print(f"📊 Database: {Config.SQLALCHEMY_DATABASE_URI.split('@')[-1] if '@' in Config.SQLALCHEMY_DATABASE_URI else 'Local database'}")

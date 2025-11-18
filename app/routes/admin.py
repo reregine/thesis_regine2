@@ -1,7 +1,7 @@
 import os
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, current_app
 from werkzeug.utils import secure_filename
-from ..models.admin import db, IncubateeProduct, Incubatee
+from ..models.admin import db, IncubateeProduct, Incubatee, PricingUnit
 from datetime import datetime
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -69,6 +69,46 @@ def check_auth():
     """Check if admin is authenticated (for AJAX calls)"""
     return jsonify({'authenticated': session.get('admin_logged_in', False),'username': session.get('admin_username', None)})
     
+@admin_bp.route("/get-pricing-units", methods=["GET"])
+def get_pricing_units():
+    """Get all available pricing units"""
+    try:
+        pricing_units = PricingUnit.query.filter_by(is_active=True).all()
+        return jsonify({
+            "success": True,
+            "pricing_units": [{"unit_id": unit.unit_id,"unit_name": unit.unit_name,"unit_description": unit.unit_description
+                } for unit in pricing_units]})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@admin_bp.route("/add-pricing-unit", methods=["POST"])
+def add_pricing_unit():
+    """Add a new pricing unit"""
+    try:
+        data = request.get_json()
+        unit_name = data.get("unit_name", "").strip()
+        unit_description = data.get("unit_description", "").strip()
+        
+        if not unit_name:
+            return jsonify({"success": False, "error": "Unit name is required"}), 400
+            
+        # Check if unit already exists
+        existing_unit = PricingUnit.query.filter_by(unit_name=unit_name).first()
+        if existing_unit:
+            return jsonify({"success": False, "error": "Pricing unit already exists"}), 400
+            
+        pricing_unit = PricingUnit(unit_name=unit_name,unit_description=unit_description)
+        
+        db.session.add(pricing_unit)
+        db.session.commit()
+        
+        return jsonify({"success": True, "message": "Pricing unit added successfully!"})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# Update the add_product route to include pricing_unit_id
 @admin_bp.route("/add-product", methods=["POST"])
 def add_product():
     try:
@@ -79,6 +119,7 @@ def add_product():
         details = request.form.get("details")
         warranty = request.form.get("warranty")
         category = request.form.get("category")
+        pricing_unit_id = request.form.get("pricing_unit_id", 1)  # Default to 1 if not provided
 
         # Validate required incubatee_id
         if not incubatee_id:
@@ -117,18 +158,9 @@ def add_product():
             image.save(save_path)
 
         # Create product entry
-        product = IncubateeProduct(
-            incubatee_id=incubatee_id,
-            name=name,
-            stock_no=stock_no,
-            products=products,
-            stock_amount=stock_amount,
-            price_per_stocks=price_per_stocks,
-            details=details,
-            category=category,
-            expiration_date=expiration_date,
-            warranty=warranty,
-            added_on=added_on,
+        product = IncubateeProduct(incubatee_id=incubatee_id,name=name,stock_no=stock_no,products=products,
+            stock_amount=stock_amount,price_per_stocks=price_per_stocks,pricing_unit_id=pricing_unit_id, 
+            details=details,category=category,expiration_date=expiration_date,warranty=warranty,added_on=added_on,
             image_path=f"{UPLOAD_FOLDER}/{filename}" if filename else None,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow())
@@ -143,30 +175,23 @@ def add_product():
         current_app.logger.error(f"Error in add_product: {e}")
         return jsonify({"success": False, "error": str(e)}), 400
 
-
+# Update the get_products route to include pricing unit info
 @admin_bp.route("/get-products", methods=["GET"])
 def get_products():
     try:
-        products = (db.session.query(IncubateeProduct).order_by(IncubateeProduct.created_at.desc()).all())
+        products = (db.session.query(IncubateeProduct).join(PricingUnit).order_by(IncubateeProduct.created_at.desc()).all())
 
         products_list = []
         for product in products:
-            products_list.append({
-                "product_id": product.product_id,
-                "incubatee_id": product.incubatee_id,
-                "name": product.name,
-                "stock_no": product.stock_no,
-                "products": product.products,
-                "stock_amount": product.stock_amount,
-                "price_per_stocks": float(product.price_per_stocks),
-                "details": product.details,
-                "category": product.category or "Uncategorized",
+            products_list.append({"product_id": product.product_id,"incubatee_id": product.incubatee_id,
+                "name": product.name,"stock_no": product.stock_no,"products": product.products,
+                "stock_amount": product.stock_amount,"price_per_stocks": float(product.price_per_stocks),
+                "pricing_unit": product.pricing_unit.unit_name if product.pricing_unit else "Per Item",
+                "pricing_unit_id": product.pricing_unit_id,"details": product.details,"category": product.category or "Uncategorized",
                 "expiration_date": product.expiration_date.strftime("%Y-%m-%d") if product.expiration_date else "No Expiry",
                 "warranty": product.warranty or "No Warranty",
-                "added_on": product.added_on.strftime("%Y-%m-%d"),
-                "image_path": product.image_path,
-                "created_at": product.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-                "updated_at": product.updated_at.strftime("%Y-%m-%d %H:%M:%S"),})
+                "added_on": product.added_on.strftime("%Y-%m-%d"),"image_path": product.image_path,
+                "created_at": product.created_at.strftime("%Y-%m-%d %H:%M:%S"),"updated_at": product.updated_at.strftime("%Y-%m-%d %H:%M:%S"),})
 
         return jsonify({"success": True, "products": products_list})
 

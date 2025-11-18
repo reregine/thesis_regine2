@@ -1,0 +1,20 @@
+ATBI Web shopping Cart (0 - 50%)
+Francisco et al. 
+- provide details and the actual prices (i.e. Per item, per kilo, package, etc. ) of products and/or services offered per incubatee
+
+-  provide info about each incubate
+
+- provide per batch info/details per incubate
+
+- improve the main page to display per incubatee best seller/know products/services
+
+- provide profile and dashboard for register user after login and logout button
+
+Admin dashboard: ptofile of admin, view pending/approved users, view list of incubatees, view confirm/delivered/pending orders, summary of sales per incubatee, other required reports
+
+- incubatee dashboard: profile of user, list products on stock/out of stock, services, view feedbacks/comments of customers, reports needed and others
+
+- customer dashboard: user profile, make order, view list of view current (approved/pending) and history of ordered  products or availed services. 
+
+- in system messaging
+securing of web pages (e.g. Session destroy, others) to prevent data leaks

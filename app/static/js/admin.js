@@ -249,6 +249,7 @@ function displayProducts(products) {
             <td>${escapeHtml(product.products)}</td>
             <td>${product.stock_amount}</td>
             <td>₱${product.price_per_stocks.toFixed(2)}</td>
+            <td>${product.pricing_unit}</td>
             <td>
                 ${product.image_path ? 
                 `<img src="/${product.image_path}" width="60" style="border-radius:6px;" alt="${escapeHtml(product.name)}">` : 
@@ -1036,3 +1037,78 @@ function formatTimeOnly(dateString) {
         return 'Invalid Time';
     }
 }
+
+// Load pricing units when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadPricingUnits();
+});
+
+// Function to load pricing units
+async function loadPricingUnits() {
+    try {
+        const response = await fetch('/admin/get-pricing-units');
+        const data = await response.json();
+        
+        if (data.success) {
+            const pricingUnitSelect = document.getElementById('pricing_unit');
+            pricingUnitSelect.innerHTML = '<option value="" disabled selected>Select Pricing Unit</option>';
+            
+            data.pricing_units.forEach(unit => {
+                const option = document.createElement('option');
+                option.value = unit.unit_id;
+                option.textContent = unit.unit_name;
+                pricingUnitSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading pricing units:', error);
+    }
+}
+
+// Add Pricing Unit Modal functionality
+document.getElementById('addPricingUnitBtn').addEventListener('click', function() {
+    document.getElementById('pricingUnitModal').style.display = 'block';
+});
+
+// Close Pricing Unit Modal
+document.getElementById('closePricingUnitModal').addEventListener('click', function() {
+    document.getElementById('pricingUnitModal').style.display = 'none';
+});
+
+document.getElementById('closePricingUnitModalBottom').addEventListener('click', function() {
+    document.getElementById('pricingUnitModal').style.display = 'none';
+});
+
+// Handle Pricing Unit Form Submission
+document.getElementById('pricingUnitForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        unit_name: document.getElementById('unit_name').value,
+        unit_description: document.getElementById('unit_description').value
+    };
+    
+    try {
+        const response = await fetch('/admin/add-pricing-unit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('✅ Pricing unit added successfully!');
+            document.getElementById('pricingUnitForm').reset();
+            document.getElementById('pricingUnitModal').style.display = 'none';
+            loadPricingUnits(); // Reload the pricing units dropdown
+        } else {
+            alert('❌ Error: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error adding pricing unit:', error);
+        alert('❌ Error adding pricing unit');
+    }
+});
