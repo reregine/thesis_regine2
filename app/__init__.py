@@ -1,4 +1,3 @@
-
 from flask import Flask, session
 from .config import Config
 from .extension import db, migrate
@@ -36,4 +35,3 @@ def create_app(config_class=Config):
     def inject_user_data():
         return dict(user_logged_in=session.get('user_logged_in'),admin_logged_in=session.get('admin_logged_in'),username=session.get('username'),admin_username=session.get('admin_username'))
     return app
-
