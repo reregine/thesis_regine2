@@ -22,7 +22,7 @@ class TeammateConfig(BaseConfig):
 class SupabaseConfig(BaseConfig):
     """Supabase production configuration"""
     # REPLACE THIS WITH YOUR ACTUAL CONNECTION STRING FROM SUPABASE DASHBOARD
-    SQLALCHEMY_DATABASE_URI = "postgresql://postgres.knawfwgerjfutwurrbfx:R3gIne_Th3sis@aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres"
+    SQLALCHEMY_DATABASE_URI = "postgresql://postgres.knawfwgerjfutwurrbfx:R3gIne_Th3sis@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres"
     DEBUG = False
     #R3gIne_Th3sis
 class ProductionConfig(BaseConfig):
