@@ -20,15 +20,66 @@ class TeammateConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = "postgresql://postgres:thesisregine@localhost:5432/atbi_db"
 
 class SupabaseConfig(BaseConfig):
-    """Supabase production configuration"""
-    # REPLACE THIS WITH YOUR ACTUAL CONNECTION STRING FROM SUPABASE DASHBOARD
+    """Supabase production configuration with connection pooling"""
+    # Fixed connection string (changed from port 6543 to 5432)
     SQLALCHEMY_DATABASE_URI = "postgresql://postgres.knawfwgerjfutwurrbfx:R3gIne_Th3sis@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres"
     DEBUG = False
-    #R3gIne_Th3sis
+    
+    # SQLAlchemy engine options for stable Supabase connection
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        # Verify connections before using them (prevents stale connections)
+        'pool_pre_ping': True,
+        
+        # Recycle connections after 5 minutes (300 seconds)
+        'pool_recycle': 300,
+        
+        # Maximum number of persistent connections
+        'pool_size': 10,
+        
+        # Allow up to 5 additional connections when pool is full
+        'max_overflow': 5,
+        
+        # Connection arguments for PostgreSQL
+        'connect_args': {
+            # Connection timeout (10 seconds)
+            'connect_timeout': 10,
+            
+            # Require SSL for security
+            'sslmode': 'require',
+            
+            # TCP keepalive settings to maintain connection
+            'keepalives': 1,              # Enable TCP keepalives
+            'keepalives_idle': 30,        # Start keepalives after 30s idle
+            'keepalives_interval': 10,    # Send keepalive every 10s
+            'keepalives_count': 5,        # Try 5 times before giving up
+        }
+    }
+
 class ProductionConfig(BaseConfig):
     """Production configuration (uses DATABASE_URL environment variable)"""
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
+    # Get DATABASE_URL and fix scheme if needed
+    database_url = os.environ.get("DATABASE_URL")
+    if database_url and database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    
+    SQLALCHEMY_DATABASE_URI = database_url
     DEBUG = False
+    
+    # Same connection pooling options as Supabase
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+        'pool_size': 10,
+        'max_overflow': 5,
+        'connect_args': {
+            'connect_timeout': 10,
+            'sslmode': 'require',
+            'keepalives': 1,
+            'keepalives_idle': 30,
+            'keepalives_interval': 10,
+            'keepalives_count': 5,
+        }
+    }
 
 # 🟢 IMPROVED AUTO-DETECTION
 def auto_detect_config():
@@ -60,7 +111,7 @@ def auto_detect_config():
     
     # Check if any of your identifiers match
     if any(identifier in computer_name or identifier in username for identifier in your_identifiers):
-        return 'you'
+        return 'local'
     
     # Check if any of teammate's identifiers match  
     if any(identifier in computer_name or identifier in username for identifier in teammate_identifiers):

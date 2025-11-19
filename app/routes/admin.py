@@ -1,8 +1,11 @@
 import os
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, current_app
 from werkzeug.utils import secure_filename
-from ..models.admin import db, IncubateeProduct, Incubatee, PricingUnit
-from datetime import datetime
+from ..models.admin import db, IncubateeProduct, Incubatee, PricingUnit, AdminProfile, SalesReport
+from datetime import datetime, timedelta
+from ..models.user import User
+from ..models.reservation import Reservation
+from sqlalchemy import func, desc
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -63,6 +66,56 @@ def admin_logout():
     session.pop('admin_username', None)
     return redirect(url_for('admin.admin_login'))
 
+@admin_bp.route("/users")
+def users_management():
+    """Users management page"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('login.login'))
+    return render_template("admin/users.html")
+
+@admin_bp.route("/incubatees")
+def incubatees_management():
+    """Incubatees management page"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('login.login'))
+    return render_template("admin/incubatees.html")
+
+@admin_bp.route("/reports")
+def sales_reports():
+    """Sales reports page"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('login.login'))
+    
+    # Calculate date for 30 days ago
+    today = datetime.utcnow().date()
+    today_minus_30 = today - timedelta(days=30)
+    
+    return render_template("admin/reports.html", today=today.isoformat(),today_minus_30=today_minus_30.isoformat())
+
+@admin_bp.route("/get-incubatee-products/<int:incubatee_id>")
+def get_incubatee_products(incubatee_id):
+    """Get products for a specific incubatee"""
+    if not session.get('admin_logged_in'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    try:
+        products = IncubateeProduct.query.filter_by(incubatee_id=incubatee_id).all()
+        products_list = []
+        
+        for product in products:
+            products_list.append({
+                "product_id": product.product_id,
+                "name": product.name,
+                "category": product.category,
+                "stock_amount": product.stock_amount,
+                "price_per_stocks": float(product.price_per_stocks),
+                "image_path": product.image_path})
+        
+        return jsonify({"success": True, "products": products_list})
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    
 # Optional: API endpoint for checking login status
 @admin_bp.route("/check-auth")
 def check_auth():
@@ -264,3 +317,239 @@ def get_incubatees():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@admin_bp.route("/profile")
+def admin_profile():
+    """Admin profile page"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('login.login'))
+    
+    # Get admin profile from database or use session data
+    admin_profile = AdminProfile.query.filter_by(username=session.get('admin_username')).first()
+    
+    return render_template("admin/profile.html", admin_profile=admin_profile)
+
+@admin_bp.route("/update-profile", methods=["POST"])
+def update_admin_profile():
+    """Update admin profile"""
+    if not session.get('admin_logged_in'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    try:
+        data = request.get_json()
+        username = session.get('admin_username')
+        
+        admin_profile = AdminProfile.query.filter_by(username=username).first()
+        if not admin_profile:
+            # Create new profile if doesn't exist
+            admin_profile = AdminProfile(
+                username=username,
+                full_name=data.get('full_name'),
+                email=data.get('email'),
+                phone=data.get('phone')
+            )
+            db.session.add(admin_profile)
+        else:
+            admin_profile.full_name = data.get('full_name')
+            admin_profile.email = data.get('email')
+            admin_profile.phone = data.get('phone')
+        
+        db.session.commit()
+        return jsonify({"success": True, "message": "Profile updated successfully!"})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@admin_bp.route("/get-users")
+def get_users():
+    """Get all users with their status"""
+    if not session.get('admin_logged_in'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    try:
+        users = User.query.all()
+        users_list = []
+        
+        for user in users:
+            # Count user's reservations by status
+            pending_reservations = Reservation.query.filter_by(user_id=user.id_no, status='pending').count()
+            approved_reservations = Reservation.query.filter_by(user_id=user.id_no, status='approved').count()
+            completed_reservations = Reservation.query.filter_by(user_id=user.id_no, status='completed').count()
+            
+            users_list.append({
+                "user_id": user.id_no,
+                "username": user.username,
+                "created_at": user.created_at.strftime("%Y-%m-%d %H:%M"),
+                "total_reservations": pending_reservations + approved_reservations + completed_reservations,
+                "pending_reservations": pending_reservations,
+                "approved_reservations": approved_reservations,
+                "completed_reservations": completed_reservations
+            })
+        
+        return jsonify({"success": True, "users": users_list})
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@admin_bp.route("/get-incubatees-list")
+def get_incubatees_list():
+    """Get all incubatees for management"""
+    if not session.get('admin_logged_in'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    try:
+        incubatees = Incubatee.query.all()
+        incubatees_list = []
+        
+        for incubatee in incubatees:
+            # Count products and calculate total sales
+            product_count = IncubateeProduct.query.filter_by(incubatee_id=incubatee.incubatee_id).count()
+            
+            # Calculate total sales from sales reports
+            total_sales = db.session.query(func.coalesce(func.sum(SalesReport.total_price), 0)).filter_by(incubatee_id=incubatee.incubatee_id).scalar()
+            
+            incubatees_list.append({
+                "incubatee_id": incubatee.incubatee_id,
+                "full_name": f"{incubatee.first_name} {incubatee.last_name}",
+                "company_name": incubatee.company_name,
+                "email": incubatee.email,
+                "phone": incubatee.phone_number,
+                "batch": incubatee.batch,
+                "product_count": product_count,
+                "total_sales": float(total_sales),
+                "is_approved": incubatee.is_approved,
+                "created_at": incubatee.created_at.strftime("%Y-%m-%d")
+            })
+        
+        return jsonify({"success": True, "incubatees": incubatees_list})
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@admin_bp.route("/toggle-incubatee-approval/<int:incubatee_id>", methods=["POST"])
+def toggle_incubatee_approval(incubatee_id):
+    """Approve or disapprove an incubatee"""
+    if not session.get('admin_logged_in'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    try:
+        incubatee = Incubatee.query.get_or_404(incubatee_id)
+        incubatee.is_approved = not incubatee.is_approved
+        db.session.commit()
+        
+        action = "approved" if incubatee.is_approved else "disapproved"
+        return jsonify({"success": True, "message": f"Incubatee {action} successfully!"})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@admin_bp.route("/sales-summary")
+def sales_summary():
+    """Get sales summary per incubatee"""
+    if not session.get('admin_logged_in'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    try:
+        # Sales by incubatee
+        sales_by_incubatee = db.session.query(
+            Incubatee.incubatee_id,
+            Incubatee.first_name,
+            Incubatee.last_name,
+            Incubatee.company_name,
+            func.count(SalesReport.report_id).label('total_sales_count'),
+            func.coalesce(func.sum(SalesReport.total_price), 0).label('total_revenue')
+        ).outerjoin(SalesReport, Incubatee.incubatee_id == SalesReport.incubatee_id
+        ).group_by(Incubatee.incubatee_id).all()
+        
+        # Total statistics
+        total_revenue = db.session.query(func.coalesce(func.sum(SalesReport.total_price), 0)).scalar()
+        total_orders = db.session.query(func.count(Reservation.reservation_id)).scalar()
+        completed_orders = db.session.query(func.count(Reservation.reservation_id)).filter_by(status='completed').scalar()
+        
+        # Monthly sales trend (last 6 months)
+        monthly_sales = db.session.query(
+            func.date_trunc('month', SalesReport.sale_date).label('month'),
+            func.sum(SalesReport.total_price).label('monthly_revenue')
+        ).filter(SalesReport.sale_date >= func.date('now', '-6 months')
+        ).group_by(func.date_trunc('month', SalesReport.sale_date)
+        ).order_by(func.date_trunc('month', SalesReport.sale_date)).all()
+        
+        summary = {
+            "total_revenue": float(total_revenue),
+            "total_orders": total_orders,
+            "completed_orders": completed_orders,
+            "completion_rate": (completed_orders / total_orders * 100) if total_orders > 0 else 0,
+            "sales_by_incubatee": [
+                {
+                    "incubatee_id": sale.incubatee_id,
+                    "name": f"{sale.first_name} {sale.last_name}",
+                    "company": sale.company_name,
+                    "sales_count": sale.total_sales_count,
+                    "revenue": float(sale.total_revenue)
+                } for sale in sales_by_incubatee
+            ],
+            "monthly_trend": [
+                {
+                    "month": sale.month.strftime("%Y-%m"),
+                    "revenue": float(sale.monthly_revenue) if sale.monthly_revenue else 0
+                } for sale in monthly_sales
+            ]
+        }
+        
+        return jsonify({"success": True, "summary": summary})
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@admin_bp.route("/reports")
+def admin_reports():
+    """Generate various reports"""
+    if not session.get('admin_logged_in'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    try:
+        # Popular products report
+        popular_products = db.session.query(
+            IncubateeProduct.product_id,
+            IncubateeProduct.name,
+            Incubatee.company_name,
+            func.count(Reservation.reservation_id).label('reservation_count'),
+            func.sum(Reservation.quantity).label('total_quantity')
+        ).join(Incubatee, IncubateeProduct.incubatee_id == Incubatee.incubatee_id
+        ).join(Reservation, IncubateeProduct.product_id == Reservation.product_id
+        ).group_by(IncubateeProduct.product_id, Incubatee.company_name
+        ).order_by(desc('reservation_count')).limit(10).all()
+        
+        # Sales performance by category
+        category_sales = db.session.query(
+            IncubateeProduct.category,
+            func.count(Reservation.reservation_id).label('order_count'),
+            func.sum(Reservation.quantity * Reservation.price_per_stocks).label('total_revenue')
+        ).join(Reservation, IncubateeProduct.product_id == Reservation.product_id
+        ).filter(Reservation.status == 'completed'
+        ).group_by(IncubateeProduct.category).all()
+        
+        reports = {
+            "popular_products": [
+                {
+                    "product_id": product.product_id,
+                    "product_name": product.name,
+                    "company": product.company_name,
+                    "reservation_count": product.reservation_count,
+                    "total_quantity": product.total_quantity
+                } for product in popular_products
+            ],
+            "category_sales": [
+                {
+                    "category": sale.category or "Uncategorized",
+                    "order_count": sale.order_count,
+                    "revenue": float(sale.total_revenue) if sale.total_revenue else 0
+                } for sale in category_sales
+            ]
+        }
+        
+        return jsonify({"success": True, "reports": reports})
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500

@@ -1112,3 +1112,200 @@ document.getElementById('pricingUnitForm').addEventListener('submit', async func
         alert('❌ Error adding pricing unit');
     }
 });
+
+// User Management Functions
+async function loadUsers() {
+    try {
+        const response = await fetch('/admin/get-users');
+        const data = await response.json();
+        
+        if (data.success) {
+            displayUsers(data.users);
+        } else {
+            console.error('Error loading users:', data.error);
+        }
+    } catch (error) {
+        console.error('Error fetching users:', error);
+    }
+}
+
+function displayUsers(users) {
+    const container = document.getElementById('users-container');
+    if (!container) return;
+    
+    if (users.length === 0) {
+        container.innerHTML = '<p class="no-data">No users found.</p>';
+        return;
+    }
+    
+    container.innerHTML = users.map(user => `
+        <div class="user-card">
+            <div class="user-info">
+                <h3>${escapeHtml(user.username)}</h3>
+                <p>User ID: ${user.user_id}</p>
+                <p>Joined: ${formatDateToReadable(user.created_at)}</p>
+            </div>
+            <div class="user-stats">
+                <div class="stat">
+                    <span class="stat-value">${user.total_reservations}</span>
+                    <span class="stat-label">Total Reservations</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value pending">${user.pending_reservations}</span>
+                    <span class="stat-label">Pending</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value approved">${user.approved_reservations}</span>
+                    <span class="stat-label">Approved</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value completed">${user.completed_reservations}</span>
+                    <span class="stat-label">Completed</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Incubatee Management Functions
+async function loadIncubatees() {
+    try {
+        const response = await fetch('/admin/get-incubatees-list');
+        const data = await response.json();
+        
+        if (data.success) {
+            displayIncubatees(data.incubatees);
+        } else {
+            console.error('Error loading incubatees:', data.error);
+        }
+    } catch (error) {
+        console.error('Error fetching incubatees:', error);
+    }
+}
+
+function displayIncubatees(incubatees) {
+    const container = document.getElementById('incubatees-container');
+    if (!container) return;
+    
+    if (incubatees.length === 0) {
+        container.innerHTML = '<p class="no-data">No incubatees found.</p>';
+        return;
+    }
+    
+    container.innerHTML = incubatees.map(incubatee => `
+        <div class="incubatee-card ${incubatee.is_approved ? 'approved' : 'pending'}">
+            <div class="incubatee-header">
+                <h3>${escapeHtml(incubatee.full_name)}</h3>
+                <button class="btn-toggle-approval ${incubatee.is_approved ? 'btn-approved' : 'btn-pending'}" 
+                        onclick="toggleIncubateeApproval(${incubatee.incubatee_id})">
+                    ${incubatee.is_approved ? '✅ Approved' : '⏳ Pending'}
+                </button>
+            </div>
+            <div class="incubatee-info">
+                <p><strong>Company:</strong> ${escapeHtml(incubatee.company_name || 'N/A')}</p>
+                <p><strong>Email:</strong> ${escapeHtml(incubatee.email || 'N/A')}</p>
+                <p><strong>Phone:</strong> ${escapeHtml(incubatee.phone || 'N/A')}</p>
+                <p><strong>Batch:</strong> ${incubatee.batch || 'N/A'}</p>
+            </div>
+            <div class="incubatee-stats">
+                <div class="stat">
+                    <span class="stat-value">${incubatee.product_count}</span>
+                    <span class="stat-label">Products</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">₱${incubatee.total_sales.toFixed(2)}</span>
+                    <span class="stat-label">Total Sales</span>
+                </div>
+            </div>
+            <div class="incubatee-footer">
+                <small>Joined: ${formatDateOnly(incubatee.created_at)}</small>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function toggleIncubateeApproval(incubateeId) {
+    if (!confirm('Are you sure you want to change the approval status?')) return;
+    
+    try {
+        const response = await fetch(`/admin/toggle-incubatee-approval/${incubateeId}`, {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            loadIncubatees(); // Refresh the list
+        } else {
+            showNotification('Error: ' + data.error, 'error');
+        }
+    } catch (error) {
+        console.error('Error toggling approval:', error);
+        showNotification('Failed to update approval status', 'error');
+    }
+}
+
+// Sales Summary Functions
+async function loadSalesSummary() {
+    try {
+        const response = await fetch('/admin/sales-summary');
+        const data = await response.json();
+        
+        if (data.success) {
+            displaySalesSummary(data.summary);
+        } else {
+            console.error('Error loading sales summary:', data.error);
+        }
+    } catch (error) {
+        console.error('Error fetching sales summary:', error);
+    }
+}
+
+function displaySalesSummary(summary) {
+    // Update summary cards
+    document.getElementById('total-revenue').textContent = `₱${summary.total_revenue.toFixed(2)}`;
+    document.getElementById('total-orders').textContent = summary.total_orders;
+    document.getElementById('completed-orders').textContent = summary.completed_orders;
+    document.getElementById('completion-rate').textContent = `${summary.completion_rate.toFixed(1)}%`;
+    
+    // Display sales by incubatee
+    const container = document.getElementById('sales-by-incubatee');
+    if (container) {
+        container.innerHTML = summary.sales_by_incubatee.map(sale => `
+            <div class="sales-item">
+                <div class="sales-info">
+                    <h4>${escapeHtml(sale.name)}</h4>
+                    <p>${escapeHtml(sale.company)}</p>
+                </div>
+                <div class="sales-stats">
+                    <span class="sales-count">${sale.sales_count} sales</span>
+                    <span class="sales-revenue">₱${sale.revenue.toFixed(2)}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
+// Initialize all management sections
+function initializeAdminManagement() {
+    // Load users if on users page
+    if (document.getElementById('users-container')) {
+        loadUsers();
+    }
+    
+    // Load incubatees if on incubatees page
+    if (document.getElementById('incubatees-container')) {
+        loadIncubatees();
+    }
+    
+    // Load sales summary if on dashboard
+    if (document.getElementById('total-revenue')) {
+        loadSalesSummary();
+    }
+}
+
+// Call this when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeAdminManagement();
+});

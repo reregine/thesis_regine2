@@ -11,18 +11,30 @@
   <!-- 🌿 Header with Logout and Add Incubatee -->
   <div class="header">
     <h1>🏢 ATBI Admin Dashboard</h1>
-    <div class="header-actions">
-      <button class="sales-report-btn" id="openSalesReportModal">
-        <span class="icon">📊</span> Sales Report
-      </button>
-      <button class="view-orders-btn" id="openOrdersModal">
-        <span class="icon">📋</span> View Orders
-      </button>
-      <button class="add-incubatee-btn" id="openIncubateeModal">
-        <span class="icon">➕</span> Add Incubatee
-      </button>
-      <button class="logout-btn" onclick="logout()">🚪 Logout</button>
-    </div>
+      <div class="header-actions">
+          <a href="{{ url_for('admin.users_management') }}" class="users-btn">
+              <span class="icon">👥</span> Users
+          </a>
+          <a href="{{ url_for('admin.incubatees_management') }}" class="incubatees-btn">
+              <span class="icon">🏢</span> Incubatees
+          </a>
+          <a href="{{ url_for('admin.sales_reports') }}" class="reports-btn">
+              <span class="icon">📊</span> Reports
+          </a>
+          <a href="{{ url_for('admin.admin_profile') }}" class="profile-btn">
+              <span class="icon">👤</span> Profile
+          </a>
+          <button class="sales-report-btn" id="openSalesReportModal">
+              <span class="icon">📊</span> Sales Report
+          </button>
+          <button class="view-orders-btn" id="openOrdersModal">
+              <span class="icon">📋</span> View Orders
+          </button>
+          <button class="add-incubatee-btn" id="openIncubateeModal">
+              <span class="icon">➕</span> Add Incubatee
+          </button>
+          <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+      </div>
   </div>
 
   <!-- Add Incubatee Modal -->
