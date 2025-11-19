@@ -228,30 +228,6 @@ def add_product():
         current_app.logger.error(f"Error in add_product: {e}")
         return jsonify({"success": False, "error": str(e)}), 400
 
-# Update the get_products route to include pricing unit info
-@admin_bp.route("/get-products", methods=["GET"])
-def get_products():
-    try:
-        products = (db.session.query(IncubateeProduct).join(PricingUnit).order_by(IncubateeProduct.created_at.desc()).all())
-
-        products_list = []
-        for product in products:
-            products_list.append({"product_id": product.product_id,"incubatee_id": product.incubatee_id,
-                "name": product.name,"stock_no": product.stock_no,"products": product.products,
-                "stock_amount": product.stock_amount,"price_per_stocks": float(product.price_per_stocks),
-                "pricing_unit": product.pricing_unit.unit_name if product.pricing_unit else "Per Item",
-                "pricing_unit_id": product.pricing_unit_id,"details": product.details,"category": product.category or "Uncategorized",
-                "expiration_date": product.expiration_date.strftime("%Y-%m-%d") if product.expiration_date else "No Expiry",
-                "warranty": product.warranty or "No Warranty",
-                "added_on": product.added_on.strftime("%Y-%m-%d"),"image_path": product.image_path,
-                "created_at": product.created_at.strftime("%Y-%m-%d %H:%M:%S"),"updated_at": product.updated_at.strftime("%Y-%m-%d %H:%M:%S"),})
-
-        return jsonify({"success": True, "products": products_list})
-
-    except Exception as e:
-        current_app.logger.error(f"Error fetching products: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
-
 @admin_bp.route("/delete-product/<int:product_id>", methods=["DELETE"])
 def delete_product(product_id):
     try:

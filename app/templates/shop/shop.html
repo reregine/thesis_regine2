@@ -618,7 +618,7 @@
 
         try {
             // Fetch products from backend
-            const response = await fetch("/admin/get-products");
+            const response = await fetch("/shop/get-products");
             const data = await response.json();
             if (!data.success) throw new Error("Failed to fetch products");
 
@@ -813,51 +813,95 @@
         // Update the renderProducts function to use stock_amount
         function renderProducts(products) {
             if (!products.length) {
-                productGrid.innerHTML = `<p style="text-align:center;color:#999;">No matching products found.</p>`;
+                productGrid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🔍</div>
+                        <h3>No products found</h3>
+                        <p>Try adjusting your filters or search terms</p>
+                    </div>`;
                 return;
             }
 
             productGrid.innerHTML = products.map(p => {
-                const imgSrc = p.image_path
+                const imgSrc = p.image_path 
                     ? `/${p.image_path}`
                     : "{{ url_for('static', filename='images/no-image.png') }}";
-
-                const stockStatus = getStockStatus(p.stock_amount || 0); // This now uses stock_amount from the backend
                 
-                let extraInfo = "";
-                if (p.expiration_date && p.expiration_date !== "No Expiry") {
-                    extraInfo = `<div class="product-expiry">Expiration: ${p.expiration_date}</div>`;
-                } else if (p.warranty) {
-                    extraInfo = `<div class="product-expiry">Warranty: ${p.warranty}</div>`;
-                } else {
-                    extraInfo = `<div class="product-expiry">Warranty: None</div>`;
-                }
+                const stockStatus = getStockStatus(p.stock_amount || 0);
+                const isOutOfStock = (p.stock_amount || 0) === 0;
+                const incubateeName = p.incubatee?.company_name || '';
+                
+                // Category-based styling
+                const isAgriAqua = p.category === 'Agri-Aqua Business';
+                const categoryIcon = isAgriAqua ? '🌱' : '🍽️';
+                const categoryColor = isAgriAqua ? '#10b981' : '#f59e0b';
+                const categoryClass = isAgriAqua ? 'agri-aqua' : 'food-processing';
 
                 return `
-                    <div class="product-card" data-id="${p.product_id}">
-                        <div class="product-image">
-                            <img src="${imgSrc}" alt="${p.name}">
-                            <div class="stock-badge ${stockStatus.class}">${stockStatus.text}</div>
+                    <div class="product-card ${categoryClass} ${isOutOfStock ? 'out-of-stock' : ''}" data-id="${p.product_id}">
+                        <!-- Header with Category Only -->
+                        <div class="product-header">
+                            <div class="category-badge" style="--category-color: ${categoryColor}">
+                                ${categoryIcon} ${p.category || 'General'}
+                            </div>
                         </div>
+
+                        <!-- Product Image -->
+                        <div class="product-image-section">
+                            <img src="${imgSrc}" alt="${p.name}" class="product-image" loading="lazy">
+                            <div class="image-overlay">
+                                ${stockStatus.text !== 'In Stock' ? 
+                                    `<div class="stock-indicator ${stockStatus.class}">${stockStatus.text}</div>` : ''}
+                                <button class="wishlist-btn" onclick="addToWishlist(${p.product_id})">
+                                    <span class="heart-icon">❤️</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Product Info -->
                         <div class="product-info">
-                            <div class="product-category">${p.category || "Uncategorized"}</div>
                             <h3 class="product-title">${p.name}</h3>
                             <p class="product-description">${p.details}</p>
-                            <div class="product-details">
-                                <div class="product-price">₱${parseFloat(p.price_per_stocks).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
-                                <div class="product-stock">${p.stock_amount} stock available</div>
-                                ${extraInfo}
+
+                            <!-- Pricing & Stock -->
+                            <div class="product-meta">
+                                <div class="price-section">
+                                    <span class="price">₱${parseFloat(p.price_per_stocks).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                    <span class="price-unit">${p.pricing_unit}</span>
+                                </div>
+                                <div class="stock-section ${stockStatus.class}">
+                                    <span class="stock-dot"></span>
+                                    ${p.stock_amount} available
+                                </div>
                             </div>
-                            <div class="product-actions">
-                                <button class="add-to-cart" onclick="addToCart(${p.product_id})" ${(p.stock_amount || 0) === 0 ? 'disabled' : ''}>
-                                    ${(p.stock_amount || 0) === 0 ? 'Out of Stock' : 'Add to Cart'}
+
+                            <!-- Additional Info -->
+                            <div class="product-details">
+                                ${p.expiration_date && p.expiration_date !== "No Expiry" ? 
+                                    `<div class="detail-item">
+                                        <span class="icon">📅</span>
+                                        Expires: ${p.expiration_date}
+                                    </div>` : ''}
+                                ${p.warranty && p.warranty !== "None" ? 
+                                    `<div class="detail-item">
+                                        <span class="icon">🛡️</span>
+                                        ${p.warranty}
+                                    </div>` : ''}
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="action-buttons">
+                                <button class="btn-primary ${isOutOfStock ? 'disabled' : ''}" 
+                                        onclick="addToCart(${p.product_id})" 
+                                        ${isOutOfStock ? 'disabled' : ''}>
+                                    <span class="btn-icon">🛒</span>
+                                    ${isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
                                 </button>
-                                <button class="reserve-btn" onclick="reserveProduct(${p.product_id})" ${(p.stock_amount || 0) === 0 ? 'disabled' : ''}>
-                                    ${(p.stock_amount || 0) === 0 ? 'Unavailable' : 'Reserve'}
-                                </button>
-                                <button class="wishlist-btn" onclick="addToWishlist(${p.product_id})">
-                                    <img src="/static/images/heart2.ico" class="wishlist-icon default-heart" alt="Add to wishlist">
-                                    <img src="/static/images/heart1.ico" class="wishlist-icon active-heart" alt="Remove from wishlist">
+                                <button class="btn-secondary ${isOutOfStock ? 'disabled' : ''}" 
+                                        onclick="reserveProduct(${p.product_id})" 
+                                        ${isOutOfStock ? 'disabled' : ''}>
+                                    <span class="btn-icon">📋</span>
+                                    Reserve
                                 </button>
                             </div>
                         </div>

@@ -1,5 +1,4 @@
 # models/admin.py
-# models/admin.py
 from app.extension import db
 from datetime import date, datetime
 
