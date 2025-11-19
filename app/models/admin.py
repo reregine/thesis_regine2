@@ -86,17 +86,22 @@ class AdminProfile(db.Model):
 class SalesReport(db.Model):
     """Sales reports for incubatees"""
     __tablename__ = "sales_reports"
+    __table_args__ = {'extend_existing': True}
     
-    report_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    incubatee_id = db.Column(db.Integer, db.ForeignKey("incubatees.incubatee_id"), nullable=False)
+    # Match your exact database columns
+    sales_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    reservation_id = db.Column(db.Integer, db.ForeignKey("reservations.reservation_id"), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey("incubatee_products.product_id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id_no"), nullable=False)
-    reservation_id = db.Column(db.Integer, db.ForeignKey("reservations.reservation_id"), nullable=False)
+    product_name = db.Column(db.String(150), nullable=False)  # This exists in your database
     quantity = db.Column(db.Integer, nullable=False)
     unit_price = db.Column(db.Numeric(8, 2), nullable=False)
     total_price = db.Column(db.Numeric(10, 2), nullable=False)
-    sale_date = db.Column(db.Date, nullable=False, default=date.today)
+    sale_date = db.Column(db.Date, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Add the new column we need (make it nullable initially since it's being added)
+    incubatee_id = db.Column(db.Integer, db.ForeignKey("incubatees.incubatee_id"), nullable=True)
     
     incubatee = db.relationship("Incubatee", back_populates="sales_reports")
     product = db.relationship("IncubateeProduct", back_populates="sales_reports")
@@ -104,4 +109,4 @@ class SalesReport(db.Model):
     reservation = db.relationship("Reservation", back_populates="sales_report")
     
     def __repr__(self):
-        return f"<SalesReport {self.report_id}>"
+        return f"<SalesReport {self.sales_id}>"
