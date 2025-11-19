@@ -21,17 +21,10 @@ class TeammateConfig(BaseConfig):
 
 class SupabaseConfig(BaseConfig):
     """Supabase production configuration"""
-    # Get Supabase connection details from environment variables
-    DB_HOST = os.environ.get("DB_HOST", "db.abcdxyz.supabase.co")
-    DB_PORT = os.environ.get("DB_PORT", "5432")
-    DB_NAME = os.environ.get("DB_NAME", "postgres")
-    DB_USER = os.environ.get("DB_USER", "postgres")
-    DB_PASSWORD = os.environ.get("DB_PASSWORD", "thesisregine")
-    
-    # Construct the database URI
-    SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    # REPLACE THIS WITH YOUR ACTUAL CONNECTION STRING FROM SUPABASE DASHBOARD
+    SQLALCHEMY_DATABASE_URI = "postgresql://postgres.knawfwgerjfutwurrbfx:R3gIne_Th3sis@aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres"
     DEBUG = False
-
+    #R3gIne_Th3sis
 class ProductionConfig(BaseConfig):
     """Production configuration (uses DATABASE_URL environment variable)"""
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
@@ -85,8 +78,8 @@ config_dict = {
 }
 
 # Select configuration based on environment variable
-config_name = os.environ.get('APP_CONFIG', 'local')
-Config = config_dict.get(config_name, LocalConfig)
+config_name = os.environ.get('APP_CONFIG', 'supabase')
+Config = config_dict.get(config_name, SupabaseConfig)
 
 # Validate configuration
 if not Config.SQLALCHEMY_DATABASE_URI:
