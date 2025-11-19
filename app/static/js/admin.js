@@ -11,7 +11,17 @@ const AUTO_CANCEL_TIMEOUT = 3 * 24 * 60 * 60 * 1000; // 3 days
 document.addEventListener('DOMContentLoaded', function() {
     initializeAdmin();
 });
-
+    // Users modal
+    const openUsersModalBtn = document.getElementById('openUsersModal');
+    if (openUsersModalBtn) {
+        openUsersModalBtn.addEventListener('click', openUsersModal);
+    }
+    
+    // Load users.js functionality
+    if (typeof initUsersManagement === 'function') {
+        initUsersManagement();
+    }
+    
 function initializeAdmin() {
     // Auto display today's date
     document.getElementById("current-date").innerText = formattedDate;

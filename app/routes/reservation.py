@@ -1,10 +1,8 @@
 from flask import Blueprint, request, jsonify, session, current_app, url_for, Response
 from ..extension import db
 from ..models.reservation import Reservation
-from ..models.admin import IncubateeProduct
-from ..models.sales_report import SalesReport 
+from ..models.admin import IncubateeProduct, SalesReport
 from datetime import datetime, timezone, timedelta
-import time
 import csv
 from io import StringIO
 

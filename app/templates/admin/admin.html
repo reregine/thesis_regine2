@@ -12,27 +12,34 @@
   <div class="header">
     <h1>🏢 ATBI Admin Dashboard</h1>
       <div class="header-actions">
+          <!-- Management Sections (Keep as pages if needed) -->
           <a href="{{ url_for('admin.users_management') }}" class="users-btn">
               <span class="icon">👥</span> Users
           </a>
           <a href="{{ url_for('admin.incubatees_management') }}" class="incubatees-btn">
               <span class="icon">🏢</span> Incubatees
           </a>
+          
+          <!-- Reports & Analytics -->
           <a href="{{ url_for('admin.sales_reports') }}" class="reports-btn">
-              <span class="icon">📊</span> Reports
-          </a>
-          <a href="{{ url_for('admin.admin_profile') }}" class="profile-btn">
-              <span class="icon">👤</span> Profile
+              <span class="icon">📊</span> Incubatee Reports
           </a>
           <button class="sales-report-btn" id="openSalesReportModal">
-              <span class="icon">📊</span> Sales Report
+              <span class="icon">📈</span> Sales Report
           </button>
+          
+          <!-- Operations -->
           <button class="view-orders-btn" id="openOrdersModal">
               <span class="icon">📋</span> View Orders
           </button>
           <button class="add-incubatee-btn" id="openIncubateeModal">
               <span class="icon">➕</span> Add Incubatee
           </button>
+          
+          <!-- User & System -->
+          <a href="{{ url_for('admin.admin_profile') }}" class="profile-btn">
+              <span class="icon">👤</span> Profile
+          </a>
           <button class="logout-btn" onclick="logout()">🚪 Logout</button>
       </div>
   </div>

@@ -297,25 +297,6 @@ def add_incubatee():
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
-    
-@admin_bp.route("/get-incubatees", methods=["GET"])
-def get_incubatees():
-    """Return incubatees for dropdown selection"""
-    try:
-        incubatees = Incubatee.query.order_by(Incubatee.last_name.asc()).all()
-        return jsonify({
-            "success": True,
-            "incubatees": [
-                {
-                    "incubatee_id": i.incubatee_id,
-                    "first_name": i.first_name,
-                    "last_name": i.last_name,
-                    "company_name": i.company_name
-                } for i in incubatees
-            ]
-        })
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
 
 @admin_bp.route("/profile")
 def admin_profile():
@@ -376,15 +357,11 @@ def get_users():
             approved_reservations = Reservation.query.filter_by(user_id=user.id_no, status='approved').count()
             completed_reservations = Reservation.query.filter_by(user_id=user.id_no, status='completed').count()
             
-            users_list.append({
-                "user_id": user.id_no,
-                "username": user.username,
+            users_list.append({"user_id": user.id_no,"username": user.username,
                 "created_at": user.created_at.strftime("%Y-%m-%d %H:%M"),
                 "total_reservations": pending_reservations + approved_reservations + completed_reservations,
                 "pending_reservations": pending_reservations,
-                "approved_reservations": approved_reservations,
-                "completed_reservations": completed_reservations
-            })
+                "approved_reservations": approved_reservations,"completed_reservations": completed_reservations})
         
         return jsonify({"success": True, "users": users_list})
         
@@ -402,29 +379,32 @@ def get_incubatees_list():
         incubatees_list = []
         
         for incubatee in incubatees:
-            # Count products and calculate total sales
+            # Count products for this incubatee
             product_count = IncubateeProduct.query.filter_by(incubatee_id=incubatee.incubatee_id).count()
             
-            # Calculate total sales from sales reports
-            total_sales = db.session.query(func.coalesce(func.sum(SalesReport.total_price), 0)).filter_by(incubatee_id=incubatee.incubatee_id).scalar()
+            # Calculate total sales from sales reports - FIXED query
+            total_sales_result = db.session.query(func.coalesce(func.sum(SalesReport.total_price), 0)).filter(SalesReport.incubatee_id == incubatee.incubatee_id).scalar()
+            
+            total_sales = float(total_sales_result) if total_sales_result else 0.0
             
             incubatees_list.append({
                 "incubatee_id": incubatee.incubatee_id,
                 "full_name": f"{incubatee.first_name} {incubatee.last_name}",
-                "company_name": incubatee.company_name,
-                "email": incubatee.email,
-                "phone": incubatee.phone_number,
+                "company_name": incubatee.company_name or "No Company",
+                "email": incubatee.email or "No email",
+                "phone": incubatee.phone_number or "No phone",
                 "batch": incubatee.batch,
                 "product_count": product_count,
-                "total_sales": float(total_sales),
-                "is_approved": incubatee.is_approved,
-                "created_at": incubatee.created_at.strftime("%Y-%m-%d")
+                "total_sales": total_sales,
+                "is_approved": incubatee.is_approved if hasattr(incubatee, 'is_approved') else False,
+                "created_at": incubatee.created_at.strftime("%Y-%m-%d") if incubatee.created_at else "Unknown"
             })
         
         return jsonify({"success": True, "incubatees": incubatees_list})
         
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        current_app.logger.error(f"Error in get_incubatees_list: {str(e)}")
+        return jsonify({"success": False, "error": f"Failed to load incubatees: {str(e)}"}), 500
 
 @admin_bp.route("/toggle-incubatee-approval/<int:incubatee_id>", methods=["POST"])
 def toggle_incubatee_approval(incubatee_id):
@@ -451,13 +431,13 @@ def sales_summary():
         return jsonify({"success": False, "error": "Unauthorized"}), 401
     
     try:
-        # Sales by incubatee
+        # Sales by incubatee - FIXED: Use sales_id instead of report_id
         sales_by_incubatee = db.session.query(
             Incubatee.incubatee_id,
             Incubatee.first_name,
             Incubatee.last_name,
             Incubatee.company_name,
-            func.count(SalesReport.report_id).label('total_sales_count'),
+            func.count(SalesReport.sales_id).label('total_sales_count'),  # FIXED
             func.coalesce(func.sum(SalesReport.total_price), 0).label('total_revenue')
         ).outerjoin(SalesReport, Incubatee.incubatee_id == SalesReport.incubatee_id
         ).group_by(Incubatee.incubatee_id).all()
@@ -493,13 +473,12 @@ def sales_summary():
                 {
                     "month": sale.month.strftime("%Y-%m"),
                     "revenue": float(sale.monthly_revenue) if sale.monthly_revenue else 0
-                } for sale in monthly_sales
-            ]
-        }
+                } for sale in monthly_sales]}
         
         return jsonify({"success": True, "summary": summary})
         
     except Exception as e:
+        current_app.logger.error(f"Error in sales_summary: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 @admin_bp.route("/reports")
