@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Incubatee Management - ATBI Admin</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/incubate.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/agrilogo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -68,64 +67,6 @@
             </div>
         </div>
 
-        <!-- Add Incubatee Modal -->
-        <div id="addIncubateeModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Add New Incubatee</h2>
-                    <button class="close-btn" onclick="closeAddIncubateeModal()">&times;</button>
-                </div>
-                <form id="addIncubateeForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>First Name *</label>
-                            <input type="text" id="add_first_name" name="first_name" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Last Name *</label>
-                            <input type="text" id="add_last_name" name="last_name" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Middle Name</label>
-                        <input type="text" id="add_middle_name" name="middle_name">
-                    </div>
-                    <div class="form-group">
-                        <label>Company Name</label>
-                        <input type="text" id="add_company_name" name="company_name">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Email *</label>
-                            <input type="email" id="add_email" name="email" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Phone Number</label>
-                            <input type="text" id="add_phone_number" name="phone_number">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Contact Info</label>
-                        <textarea id="add_contact_info" name="contact_info" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Batch</label>
-                        <input type="number" id="add_batch" name="batch">
-                    </div>
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="add_is_approved" name="is_approved" checked>
-                            Approve immediately
-                        </label>
-                    </div>
-                    <div class="modal-actions">
-                        <button type="button" class="btn-cancel" onclick="closeAddIncubateeModal()">Cancel</button>
-                        <button type="submit" class="btn-save">Add Incubatee</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
         <!-- Incubatee Details Modal -->
         <div id="incubateeDetailsModal" class="modal">
             <div class="modal-content large-modal">
@@ -144,347 +85,176 @@
             </div>
         </div>
     </div>
-
-    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
-    <script>
-        let allIncubatees = [];
-        let currentFilter = 'all';
-
-        // Load incubatees when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            loadIncubatees();
-        });
-
-        async function loadIncubatees() {
-            try {
-                const response = await fetch('/admin/get-incubatees-list');
-                const data = await response.json();
-                
-                if (data.success) {
-                    allIncubatees = data.incubatees;
-                    filterAndDisplayIncubatees();
-                    updateIncubateeStats(allIncubatees);
-                } else {
-                    showNotification('Error loading incubatees: ' + data.error, 'error');
-                    document.getElementById('incubatees-container').innerHTML = 
-                        '<div class="error-state">Failed to load incubatees. Please try again.</div>';
-                }
-            } catch (error) {
-                console.error('Error fetching incubatees:', error);
-                showNotification('Failed to load incubatees', 'error');
-                document.getElementById('incubatees-container').innerHTML = 
-                    '<div class="error-state">Network error. Please check your connection.</div>';
-            }
-        }
-
-        function filterAndDisplayIncubatees() {
-            let filteredIncubatees = allIncubatees;
-            
-            // Apply status filter
-            if (currentFilter === 'approved') {
-                filteredIncubatees = filteredIncubatees.filter(i => i.is_approved);
-            } else if (currentFilter === 'pending') {
-                filteredIncubatees = filteredIncubatees.filter(i => !i.is_approved);
-            }
-            
-            // Apply search filter
-            const searchTerm = document.getElementById('incubateeSearch').value.toLowerCase();
-            if (searchTerm) {
-                filteredIncubatees = filteredIncubatees.filter(i => 
-                    i.full_name.toLowerCase().includes(searchTerm) ||
-                    (i.company_name && i.company_name.toLowerCase().includes(searchTerm)) ||
-                    (i.email && i.email.toLowerCase().includes(searchTerm))
-                );
-            }
-            
-            displayIncubatees(filteredIncubatees);
-        }
-
-        function displayIncubatees(incubatees) {
-            const container = document.getElementById('incubatees-container');
-            
-            if (incubatees.length === 0) {
-                container.innerHTML = '<div class="no-data">No incubatees found.</div>';
-                return;
-            }
-
-            container.innerHTML = incubatees.map(incubatee => `
-                <div class="incubatee-card ${incubatee.is_approved ? 'approved' : 'pending'}">
-                    <div class="incubatee-header">
-                        <div class="incubatee-avatar">
-                            ${incubatee.full_name.charAt(0).toUpperCase()}
-                        </div>
-                        <div class="incubatee-basic-info">
-                            <h3>${escapeHtml(incubatee.full_name)}</h3>
-                            <p class="company-name">${escapeHtml(incubatee.company_name || 'No Company')}</p>
-                            <p class="incubatee-id">ID: ${incubatee.incubatee_id} • Batch: ${incubatee.batch || 'N/A'}</p>
-                        </div>
-                        <div class="incubatee-actions">
-                            <button class="btn-toggle-approval ${incubatee.is_approved ? 'btn-approved' : 'btn-pending'}" 
-                                    onclick="toggleIncubateeApproval(${incubatee.incubatee_id})">
-                                ${incubatee.is_approved ? '✅ Approved' : '⏳ Pending'}
-                            </button>
-                            <button class="btn-view" onclick="showIncubateeDetails(${incubatee.incubatee_id})">
-                                👁️ View
-                            </button>
-                        </div>
+    <!-- Edit Incubatee Modal -->
+    <div id="editIncubateeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Incubatee</h2>
+                <button class="close-btn" onclick="closeEditIncubateeModal()">&times;</button>
+            </div>
+            <form id="editIncubateeForm" enctype="multipart/form-data">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>First Name *</label>
+                        <input type="text" id="edit_first_name" name="first_name" required>
                     </div>
-                    
-                    <div class="incubatee-contact">
-                        <div class="contact-item">
-                            <span class="contact-icon">📧</span>
-                            <span>${escapeHtml(incubatee.email || 'No email')}</span>
-                        </div>
-                        <div class="contact-item">
-                            <span class="contact-icon">📞</span>
-                            <span>${escapeHtml(incubatee.phone || 'No phone')}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="incubatee-stats">
-                        <div class="stat">
-                            <span class="stat-value">${incubatee.product_count}</span>
-                            <span class="stat-label">Products</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-value revenue">₱${incubatee.total_sales.toFixed(2)}</span>
-                            <span class="stat-label">Total Sales</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-value">${formatDateOnly(incubatee.created_at)}</span>
-                            <span class="stat-label">Joined</span>
-                        </div>
+                    <div class="form-group">
+                        <label>Last Name *</label>
+                        <input type="text" id="edit_last_name" name="last_name" required>
                     </div>
                 </div>
-            `).join('');
-        }
-
-        function updateIncubateeStats(incubatees) {
-            const totalIncubatees = incubatees.length;
-            const approvedIncubatees = incubatees.filter(i => i.is_approved).length;
-            const pendingIncubatees = incubatees.filter(i => !i.is_approved).length;
-            const totalProducts = incubatees.reduce((sum, i) => sum + i.product_count, 0);
-            const totalRevenue = incubatees.reduce((sum, i) => sum + i.total_sales, 0);
-
-            document.getElementById('totalIncubatees').textContent = totalIncubatees;
-            document.getElementById('approvedIncubatees').textContent = approvedIncubatees;
-            document.getElementById('pendingIncubatees').textContent = pendingIncubatees;
-            document.getElementById('totalProducts').textContent = totalProducts;
-            document.getElementById('totalRevenue').textContent = '₱' + totalRevenue.toFixed(2);
-        }
-
-        function setIncubateeFilter(filter) {
-            currentFilter = filter;
-            
-            // Update active tab
-            document.querySelectorAll('.filter-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            filterAndDisplayIncubatees();
-        }
-
-        function filterIncubatees() {
-            filterAndDisplayIncubatees();
-        }
-
-        async function toggleIncubateeApproval(incubateeId) {
-            if (!confirm('Are you sure you want to change the approval status?')) return;
-            
-            try {
-                const response = await fetch(`/admin/toggle-incubatee-approval/${incubateeId}`, {
-                    method: 'POST'
-                });
                 
-                const data = await response.json();
+                <div class="form-group">
+                    <label>Middle Name</label>
+                    <input type="text" id="edit_middle_name" name="middle_name">
+                </div>
                 
-                if (data.success) {
-                    showNotification(data.message, 'success');
-                    loadIncubatees(); // Refresh the list
-                } else {
-                    showNotification('Error: ' + data.error, 'error');
-                }
-            } catch (error) {
-                console.error('Error toggling approval:', error);
-                showNotification('Failed to update approval status', 'error');
-            }
-        }
+                <div class="form-group">
+                    <label>Company Name</label>
+                    <input type="text" id="edit_company_name" name="company_name">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="edit_email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="text" id="edit_phone_number" name="phone_number">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Website</label>
+                    <input type="url" id="edit_website" name="website" placeholder="https://example.com">
+                </div>
+                
+                <div class="form-group">
+                    <label>Contact Info</label>
+                    <textarea id="edit_contact_info" name="contact_info" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Batch</label>
+                    <input type="number" id="edit_batch" name="batch">
+                </div>
+                
+                <!-- Logo Upload Section -->
+                <div class="form-group">
+                    <label>Company Logo</label>
+                    <div class="logo-upload-section">
+                        <div id="edit_logo_preview" class="logo-preview">
+                            <!-- Current logo will be displayed here -->
+                        </div>
+                        <input type="file" id="edit_company_logo" name="company_logo" 
+                            accept="image/*" onchange="handleEditLogoPreview(event)">
+                        <div id="edit_new_logo_container" style="margin-top: 10px;">
+                            <img id="edit_new_logo_preview" src="" alt="New Logo Preview" 
+                                style="max-width: 150px; max-height: 150px; display: none; border: 1px solid #ccc; padding: 5px; border-radius: 6px;">
+                        </div>
+                        <small class="file-hint">Supported formats: JPG, PNG, GIF, SVG. Max size: 5MB</small>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="edit_is_approved" name="is_approved">
+                        Approve incubatee
+                    </label>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeEditIncubateeModal()">Cancel</button>
+                    <button type="submit" class="btn-save">Update Incubatee</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-        function openAddIncubateeModal() {
-            document.getElementById('addIncubateeModal').classList.add('active');
-        }
-
-        function closeAddIncubateeModal() {
-            document.getElementById('addIncubateeModal').classList.remove('active');
-            document.getElementById('addIncubateeForm').reset();
-        }
-
-        async function showIncubateeDetails(incubateeId) {
-            try {
-                const incubatee = allIncubatees.find(i => i.incubatee_id === incubateeId);
-                if (!incubatee) return;
-
-                const modal = document.getElementById('incubateeDetailsModal');
-                const content = document.getElementById('incubateeDetailsContent');
-
-                // Load incubatee products
-                const productsResponse = await fetch(`/admin/get-incubatee-products/${incubateeId}`);
-                const productsData = await productsResponse.json();
-                const products = productsData.success ? productsData.products : [];
-
-                content.innerHTML = `
-                    <div class="incubatee-detail-section">
-                        <h3>Basic Information</h3>
-                        <div class="detail-grid">
-                            <div class="detail-item">
-                                <label>Incubatee ID:</label>
-                                <span>${incubatee.incubatee_id}</span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Full Name:</label>
-                                <span>${escapeHtml(incubatee.full_name)}</span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Company:</label>
-                                <span>${escapeHtml(incubatee.company_name || 'N/A')}</span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Batch:</label>
-                                <span>${incubatee.batch || 'N/A'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Email:</label>
-                                <span>${escapeHtml(incubatee.email || 'N/A')}</span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Phone:</label>
-                                <span>${escapeHtml(incubatee.phone || 'N/A')}</span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Status:</label>
-                                <span class="status-badge ${incubatee.is_approved ? 'status-approved' : 'status-pending'}">
-                                    ${incubatee.is_approved ? 'Approved' : 'Pending Approval'}
-                                </span>
-                            </div>
-                            <div class="detail-item">
-                                <label>Join Date:</label>
-                                <span>${formatDateToReadable(incubatee.created_at)}</span>
+    <!-- Add Incubatee Modal (with logo upload) -->
+    <div id="incubateeModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Add New Incubatee</h2>
+            <button class="close-btn" id="closeIncubateeModalTop">&times;</button>
+          </div>
+    
+          <form id="incubateeAddForm" enctype="multipart/form-data">
+            <div class="form-group">
+              <label>First Name <span class="required-star">*</span></label>
+              <input type="text" id="first_name" name="first_name" required>
+            </div>
+    
+            <div class="form-group">
+              <label>Middle Name</label>
+              <input type="text" id="middle_name" name="middle_name">
+            </div>
+    
+            <div class="form-group">
+              <label>Last Name <span class="required-star">*</span></label>
+              <input type="text" id="last_name" name="last_name" required>
+            </div>
+    
+            <div class="form-group">
+              <label>Company Name</label>
+              <input type="text" id="company_name" name="company_name">
+            </div>
+    
+            <div class="form-group">
+              <label>Company Website</label>
+              <input type="url" id="website" name="website" placeholder="https://incubatee.com">
+            </div>
+    
+            <div class="form-group">
+                <label>Company Logo</label>
+                <div class="file-upload-container">
+                    <input type="file" id="company_logo" name="company_logo" accept="image/*" class="file-input">
+                    <label for="company_logo" class="file-upload-label">
+                        <div class="file-upload-content">
+                            <div class="file-upload-icon">📁</div>
+                            <div class="file-upload-text">
+                                <span class="file-upload-title">Choose Company Logo</span>
+                                <span class="file-upload-subtitle">PNG, JPG, GIF, SVG up to 5MB</span>
                             </div>
                         </div>
+                    </label>
+                    <div id="logo-preview" class="logo-preview-container">
+                        <img id="preview-logo" src="" alt="Logo Preview" class="logo-preview-image">
                     </div>
+                </div>
+            </div>
+    
+            <div class="form-group">
+              <label>Email <span class="required-star">*</span></label>
+              <input type="email" id="email" name="email" required>
+            </div>
+    
+            <div class="form-group">
+              <label>Phone Number</label>
+              <input type="text" id="phone_number" name="phone_number">
+            </div>
+    
+            <div class="form-group">
+              <label>Contact Info</label>
+              <textarea id="contact_info" name="contact_info" rows="2"></textarea>
+            </div>
+    
+            <div class="form-group">
+              <label>Batch</label>
+              <input type="number" id="batch" name="batch">
+            </div>
+    
+            <div class="modal-actions">
+              <button type="button" class="btn-cancel" id="closeIncubateeModalBottom">Cancel</button>
+              <button type="submit" class="btn-save">Save</button>
+            </div>
+          </form>
+        </div>
+    </div>
 
-                    <div class="incubatee-detail-section">
-                        <h3>Business Statistics</h3>
-                        <div class="stats-grid">
-                            <div class="stat-card mini">
-                                <div class="stat-value">${incubatee.product_count}</div>
-                                <div class="stat-label">Total Products</div>
-                            </div>
-                            <div class="stat-card mini">
-                                <div class="stat-value revenue">₱${incubatee.total_sales.toFixed(2)}</div>
-                                <div class="stat-label">Total Revenue</div>
-                            </div>
-                            <div class="stat-card mini">
-                                <div class="stat-value">${products.filter(p => p.stock_amount > 0).length}</div>
-                                <div class="stat-label">In Stock</div>
-                            </div>
-                            <div class="stat-card mini">
-                                <div class="stat-value">${products.filter(p => p.stock_amount === 0).length}</div>
-                                <div class="stat-label">Out of Stock</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="incubatee-detail-section">
-                        <h3>Products (${products.length})</h3>
-                        ${products.length === 0 ? 
-                            '<p class="no-data">No products added yet.</p>' :
-                            `<div class="products-list">
-                                ${products.map(product => `
-                                    <div class="product-item">
-                                        <div class="product-image">
-                                            ${product.image_path ? 
-                                                `<img src="/${product.image_path}" alt="${escapeHtml(product.name)}">` :
-                                                '<div class="no-image">📷</div>'
-                                            }
-                                        </div>
-                                        <div class="product-info">
-                                            <h4>${escapeHtml(product.name)}</h4>
-                                            <p class="product-category">${product.category || 'Uncategorized'}</p>
-                                            <p class="product-stock">Stock: ${product.stock_amount} • Price: ₱${product.price_per_stocks.toFixed(2)}</p>
-                                        </div>
-                                        <div class="product-status ${product.stock_amount > 0 ? 'in-stock' : 'out-of-stock'}">
-                                            ${product.stock_amount > 0 ? 'In Stock' : 'Out of Stock'}
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>`
-                        }
-                    </div>
-                `;
-
-                modal.classList.add('active');
-            } catch (error) {
-                console.error('Error showing incubatee details:', error);
-                showNotification('Failed to load incubatee details', 'error');
-            }
-        }
-
-        function closeIncubateeModal() {
-            document.getElementById('incubateeDetailsModal').classList.remove('active');
-        }
-
-        // Handle add incubatee form submission
-        document.getElementById('addIncubateeForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const formData = {
-                first_name: document.getElementById('add_first_name').value,
-                last_name: document.getElementById('add_last_name').value,
-                middle_name: document.getElementById('add_middle_name').value,
-                company_name: document.getElementById('add_company_name').value,
-                email: document.getElementById('add_email').value,
-                phone_number: document.getElementById('add_phone_number').value,
-                contact_info: document.getElementById('add_contact_info').value,
-                batch: document.getElementById('add_batch').value,
-                is_approved: document.getElementById('add_is_approved').checked
-            };
-
-            try {
-                const response = await fetch('/admin/add-incubatee', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showNotification('✅ Incubatee added successfully!', 'success');
-                    closeAddIncubateeModal();
-                    loadIncubatees(); // Refresh the list
-                } else {
-                    showNotification('❌ Error: ' + data.error, 'error');
-                }
-            } catch (error) {
-                console.error('Error adding incubatee:', error);
-                showNotification('❌ Failed to add incubatee', 'error');
-            }
-        });
-
-        // Close modals when clicking outside
-        document.getElementById('addIncubateeModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeAddIncubateeModal();
-            }
-        });
-
-        document.getElementById('incubateeDetailsModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeIncubateeModal();
-            }
-        });
-    </script>
+    <!-- Hidden image for current logo -->
+    <img id="edit_current_logo" src="" alt="Current Logo" style="max-width: 150px; max-height: 150px; display: none; border: 1px solid #ccc; padding: 5px; border-radius: 6px;">
+    <script src="{{ url_for('static', filename='js/incubatee.js') }}"></script>
 </body>
 </html>

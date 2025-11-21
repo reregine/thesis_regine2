@@ -1,6 +1,7 @@
 # models/admin.py
 from app.extension import db
 from datetime import date, datetime
+import os
 
 class Incubatee(db.Model):
     """Represents the incubatee (owner/vendor of products)."""
@@ -15,8 +16,11 @@ class Incubatee(db.Model):
     company_name = db.Column(db.String(150), nullable=True)
     email = db.Column(db.String(100), nullable=True)
     phone_number = db.Column(db.String(100), nullable=True)
-    is_approved = db.Column(db.Boolean, default=False)  # New field for approval status
+    website = db.Column(db.String(255), nullable=True)
+    logo_path = db.Column(db.String(500), nullable=True)
+    is_approved = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationship: One incubatee → Many products
     products = db.relationship("IncubateeProduct", back_populates="incubatee", cascade="all, delete-orphan")
@@ -24,6 +28,29 @@ class Incubatee(db.Model):
 
     def __repr__(self):
         return f"<Incubatee {self.first_name} {self.last_name}>"
+
+    @property
+    def full_name(self):
+        """Return the full name of the incubatee."""
+        if self.middle_name:
+            return f"{self.first_name} {self.middle_name} {self.last_name}"
+        return f"{self.first_name} {self.last_name}"
+
+    @property
+    def logo_url(self):
+        """Return the logo URL only if it's a custom uploaded logo."""
+        if self.logo_path and 'incubatee_logo' in self.logo_path:
+            return f"incubatee_logo/{self.logo_path}"
+        return None  # Return None instead of batch image
+
+    @property
+    def display_website(self):
+        """Return formatted website URL."""
+        if self.website:
+            if not self.website.startswith(('http://', 'https://')):
+                return f"https://{self.website}"
+            return self.website
+        return None
 
 class IncubateeProduct(db.Model):
     __tablename__ = "incubatee_products"

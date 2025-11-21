@@ -32,9 +32,6 @@
           <button class="view-orders-btn" id="openOrdersModal">
               <span class="icon">📋</span> View Orders
           </button>
-          <button class="add-incubatee-btn" id="openIncubateeModal">
-              <span class="icon">➕</span> Add Incubatee
-          </button>
           
           <!-- User & System -->
           <a href="{{ url_for('admin.admin_profile') }}" class="profile-btn">
@@ -42,63 +39,6 @@
           </a>
           <button class="logout-btn" onclick="logout()">🚪 Logout</button>
       </div>
-  </div>
-
-  <!-- Add Incubatee Modal -->
-  <div id="incubateeModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Add New Incubatee</h2>
-        <button class="close-btn" id="closeIncubateeModalTop">&times;</button>
-      </div>
-
-      <form id="incubateeAddForm">
-        <div class="form-group">
-          <label>First Name</label>
-          <input type="text" id="first_name" name="first_name" required>
-        </div>
-
-        <div class="form-group">
-          <label>Middle Name</label>
-          <input type="text" id="middle_name" name="middle_name">
-        </div>
-
-        <div class="form-group">
-          <label>Last Name</label>
-          <input type="text" id="last_name" name="last_name" required>
-        </div>
-
-        <div class="form-group">
-          <label>Company Name</label>
-          <input type="text" id="company_name" name="company_name">
-        </div>
-
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="email" name="email" required>
-        </div>
-
-        <div class="form-group">
-          <label>Phone Number</label>
-          <input type="text" id="phone_number" name="phone_number">
-        </div>
-
-        <div class="form-group">
-          <label>Contact Info</label>
-          <textarea id="contact_info" name="contact_info" rows="2"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label>Batch</label>
-          <input type="number" id="batch" name="batch">
-        </div>
-
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" id="closeIncubateeModalBottom">Cancel</button>
-          <button type="submit" class="btn-save">Save</button>
-        </div>
-      </form>
-    </div>
   </div>
 
   <!-- Orders Modal -->
@@ -256,10 +196,11 @@
         <!-- Add this form group after the price_per_stocks field -->
         <div class="form-group">
           <label for="pricing_unit">Pricing Unit <span class="required-star">*</span></label>
-          <select id="pricing_unit" name="pricing_unit_id" class="form-control" required>
-            <option value="" disabled selected>Select Pricing Unit</option>
-            <!-- Options will be populated dynamically -->
-          </select>
+          <div class="pricing-unit-search-container">
+            <input type="text" id="pricing_unit_search" placeholder="Search pricing unit..." autocomplete="off">
+            <div id="pricingUnitDropdown" class="dropdown hidden"></div>
+          </div>
+          <input type="hidden" id="pricing_unit" name="pricing_unit_id" required>
           <button type="button" class="btn-add-unit" id="addPricingUnitBtn" style="margin-top: 5px; padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
             + Add New Pricing Unit
           </button>
@@ -332,31 +273,32 @@
       </div>
     </div>
   </div>
+  
   <!-- Add Pricing Unit Modal -->
-  <div id="pricingUnitModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Add New Pricing Unit</h2>
-        <button class="close-btn" id="closePricingUnitModal">&times;</button>
+  <div id="pricingUnitModal" class="add-pricing-modal" style="display: none;">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h2>Add New Pricing Unit</h2>
+              <button class="close-btn" id="closePricingUnitModal">&times;</button>
+          </div>
+          
+          <form id="pricingUnitForm">
+              <div class="form-group">
+                  <label for="unit_name">Unit Name <span class="required-star">*</span></label>
+                  <input type="text" id="unit_name" name="unit_name" placeholder="e.g., Per Kilo, Per Item, Per Package" required>
+              </div>
+              
+              <div class="form-group">
+                  <label for="unit_description">Description (Optional)</label>
+                  <textarea id="unit_description" name="unit_description" rows="3" placeholder="Brief description of the unit"></textarea>
+              </div>
+              
+              <div class="modal-actions">
+                  <button type="button" class="btn-cancel" id="closePricingUnitModalBottom">Cancel</button>
+                  <button type="submit" class="btn-save">Save Unit</button>
+              </div>
+          </form>
       </div>
-      
-      <form id="pricingUnitForm">
-        <div class="form-group">
-          <label>Unit Name</label>
-          <input type="text" id="unit_name" name="unit_name" placeholder="e.g., Per Kilo, Per Item, Per Package" required>
-        </div>
-        
-        <div class="form-group">
-          <label>Description (Optional)</label>
-          <input type="text" id="unit_description" name="unit_description" placeholder="Brief description of the unit">
-        </div>
-        
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" id="closePricingUnitModalBottom">Cancel</button>
-          <button type="submit" class="btn-save">Save Unit</button>
-        </div>
-      </form>
-    </div>
   </div>
   <!-- Include the external JavaScript file -->
   <script src="{{ url_for('static', filename='js/admin.js') }}"></script>

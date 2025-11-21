@@ -23,43 +23,86 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
 function initializeAdmin() {
-    // Auto display today's date
-    document.getElementById("current-date").innerText = formattedDate;
+    // Auto display today's date - ADD NULL CHECK
+    const currentDateElement = document.getElementById("current-date");
+    if (currentDateElement) {
+        currentDateElement.innerText = formattedDate;
+    }
 
-    loadProducts(); // Load products when page loads
+    // Only load products if we're on the main admin page
+    const productList = document.getElementById("product-list");
+    if (productList) {
+        loadProducts(); // Load products when page loads
+    }
 
     initializeEventListeners(); // Initialize event listeners
     
-    initializeIncubateeSearch(); // Initialize incubatee search
+    // Only initialize incubatee search if we're on the main admin page
+    const incubateeSearch = document.getElementById("incubateeSearch");
+    if (incubateeSearch) {
+        initializeIncubateeSearch();
+    }
+
+    // Initialize pricing unit search
+    const pricingUnitSearch = document.getElementById("pricing_unit_search");
+    if (pricingUnitSearch) {
+        initializePricingUnitSearch();
+    }
 
     startAutoCancellationChecker();  // Start auto-cancellation checker
 }
-
 function initializeEventListeners() {
-    // Category filter event
-    document.getElementById("categoryFilter").addEventListener("change", handleCategoryFilter);
+    // Category filter event - ADD NULL CHECK
+    const categoryFilter = document.getElementById("categoryFilter");
+    if (categoryFilter) {
+        categoryFilter.addEventListener("change", handleCategoryFilter);
+    }
 
+    // Only add logo preview if the element exists (for incubatee form)
+    const companyLogoInput = document.getElementById("company_logo");
+    if (companyLogoInput) {
+        companyLogoInput.addEventListener("change", handleLogoPreview);
+    }
     // Validation: Stock Number → Only numbers and dash
-    document.getElementById("stock_no").addEventListener("input", function() {
-        this.value = this.value.replace(/[^0-9-]/g, "");
-    });
+    const stockNoInput = document.getElementById("stock_no");
+    if (stockNoInput) {
+        stockNoInput.addEventListener("input", function() {
+            this.value = this.value.replace(/[^0-9-]/g, "");
+        });
+    }
 
     // Validation: Offered Services → Only letters and spaces
-    document.getElementById("products").addEventListener("input", function() {
-        this.value = this.value.replace(/[^a-zA-Z\s]/g, "");
-    });
+    const productsInput = document.getElementById("products");
+    if (productsInput) {
+        productsInput.addEventListener("input", function() {
+            this.value = this.value.replace(/[^a-zA-Z\s]/g, "");
+        });
+    }
 
     // Preview uploaded image
-    document.getElementById("product_image").addEventListener("change", handleImagePreview);
+    const productImageInput = document.getElementById("product_image");
+    if (productImageInput) {
+        productImageInput.addEventListener("change", handleImagePreview);
+    }
 
     // Handle form submission
-    document.getElementById("incubateeForm").addEventListener("submit", handleProductFormSubmit);
+    const incubateeForm = document.getElementById("incubateeForm");
+    if (incubateeForm) {
+        incubateeForm.addEventListener("submit", handleProductFormSubmit);
+    }
 
     // Logout functionality
-    document.getElementById("confirm-logout").addEventListener("click", handleLogout);
-    document.getElementById("cancel-logout").addEventListener("click", function() {
-        document.getElementById("logout-modal").classList.add("hidden");
-    });
+    const confirmLogout = document.getElementById("confirm-logout");
+    const cancelLogout = document.getElementById("cancel-logout");
+    
+    if (confirmLogout) {
+        confirmLogout.addEventListener("click", handleLogout);
+    }
+    if (cancelLogout) {
+        cancelLogout.addEventListener("click", function() {
+            document.getElementById("logout-modal").classList.add("hidden");
+        });
+    }
 
     // Modal open/close logic
     initializeModalHandlers();
@@ -113,22 +156,13 @@ function initializeIncubateeAddForm() {
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
 
-            const formData = {
-                first_name: document.getElementById("first_name").value.trim(),
-                middle_name: document.getElementById("middle_name").value.trim(),
-                last_name: document.getElementById("last_name").value.trim(),
-                company_name: document.getElementById("company_name").value.trim(),
-                email: document.getElementById("email").value.trim(),
-                phone_number: document.getElementById("phone_number").value.trim(),
-                contact_info: document.getElementById("contact_info").value.trim(),
-                batch: document.getElementById("batch").value.trim()
-            };
+            // Create FormData object to handle both form fields and file uploads
+            const formData = new FormData(form);
 
             try {
                 const res = await fetch("/admin/add-incubatee", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(formData)
+                    body: formData // No Content-Type header needed for FormData
                 });
 
                 const data = await res.json();
@@ -136,6 +170,8 @@ function initializeIncubateeAddForm() {
                 if (data.success) {
                     showToast("✅ Incubatee added successfully!", "success");
                     form.reset();
+                    // Reset logo preview
+                    document.getElementById("preview-logo").style.display = "none";
                     modal.classList.remove("active");
 
                     // Refresh dropdown instantly
@@ -150,6 +186,7 @@ function initializeIncubateeAddForm() {
         });
     }
 }
+
 
 async function initializeIncubateeSearch() {
     const searchContainer = document.querySelector(".incubatee-search-container");
@@ -307,6 +344,13 @@ function handleImagePreview(event) {
 function handleProductFormSubmit(event) {
     event.preventDefault();
 
+    // Validate pricing unit selection
+    const pricingUnitId = document.getElementById("pricing_unit").value;
+    if (!pricingUnitId) {
+        alert("Please select a pricing unit");
+        return;
+    }
+
     if (!this.checkValidity()) {
         this.reportValidity();
         return;
@@ -323,6 +367,7 @@ function handleProductFormSubmit(event) {
     formData.append("products", document.getElementById("products").value);
     formData.append("stock_amount", document.getElementById("stock_amount").value);
     formData.append("price_per_stocks", document.getElementById("price_per_stocks").value);
+    formData.append("pricing_unit_id", pricingUnitId); // Use the selected unit ID
     formData.append("details", document.getElementById("details").value);
     formData.append("category", document.getElementById("category").value);
     formData.append("warranty", document.getElementById("warranty").value);
@@ -335,7 +380,7 @@ function handleProductFormSubmit(event) {
         formData.append("product_image", imageFile);
     }
 
-    // Send to backend
+    // Send to backend (rest of your existing code...)
     fetch("/admin/add-product", {
         method: "POST",
         body: formData
@@ -346,6 +391,8 @@ function handleProductFormSubmit(event) {
             // Reset form
             this.reset();
             document.getElementById("preview-img").style.display = "none";
+            document.getElementById("pricing_unit_search").value = "";
+            document.getElementById("pricing_unit").value = "";
             
             // Reload the product list to show the new product
             loadProducts();
@@ -1048,6 +1095,97 @@ function formatTimeOnly(dateString) {
     }
 }
 
+// Initialize pricing unit search functionality
+function initializePricingUnitSearch() {
+    const searchContainer = document.querySelector(".pricing-unit-search-container");
+    const searchInput = document.getElementById("pricing_unit_search");
+    const dropdown = document.getElementById("pricingUnitDropdown");
+    const hiddenInput = document.getElementById("pricing_unit");
+
+    if (!searchInput || !dropdown || !hiddenInput) return;
+
+    let pricingUnits = [];
+
+    // Load pricing units when search is initialized
+    loadPricingUnitsForSearch();
+
+    async function loadPricingUnitsForSearch() {
+        try {
+            const response = await fetch('/admin/get-pricing-units');
+            const data = await response.json();
+            
+            if (data.success) {
+                pricingUnits = data.pricing_units;
+            }
+        } catch (error) {
+            console.error('Error loading pricing units for search:', error);
+        }
+    }
+
+    // Show filtered list as user types
+    searchInput.addEventListener("input", () => {
+        const query = searchInput.value.toLowerCase().trim();
+        dropdown.innerHTML = "";
+
+        if (!query) {
+            dropdown.classList.add("hidden");
+            return;
+        }
+
+        const filtered = pricingUnits.filter(unit =>
+            unit.unit_name.toLowerCase().includes(query) ||
+            (unit.unit_description && unit.unit_description.toLowerCase().includes(query))
+        );
+
+        if (filtered.length === 0) {
+            const emptyItem = document.createElement("div");
+            emptyItem.classList.add("pricing-unit-item", "empty");
+            emptyItem.textContent = "No matching units found";
+            dropdown.appendChild(emptyItem);
+        } else {
+            filtered.forEach(unit => {
+                const item = document.createElement("div");
+                item.classList.add("pricing-unit-item");
+                item.innerHTML = `
+                    <div class="unit-name">${escapeHtml(unit.unit_name)}</div>
+                    ${unit.unit_description ? `<div class="unit-description">${escapeHtml(unit.unit_description)}</div>` : ''}
+                `;
+                item.dataset.id = unit.unit_id;
+                item.addEventListener("click", () => {
+                    searchInput.value = unit.unit_name;
+                    hiddenInput.value = unit.unit_id;
+                    dropdown.classList.add("hidden");
+                    
+                    // Show selected unit info
+                    showSelectedUnitInfo(unit);
+                });
+                dropdown.appendChild(item);
+            });
+        }
+
+        dropdown.classList.remove("hidden");
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener("click", (e) => {
+        if (!searchContainer.contains(e.target)) {
+            dropdown.classList.add("hidden");
+        }
+    });
+
+    // Clear selection when input is cleared
+    searchInput.addEventListener("blur", () => {
+        if (!searchInput.value.trim()) {
+            hiddenInput.value = "";
+        }
+    });
+}
+// Function to show selected unit information
+function showSelectedUnitInfo(unit) {
+    // You can add visual feedback here if needed
+    console.log(`Selected unit: ${unit.unit_name} (ID: ${unit.unit_id})`);
+}
+
 // Load pricing units when page loads
 document.addEventListener('DOMContentLoaded', function() {
     loadPricingUnits();
@@ -1060,25 +1198,296 @@ async function loadPricingUnits() {
         const data = await response.json();
         
         if (data.success) {
+            // If you want to keep the original select as backup, update it too
             const pricingUnitSelect = document.getElementById('pricing_unit');
-            pricingUnitSelect.innerHTML = '<option value="" disabled selected>Select Pricing Unit</option>';
+            if (pricingUnitSelect && pricingUnitSelect.tagName === 'SELECT') {
+                pricingUnitSelect.innerHTML = '<option value="" disabled selected>Select Pricing Unit</option>';
+                
+                data.pricing_units.forEach(unit => {
+                    const option = document.createElement('option');
+                    option.value = unit.unit_id;
+                    option.textContent = unit.unit_name;
+                    pricingUnitSelect.appendChild(option);
+                });
+            }
             
-            data.pricing_units.forEach(unit => {
-                const option = document.createElement('option');
-                option.value = unit.unit_id;
-                option.textContent = unit.unit_name;
-                pricingUnitSelect.appendChild(option);
-            });
+            // Return the units for search functionality
+            return data.pricing_units;
         }
     } catch (error) {
         console.error('Error loading pricing units:', error);
     }
+    return [];
 }
 
-// Add Pricing Unit Modal functionality
-document.getElementById('addPricingUnitBtn').addEventListener('click', function() {
-    document.getElementById('pricingUnitModal').style.display = 'block';
+// Pricing Unit Modal functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Add Pricing Unit Modal
+    const addPricingUnitBtn = document.getElementById('addPricingUnitBtn');
+    const pricingUnitModal = document.getElementById('pricingUnitModal');
+    const closePricingUnitModal = document.getElementById('closePricingUnitModal');
+    const closePricingUnitModalBottom = document.getElementById('closePricingUnitModalBottom');
+    const pricingUnitForm = document.getElementById('pricingUnitForm');
+
+    // Open modal
+    if (addPricingUnitBtn) {
+        addPricingUnitBtn.addEventListener('click', function() {
+            pricingUnitModal.style.display = 'block';
+            // Clear form when opening
+            pricingUnitForm.reset();
+        });
+    }
+
+    // Close modal buttons
+    if (closePricingUnitModal) {
+        closePricingUnitModal.addEventListener('click', function() {
+            pricingUnitModal.style.display = 'none';
+        });
+    }
+
+    if (closePricingUnitModalBottom) {
+        closePricingUnitModalBottom.addEventListener('click', function() {
+            pricingUnitModal.style.display = 'none';
+        });
+    }
+
+    // Close modal when clicking outside
+    if (pricingUnitModal) {
+        pricingUnitModal.addEventListener('click', function(e) {
+            if (e.target === pricingUnitModal) {
+                pricingUnitModal.style.display = 'none';
+            }
+        });
+    }
+
+    // Handle Pricing Unit Form Submission
+    if (pricingUnitForm) {
+        pricingUnitForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const unitName = document.getElementById('unit_name').value.trim();
+            const unitDescription = document.getElementById('unit_description').value.trim();
+            
+            if (!unitName) {
+                alert('Please enter a unit name');
+                return;
+            }
+
+            // Show loading state
+            const submitBtn = pricingUnitForm.querySelector('.btn-save');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Saving...';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch('/admin/add-pricing-unit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        unit_name: unitName,
+                        unit_description: unitDescription
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('✅ Pricing unit added successfully!', 'success');
+                    pricingUnitForm.reset();
+                    pricingUnitModal.style.display = 'none';
+                    
+                    // Reload the pricing units dropdown
+                    await loadPricingUnits();
+                    
+                    // If search is initialized, reload it too
+                    if (typeof initializePricingUnitSearch === 'function') {
+                        initializePricingUnitSearch();
+                    }
+                } else {
+                    showToast('❌ Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error adding pricing unit:', error);
+                showToast('❌ Error adding pricing unit', 'error');
+            } finally {
+                // Reset button state
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+    }
 });
+
+// Pricing Unit Modal functionality - Fixed version
+function initializePricingUnitModal() {
+    const addPricingUnitBtn = document.getElementById('addPricingUnitBtn');
+    const pricingUnitModal = document.getElementById('pricingUnitModal');
+    const closePricingUnitModal = document.getElementById('closePricingUnitModal');
+    const closePricingUnitModalBottom = document.getElementById('closePricingUnitModalBottom');
+    const pricingUnitForm = document.getElementById('pricingUnitForm');
+
+    console.log('Initializing pricing unit modal...');
+
+    // Ensure modal is hidden on initialization
+    if (pricingUnitModal) {
+        pricingUnitModal.style.display = 'none';
+        pricingUnitModal.classList.add('add-pricing-modal');
+    }
+
+    // Track if modal is currently opening to prevent immediate close
+    let isOpening = false;
+
+    // Open modal
+    if (addPricingUnitBtn) {
+        addPricingUnitBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation(); // Prevent event bubbling
+            
+            console.log('Add pricing unit button clicked');
+            
+            if (pricingUnitModal) {
+                isOpening = true;
+                pricingUnitModal.style.display = 'block';
+                console.log('Add pricing modal should be visible now');
+                
+                // Clear form when opening
+                if (pricingUnitForm) {
+                    pricingUnitForm.reset();
+                }
+                
+                // Focus on the first input field
+                const unitNameInput = document.getElementById('unit_name');
+                if (unitNameInput) {
+                    setTimeout(() => {
+                        unitNameInput.focus();
+                    }, 100);
+                }
+                
+                // Reset opening flag after a short delay
+                setTimeout(() => {
+                    isOpening = false;
+                }, 100);
+            }
+        });
+    } else {
+        console.warn('Add pricing unit button not found');
+    }
+
+    // Close modal buttons
+    if (closePricingUnitModal) {
+        closePricingUnitModal.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent event bubbling to modal
+            if (pricingUnitModal) {
+                pricingUnitModal.style.display = 'none';
+                console.log('Add pricing modal closed via top close button');
+            }
+        });
+    }
+
+    if (closePricingUnitModalBottom) {
+        closePricingUnitModalBottom.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent event bubbling to modal
+            if (pricingUnitModal) {
+                pricingUnitModal.style.display = 'none';
+                console.log('Add pricing modal closed via bottom close button');
+            }
+        });
+    }
+
+    // Close modal when clicking outside - but not when opening
+    if (pricingUnitModal) {
+        pricingUnitModal.addEventListener('click', function(e) {
+            // Only close if clicking directly on the modal background (not the content)
+            // and not during the opening process
+            if (e.target === pricingUnitModal && !isOpening) {
+                pricingUnitModal.style.display = 'none';
+                console.log('Add pricing modal closed via outside click');
+            }
+        });
+
+        // Prevent clicks inside the modal content from closing the modal
+        const modalContent = pricingUnitModal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent click from bubbling to modal background
+            });
+        }
+    }
+
+    // Handle Pricing Unit Form Submission
+    if (pricingUnitForm) {
+        pricingUnitForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            console.log('Pricing unit form submitted');
+            
+            const unitName = document.getElementById('unit_name').value.trim();
+            const unitDescription = document.getElementById('unit_description').value.trim();
+            
+            if (!unitName) {
+                showToast('Please enter a unit name', 'error');
+                return;
+            }
+
+            // Show loading state
+            const submitBtn = pricingUnitForm.querySelector('.btn-save');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Saving...';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch('/admin/add-pricing-unit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        unit_name: unitName,
+                        unit_description: unitDescription
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('✅ Pricing unit added successfully!', 'success');
+                    pricingUnitForm.reset();
+                    if (pricingUnitModal) {
+                        pricingUnitModal.style.display = 'none';
+                    }
+                    
+                    // Reload the pricing units dropdown
+                    await loadPricingUnits();
+                    
+                    // Re-initialize search functionality
+                    if (typeof initializePricingUnitSearch === 'function') {
+                        initializePricingUnitSearch();
+                    }
+                } else {
+                    showToast('❌ Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error adding pricing unit:', error);
+                showToast('❌ Error adding pricing unit', 'error');
+            } finally {
+                // Reset button state
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+    } else {
+        console.warn('Pricing unit form not found');
+    }
+
+    // Add escape key to close modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && pricingUnitModal && pricingUnitModal.style.display === 'block') {
+            pricingUnitModal.style.display = 'none';
+            console.log('Add pricing modal closed via Escape key');
+        }
+    });
+}
 
 // Close Pricing Unit Modal
 document.getElementById('closePricingUnitModal').addEventListener('click', function() {
@@ -1205,18 +1614,44 @@ function displayIncubatees(incubatees) {
     container.innerHTML = incubatees.map(incubatee => `
         <div class="incubatee-card ${incubatee.is_approved ? 'approved' : 'pending'}">
             <div class="incubatee-header">
-                <h3>${escapeHtml(incubatee.full_name)}</h3>
+                <div class="incubatee-avatar">
+                    ${incubatee.logo_url 
+                        ? `<img src="/static/${incubatee.logo_url}" alt="Logo" class="avatar-img">`
+                        : '<div class="avatar-placeholder">🏢</div>'
+                    }
+                </div>
+                <div class="incubatee-title">
+                    <h3>${escapeHtml(incubatee.full_name)}</h3>
+                    <p class="company-name">${escapeHtml(incubatee.company_name || 'No company')}</p>
+                </div>
                 <button class="btn-toggle-approval ${incubatee.is_approved ? 'btn-approved' : 'btn-pending'}" 
                         onclick="toggleIncubateeApproval(${incubatee.incubatee_id})">
-                    ${incubatee.is_approved ? '✅ Approved' : '⏳ Pending'}
+                    ${incubatee.is_approved ? '✅' : '⏳'}
                 </button>
             </div>
-            <div class="incubatee-info">
-                <p><strong>Company:</strong> ${escapeHtml(incubatee.company_name || 'N/A')}</p>
-                <p><strong>Email:</strong> ${escapeHtml(incubatee.email || 'N/A')}</p>
-                <p><strong>Phone:</strong> ${escapeHtml(incubatee.phone || 'N/A')}</p>
-                <p><strong>Batch:</strong> ${incubatee.batch || 'N/A'}</p>
+            
+            <div class="incubatee-details">
+                <div class="detail-item">
+                    <span class="detail-label">📧</span>
+                    <span>${escapeHtml(incubatee.email || 'No email')}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">📞</span>
+                    <span>${escapeHtml(incubatee.phone || 'No phone')}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">🌐</span>
+                    <span>${incubatee.website 
+                        ? `<a href="${incubatee.website}" target="_blank">Website</a>`
+                        : 'No website'
+                    }</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">#️⃣</span>
+                    <span>Batch ${incubatee.batch || 'N/A'}</span>
+                </div>
             </div>
+            
             <div class="incubatee-stats">
                 <div class="stat">
                     <span class="stat-value">${incubatee.product_count}</span>
@@ -1224,11 +1659,12 @@ function displayIncubatees(incubatees) {
                 </div>
                 <div class="stat">
                     <span class="stat-value">₱${incubatee.total_sales.toFixed(2)}</span>
-                    <span class="stat-label">Total Sales</span>
+                    <span class="stat-label">Sales</span>
                 </div>
             </div>
+            
             <div class="incubatee-footer">
-                <small>Joined: ${formatDateOnly(incubatee.created_at)}</small>
+                <small>Joined ${formatDateOnly(incubatee.created_at)}</small>
             </div>
         </div>
     `).join('');
@@ -1318,4 +1754,11 @@ function initializeAdminManagement() {
 // Call this when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeAdminManagement();
+});
+// Add this at the end of your admin.js to debug
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded - checking for pricing unit elements:');
+    console.log('Add button:', document.getElementById('addPricingUnitBtn'));
+    console.log('Add pricing modal:', document.getElementById('pricingUnitModal'));
+    console.log('Form:', document.getElementById('pricingUnitForm'));
 });

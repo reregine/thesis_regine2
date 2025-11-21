@@ -4,7 +4,7 @@ Francisco et al.
 
 -  provide info about each incubate
 
-- provide per batch info/details per incubate
+- provide per batch info/details per incubatee
 
 - improve the main page to display per incubatee best seller/know products/services
 
@@ -18,3 +18,346 @@ Admin dashboard: ptofile of admin, view pending/approved users, view list of inc
 
 - in system messaging
 securing of web pages (e.g. Session destroy, others) to prevent data leaks
+
+
+
+[
+  {
+    "first_name": "Maria",
+    "middle_name": "Santos",
+    "last_name": "Reyes",
+    "company_name": "GreenHarvest Aqua Farms",
+    "website": "www.greenharvestaqua.com",
+    "email": "maria.reyes@greenharvestaqua.com",
+    "phone_number": "+63 912 345 6789",
+    "contact_info": "123 Aqua Farm Road, Barangay San Isidro, Rodriguez, Rizal 1860",
+    "batch": 1
+  },
+  [
+  {
+    "incubatee_id": 7,
+    "name": "Organic Tilapia Fingerlings",
+    "stock_no": "GH-TF-001",
+    "products": "Fish Stock",
+    "stock_amount": 5000,
+    "price_per_stocks": 15.50,
+    "pricing_unit_id": 1,
+    "details": "Premium organic tilapia fingerlings raised in sustainable aqua farms. Disease-free and fast-growing variety suitable for freshwater ponds.",
+    "category": "Agri-Aqua Business",
+    "expiration_date": null,
+    "warranty": "7-day health guarantee",
+    "added_on": "2025-11-20"
+  },
+  {
+    "incubatee_id": 7,
+    "name": "Bangus Fry Premium Pack",
+    "stock_no": "GH-BF-002",
+    "products": "Fish Fry",
+    "stock_amount": 3000,
+    "price_per_stocks": 12.75,
+    "pricing_unit_id": 1,
+    "details": "High-quality milkfish (bangus) fry with excellent survival rate. Perfect for brackish water fish farming operations.",
+    "category": "Agri-Aqua Business",
+    "expiration_date": null,
+    "warranty": "5-day health guarantee",
+    "added_on": "2025-11-20"
+  },
+  {
+    "incubatee_id": 7,
+    "name": "Organic Fish Feed Pellets",
+    "stock_no": "GH-FF-003",
+    "products": "Fish Feed",
+    "stock_amount": 200,
+    "price_per_stocks": 450.00,
+    "pricing_unit_id": 2,
+    "details": "100% organic fish feed pellets made from sustainable ingredients. Promotes healthy growth and enhances fish flavor.",
+    "category": "Agri-Aqua Business",
+    "expiration_date": "2026-05-20",
+    "warranty": "6 months shelf life",
+    "added_on": "2025-11-20"
+  }
+]
+
+  {
+    "first_name": "Juan",
+    "middle_name": "Dela Cruz",
+    "last_name": "Gonzales",
+    "company_name": "OrganicRice Coop",
+    "website": "www.organicricecoop.ph",
+    "email": "juan.gonzales@organicricecoop.ph",
+    "phone_number": "+63 917 890 1234",
+    "contact_info": "456 Rice Terrace Street, Banaue, Ifugao 3601",
+    "batch": 1
+  },
+  [
+  {
+    "incubatee_id": 8,
+    "name": "Heirloom Rice Variety Pack",
+    "stock_no": "OR-RV-001",
+    "products": "Rice Grains",
+    "stock_amount": 1000,
+    "price_per_stocks": 85.00,
+    "pricing_unit_id": 2,
+    "details": "Premium heirloom rice varieties including Tinawon, Unoy, and traditional Philippine rice strains. Grown using organic farming methods.",
+    "category": "Agri-Aqua Business",
+    "expiration_date": "2026-08-15",
+    "warranty": "1 year shelf life",
+    "added_on": "2025-11-20"
+  },
+  {
+    "incubatee_id": 8,
+    "name": "Organic Fertilizer Blend",
+    "stock_no": "OR-FB-002",
+    "products": "Fertilizer",
+    "stock_amount": 500,
+    "price_per_stocks": 120.00,
+    "pricing_unit_id": 2,
+    "details": "Natural organic fertilizer made from composted rice hulls and plant materials. Improves soil health and crop yield.",
+    "category": "Agri-Aqua Business",
+    "expiration_date": null,
+    "warranty": "2 years effectiveness",
+    "added_on": "2025-11-20"
+  },
+  {
+    "incubatee_id": 8,
+    "name": "Free-range Duck Eggs",
+    "stock_no": "OR-DE-003",
+    "products": "Poultry Products",
+    "stock_amount": 200,
+    "price_per_stocks": 12.00,
+    "pricing_unit_id": 1,
+    "details": "Fresh free-range duck eggs from ducks raised in rice fields. Rich in nutrients and perfect for baking and cooking.",
+    "category": "Agri-Aqua Business",
+    "expiration_date": "2025-12-05",
+    "warranty": "Freshness guaranteed",
+    "added_on": "2025-11-20"
+  }
+]
+
+  {
+    "first_name": "Andrea",
+    "middle_name": "Lim",
+    "last_name": "Tan",
+    "company_name": "UrbanHydroponics PH",
+    "website": "www.urbanhydroponics.ph",
+    "email": "andrea.tan@urbanhydroponics.ph",
+    "phone_number": "+63 918 567 8901",
+    "contact_info": "789 Vertical Garden Building, Quezon City, Metro Manila 1100",
+    "batch": 1
+      },
+      [
+  {
+    "incubatee_id": 9,
+    "name": "Home Hydroponics Starter Kit",
+    "stock_no": "UH-HK-001",
+    "products": "Gardening Kit",
+    "stock_amount": 150,
+    "price_per_stocks": 2500.00,
+    "pricing_unit_id": 1,
+    "details": "Complete hydroponics system for urban gardening. Includes grow lights, nutrient solution, and seed starters. Perfect for apartments and small spaces.",
+    "category": "Agri-Aqua Business",
+    "expiration_date": null,
+    "warranty": "1 year equipment warranty",
+    "added_on": "2025-11-20"
+  },
+  {
+    "incubatee_id": 9,
+    "name": "Lettuce Variety Seed Pack",
+    "stock_no": "UH-LS-002",
+    "products": "Seeds",
+    "stock_amount": 1000,
+    "price_per_stocks": 45.00,
+    "pricing_unit_id": 1,
+    "details": "Assorted lettuce seeds including Romaine, Butterhead, and Lollo Rosso. Specially selected for hydroponic cultivation.",
+    "category": "Agri-Aqua Business",
+    "expiration_date": "2026-11-20",
+    "warranty": "90% germination rate",
+    "added_on": "2025-11-20"
+  },
+  {
+    "incubatee_id": 9,
+    "name": "Hydroponic Nutrient Solution",
+    "stock_no": "UH-NS-003",
+    "products": "Plant Nutrients",
+    "stock_amount": 300,
+    "price_per_stocks": 180.00,
+    "pricing_unit_id": 3,
+    "details": "Balanced nutrient solution for hydroponic systems. Contains essential minerals and trace elements for optimal plant growth.",
+    "category": "Agri-Aqua Business",
+    "expiration_date": "2026-05-20",
+    "warranty": "1 year shelf life",
+    "added_on": "2025-11-20"
+  }
+]
+
+  {
+    "first_name": "Roberto",
+    "middle_name": "Villanueva",
+    "last_name": "Aquino",
+    "company_name": "MushroomMagic Farms",
+    "website": "www.mushroommagicfarms.com",
+    "email": "roberto.aquino@mushroommagic.com",
+    "phone_number": "+63 919 234 5678",
+    "contact_info": "321 Fungus Lane, Barangay San Jose, Los Baños, Laguna 4030",
+    "batch": 1
+  },
+  [
+  {
+    "incubatee_id": 10,
+    "name": "Oyster Mushroom Spawn",
+    "stock_no": "MM-OS-001",
+    "products": "Mushroom Spawn",
+    "stock_amount": 200,
+    "price_per_stocks": 75.00,
+    "pricing_unit_id": 1,
+    "details": "Premium oyster mushroom spawn for commercial and home cultivation. High-yield variety with fast growth cycle.",
+    "category": "Agri-Aqua Business",
+    "expiration_date": "2025-12-30",
+    "warranty": "95% viability guarantee",
+    "added_on": "2025-11-20"
+  },
+  {
+    "incubatee_id": 10,
+    "name": "Shiitake Growing Kit",
+    "stock_no": "MM-SK-002",
+    "products": "Gardening Kit",
+    "stock_amount": 100,
+    "price_per_stocks": 350.00,
+    "pricing_unit_id": 1,
+    "details": "Complete shiitake mushroom growing kit with inoculated logs and growing instructions. Perfect for beginners.",
+    "category": "Agri-Aqua Business",
+    "expiration_date": null,
+    "warranty": "Guaranteed fruiting",
+    "added_on": "2025-11-20"
+  },
+  {
+    "incubatee_id": 10,
+    "name": "Dried Mushroom Assortment",
+    "stock_no": "MM-DM-003",
+    "products": "Dried Food",
+    "stock_amount": 500,
+    "price_per_stocks": 120.00,
+    "pricing_unit_id": 2,
+    "details": "Premium dried mushrooms including shiitake, oyster, and wood ear varieties. Perfect for cooking and medicinal use.",
+    "category": "Agri-Aqua Business",
+    "expiration_date": "2026-11-20",
+    "warranty": "1 year shelf life",
+    "added_on": "2025-11-20"
+  }
+]
+
+  {
+    "first_name": "Liza",
+    "middle_name": "Ramos",
+    "last_name": "Chua",
+    "company_name": "AquaOrganic Shrimps",
+    "website": "www.aquaorganicshrimps.ph",
+    "email": "liza.chua@aquaorganicshrimps.ph",
+    "phone_number": "+63 920 876 5432",
+    "contact_info": "654 Shrimp Pond Avenue, Barangay Talisay, Naujan, Oriental Mindoro 5204",
+    "batch": 4
+  }
+  [
+  {
+    "incubatee_id": 11,
+    "name": "Organic Shrimp Post-larvae",
+    "stock_no": "AO-PL-001",
+    "products": "Shrimp Stock",
+    "stock_amount": 10000,
+    "price_per_stocks": 8.50,
+    "pricing_unit_id": 1,
+    "details": "Certified organic shrimp post-larvae raised using sustainable methods. Disease-resistant and fast-growing variety.",
+    "category": "Agri-Aqua Business",
+    "expiration_date": null,
+    "warranty": "3-day survival guarantee",
+    "added_on": "2025-11-20"
+  },
+  {
+    "incubatee_id": 11,
+    "name": "Probiotic Shrimp Feed",
+    "stock_no": "AO-PF-002",
+    "products": "Shrimp Feed",
+    "stock_amount": 300,
+    "price_per_stocks": 380.00,
+    "pricing_unit_id": 2,
+    "details": "Enhanced probiotic feed for shrimp health and growth. Contains beneficial bacteria for improved digestion and immunity.",
+    "category": "Agri-Aqua Business",
+    "expiration_date": "2026-04-20",
+    "warranty": "6 months shelf life",
+    "added_on": "2025-11-20"
+  },
+  {
+    "incubatee_id": 11,
+    "name": "Water Quality Testing Kit",
+    "stock_no": "AO-WT-003",
+    "products": "Testing Equipment",
+    "stock_amount": 50,
+    "price_per_stocks": 850.00,
+    "pricing_unit_id": 1,
+    "details": "Comprehensive water testing kit for shrimp farms. Measures pH, ammonia, nitrite, and salinity levels.",
+    "category": "Agri-Aqua Business",
+    "expiration_date": "2026-08-20",
+    "warranty": "1 year equipment warranty",
+    "added_on": "2025-11-20"
+  }
+
+]
+
+
+[
+  {
+    "first_name": "Carlos",
+    "middle_name": "Manalo",
+    "last_name": "Sy",
+    "company_name": "TropicalFruit Preserves",
+    "website": "www.tropicalfruitpreserves.com",
+    "email": "carlos.sy@tropicalfruitpreserves.com",
+    "phone_number": "+63 921 345 6789",
+    "contact_info": "987 Fruit Processing Center, Guimaras Island, Guimaras 5044",
+    "batch": 4
+  },
+  {
+    "first_name": "Sofia",
+    "middle_name": "Garcia",
+    "last_name": "Lim",
+    "company_name": "HealthyBites Snacks",
+    "website": "www.healthybitessnacks.ph",
+    "email": "sofia.lim@healthybitessnacks.ph",
+    "phone_number": "+63 922 456 7890",
+    "contact_info": "555 Root Crop Highway, Tarlac City, Tarlac 2300",
+    "batch": 4
+  },
+  {
+    "first_name": "Miguel",
+    "middle_name": "Torres",
+    "last_name": "Ong",
+    "company_name": "FilipinoArtisanal Cheese",
+    "website": "www.filipinoartisanalcheese.com",
+    "email": "miguel.ong@filcheese.com",
+    "phone_number": "+63 923 567 8901",
+    "contact_info": "222 Dairy Farm Road, Santa Maria, Bulacan 3022",
+    "batch": 4
+  },
+  {
+    "first_name": "Elena",
+    "middle_name": "Santos",
+    "last_name": "Uy",
+    "company_name": "HerbalTea Blends Co.",
+    "website": "www.herbalteablends.ph",
+    "email": "elena.uy@herbalteablends.ph",
+    "phone_number": "+63 924 678 9012",
+    "contact_info": "333 Medicinal Garden Street, Baguio City, Benguet 2600",
+    "batch": 4
+  },
+  {
+    "first_name": "Antonio",
+    "middle_name": "Reyes",
+    "last_name": "Go",
+    "company_name": "SustainablePack Solutions",
+    "website": "www.sustainablepacksolutions.com",
+    "email": "antonio.go@sustainablepack.com",
+    "phone_number": "+63 925 789 0123",
+    "contact_info": "444 Eco-Industrial Park, Calamba, Laguna 4027",
+    "batch": 4
+  }
+]
