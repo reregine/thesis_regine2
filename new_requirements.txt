@@ -277,3 +277,6 @@ per pack
 
 per bunch
 
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);

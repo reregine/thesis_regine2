@@ -7,6 +7,7 @@ const formattedDate = today.toISOString().split('T')[0];
 // For production, use: 
 const AUTO_CANCEL_TIMEOUT = 3 * 24 * 60 * 60 * 1000; // 3 days
 
+
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeAdmin();
@@ -27,36 +28,50 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof initUsersManagement === 'function') {
         initUsersManagement();
     }
+
+// Initialize the application when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM fully loaded - initializing admin...');
     
+    // Check if we're on the main admin page
+    const isMainAdminPage = document.getElementById("product-list") !== null;
+    
+    if (isMainAdminPage) {
+        console.log('📋 Main admin page detected');
+        initializeAdmin();
+    } else {
+        console.log('📊 Management page detected');
+        initializeAdminManagement();
+    }
+});
+
 function initializeAdmin() {
-    // Auto display today's date - ADD NULL CHECK
-    const currentDateElement = document.getElementById("current-date");
+    console.log('🎯 Initializing main admin functionality...');
+    
+    // Auto display today's date
+    const currentDateElement = getElementById("current-date");
     if (currentDateElement) {
         currentDateElement.innerText = formattedDate;
     }
 
-    // Only load products if we're on the main admin page
+    // Load products if we're on the main admin page
     const productList = document.getElementById("product-list");
     if (productList) {
-        loadProducts(); // Load products when page loads
+        loadProducts();
     }
 
-    initializeEventListeners(); // Initialize event listeners
-    
-    // Only initialize incubatee search if we're on the main admin page
-    const incubateeSearch = document.getElementById("incubateeSearch");
-    if (incubateeSearch) {
-        initializeIncubateeSearch();
-    }
-
-    // Initialize pricing unit search
-    const pricingUnitSearch = document.getElementById("pricing_unit_search");
-    if (pricingUnitSearch) {
-        initializePricingUnitSearch();
-    }
+    initializeEventListeners();
+    initializeOrdersModal();
+    initializeSalesReportModal();
+    initializePricingUnitModal();
     initializeEditProductModal();
-    startAutoCancellationChecker();  // Start auto-cancellation checker
+    loadPricingUnits(); // Load pricing units
+    
+    startAutoCancellationChecker();
+    
+    console.log('✅ Main admin initialized successfully');
 }
+
 function initializeEventListeners() {
     // Category filter event - ADD NULL CHECK
     const categoryFilter = document.getElementById("categoryFilter");
@@ -608,55 +623,57 @@ function initializeOrdersModal() {
     const closeOrdersModalTop = document.getElementById("closeOrdersModalTop");
     const closeOrdersModalBottom = document.getElementById("closeOrdersModalBottom");
 
-    console.log('Initializing orders modal...');
-    console.log('Orders modal element:', ordersModal);
-    console.log('Open button:', openOrdersModal);
+    console.log('🚀 Initializing orders modal...');
+    console.log('📦 Orders modal:', ordersModal);
+    console.log('🖱️ Open button:', openOrdersModal);
+
+    if (!ordersModal || !openOrdersModal) {
+        console.log('ℹ️ Orders modal elements not found (might be on different page)');
+        return;
+    }
 
     // Open modal
-    if (openOrdersModal && ordersModal) {
-        openOrdersModal.addEventListener("click", (e) => {
-            e.preventDefault();
-            console.log('Opening orders modal');
-            ordersModal.classList.add("active");
-            document.body.style.overflow = 'hidden'; // Prevent background scrolling
-            loadAllOrders(); // Load orders when modal opens
-            startOrdersAutoRefresh(); // Start auto-refresh
-        });
-    } else {
-        console.error('Missing orders modal elements');
-    }
+    openOrdersModal.addEventListener("click", (e) => {
+        e.preventDefault();
+        console.log('🎯 Opening orders modal');
+        ordersModal.classList.add("active");
+        document.body.style.overflow = 'hidden';
+        loadAllOrders();
+        startOrdersAutoRefresh();
+    });
 
     // Close modal from both buttons
     [closeOrdersModalTop, closeOrdersModalBottom].forEach(btn => {
         if (btn) {
             btn.addEventListener("click", () => {
-                console.log('Closing orders modal');
+                console.log('🔒 Closing orders modal');
                 ordersModal.classList.remove("active");
-                document.body.style.overflow = ''; // Restore scrolling
-                stopOrdersAutoRefresh(); // Stop auto-refresh
+                document.body.style.overflow = '';
+                stopOrdersAutoRefresh();
             });
         }
     });
 
     // Close modal when clicking outside
-    if (ordersModal) {
-        ordersModal.addEventListener("click", (e) => {
-            if (e.target === ordersModal) {
-                console.log('Closing orders modal from outside click');
-                ordersModal.classList.remove("active");
-                document.body.style.overflow = ''; // Restore scrolling
-                stopOrdersAutoRefresh(); // Stop auto-refresh
-            }
-        });
-    }
+    ordersModal.addEventListener("click", (e) => {
+        if (e.target === ordersModal) {
+            console.log('🔒 Closing orders modal from outside');
+            ordersModal.classList.remove("active");
+            document.body.style.overflow = '';
+            stopOrdersAutoRefresh();
+        }
+    });
 
     // Order status filter
     const orderStatusFilter = document.getElementById("orderStatusFilter");
     if (orderStatusFilter) {
         orderStatusFilter.addEventListener("change", function() {
+            console.log('🔍 Filtering orders by:', this.value);
             loadAllOrders(this.value);
         });
     }
+
+    console.log('✅ Orders modal initialized');
 }
 
 //new function to start the auto-cancellation checker
@@ -893,52 +910,54 @@ function initializeSalesReportModal() {
     const closeSalesReportModalTop = document.getElementById("closeSalesReportModalTop");
     const closeSalesReportModalBottom = document.getElementById("closeSalesReportModalBottom");
 
-    console.log('Initializing sales report modal...');
-    console.log('Sales report modal element:', salesReportModal);
-    console.log('Open button:', openSalesReportModal);
+    console.log('🚀 Initializing sales report modal...');
+    console.log('📊 Sales report modal:', salesReportModal);
+    console.log('🖱️ Open button:', openSalesReportModal);
+
+    if (!salesReportModal || !openSalesReportModal) {
+        console.log('ℹ️ Sales report modal elements not found (might be on different page)');
+        return;
+    }
 
     // Open modal
-    if (openSalesReportModal && salesReportModal) {
-        openSalesReportModal.addEventListener("click", (e) => {
-            e.preventDefault();
-            console.log('Opening sales report modal');
-            salesReportModal.classList.add("active");
-            document.body.style.overflow = 'hidden'; // Prevent background scrolling
-            
-            // Set today's date as default
-            const today = new Date().toISOString().split('T')[0];
-            const reportDateInput = document.getElementById("reportDate");
-            if (reportDateInput) {
-                reportDateInput.value = today;
-            }
-            
-            generateSalesReport();
-        });
-    } else {
-        console.error('Missing sales report modal elements');
-    }
+    openSalesReportModal.addEventListener("click", (e) => {
+        e.preventDefault();
+        console.log('🎯 Opening sales report modal');
+        salesReportModal.classList.add("active");
+        document.body.style.overflow = 'hidden';
+        
+        // Set today's date as default
+        const todayDate = new Date().toISOString().split('T')[0];
+        const reportDateInput = document.getElementById("reportDate");
+        if (reportDateInput) {
+            reportDateInput.value = todayDate;
+            console.log('📅 Set report date to:', todayDate);
+        }
+        
+        generateSalesReport();
+    });
 
     // Close modal from both buttons
     [closeSalesReportModalTop, closeSalesReportModalBottom].forEach(btn => {
         if (btn) {
             btn.addEventListener("click", () => {
-                console.log('Closing sales report modal');
+                console.log('🔒 Closing sales report modal');
                 salesReportModal.classList.remove("active");
-                document.body.style.overflow = ''; // Restore scrolling
+                document.body.style.overflow = '';
             });
         }
     });
 
     // Close modal when clicking outside
-    if (salesReportModal) {
-        salesReportModal.addEventListener("click", (e) => {
-            if (e.target === salesReportModal) {
-                console.log('Closing sales report modal from outside click');
-                salesReportModal.classList.remove("active");
-                document.body.style.overflow = ''; // Restore scrolling
-            }
-        });
-    }
+    salesReportModal.addEventListener("click", (e) => {
+        if (e.target === salesReportModal) {
+            console.log('🔒 Closing sales report modal from outside');
+            salesReportModal.classList.remove("active");
+            document.body.style.overflow = '';
+        }
+    });
+
+    console.log('✅ Sales report modal initialized');
 }
 
 // Update the auto-refresh functions to use the correct modal class
@@ -1481,47 +1500,91 @@ function initializePricingUnitModal() {
 }
 
 // Close Pricing Unit Modal
-document.getElementById('closePricingUnitModal').addEventListener('click', function() {
-    document.getElementById('pricingUnitModal').style.display = 'none';
-});
+// Close Pricing Unit Modal - WITH NULL CHECK
+const closePricingModal = document.getElementById('closePricingUnitModal');
+if (closePricingModal) {
+    closePricingModal.addEventListener('click', function() {
+        const pricingModal = document.getElementById('pricingUnitModal');
+        if (pricingModal) {
+            pricingModal.style.display = 'none';
+        }
+    });
+} else {
+    console.log('closePricingUnitModal element not found');
+}
 
-document.getElementById('closePricingUnitModalBottom').addEventListener('click', function() {
-    document.getElementById('pricingUnitModal').style.display = 'none';
-});
+// Close Pricing Unit Modal - Bottom Close Button
+const closePricingModalBottom = document.getElementById('closePricingUnitModalBottom');
+if (closePricingModalBottom) {
+    closePricingModalBottom.addEventListener('click', function() {
+        const pricingModal = document.getElementById('pricingUnitModal');
+        if (pricingModal) {
+            pricingModal.style.display = 'none';
+        }
+    });
+} else {
+    console.log('closePricingUnitModalBottom element not found');
+}
 
 // Handle Pricing Unit Form Submission
-document.getElementById('pricingUnitForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const formData = {
-        unit_name: document.getElementById('unit_name').value,
-        unit_description: document.getElementById('unit_description').value
-    };
-    
-    try {
-        const response = await fetch('/admin/add-pricing-unit', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData)
-        });
+const pricingUnitForm = document.getElementById('pricingUnitForm');
+if (pricingUnitForm) {
+    pricingUnitForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
         
-        const data = await response.json();
+        const unitNameInput = document.getElementById('unit_name');
+        const unitDescInput = document.getElementById('unit_description');
         
-        if (data.success) {
-            alert('✅ Pricing unit added successfully!');
-            document.getElementById('pricingUnitForm').reset();
-            document.getElementById('pricingUnitModal').style.display = 'none';
-            loadPricingUnits(); // Reload the pricing units dropdown
-        } else {
-            alert('❌ Error: ' + data.error);
+        if (!unitNameInput || !unitDescInput) {
+            alert('❌ Form elements not found');
+            return;
         }
-    } catch (error) {
-        console.error('Error adding pricing unit:', error);
-        alert('❌ Error adding pricing unit');
-    }
-});
+        
+        const formData = {
+            unit_name: unitNameInput.value,
+            unit_description: unitDescInput.value
+        };
+        
+        // Validate required field
+        if (!formData.unit_name.trim()) {
+            alert('❌ Please enter a unit name');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/admin/add-pricing-unit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('✅ Pricing unit added successfully!');
+                pricingUnitForm.reset();
+                
+                const pricingModal = document.getElementById('pricingUnitModal');
+                if (pricingModal) {
+                    pricingModal.style.display = 'none';
+                }
+                
+                if (typeof loadPricingUnits === 'function') {
+                    loadPricingUnits(); // Reload the pricing units dropdown
+                }
+            } else {
+                alert('❌ Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error adding pricing unit:', error);
+            alert('❌ Error adding pricing unit');
+        }
+    });
+} else {
+    console.log('pricingUnitForm element not found');
+}
 
 // User Management Functions
 async function loadUsers() {

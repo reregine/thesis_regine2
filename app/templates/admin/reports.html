@@ -166,14 +166,13 @@
             </div>
         </div>
     </div>
-
-    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
     <script>
         let currentView = 'table';
         let currentReportData = null;
         let charts = {};
 
         // Set today's date and 30 days ago as default
+
         const today = new Date().toISOString().split('T')[0];
         const todayMinus30 = new Date();
         todayMinus30.setDate(todayMinus30.getDate() - 30);
@@ -549,5 +548,6 @@
             }
         }, 300000); // 5 minutes
     </script>
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>
 </html>
