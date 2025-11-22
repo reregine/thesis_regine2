@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeAdminManagement();
     loadPricingUnits();
     initializeEditProductModal();
+    initializeOrdersModal();
+    initializeSalesReportModal();
 });
     // Users modal
     const openUsersModalBtn = document.getElementById('openUsersModal');
@@ -598,27 +600,39 @@ function stopOrdersAutoRefresh() {
         clearInterval(ordersRefreshInterval);
     }
 }
-// Orders Modal Functions - Updated for pickup only
+
+// Fixed Orders Modal Initialization
 function initializeOrdersModal() {
     const ordersModal = document.getElementById("ordersModal");
     const openOrdersModal = document.getElementById("openOrdersModal");
     const closeOrdersModalTop = document.getElementById("closeOrdersModalTop");
     const closeOrdersModalBottom = document.getElementById("closeOrdersModalBottom");
 
+    console.log('Initializing orders modal...');
+    console.log('Orders modal element:', ordersModal);
+    console.log('Open button:', openOrdersModal);
+
     // Open modal
-    if (openOrdersModal) {
-        openOrdersModal.addEventListener("click", () => {
+    if (openOrdersModal && ordersModal) {
+        openOrdersModal.addEventListener("click", (e) => {
+            e.preventDefault();
+            console.log('Opening orders modal');
             ordersModal.classList.add("active");
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
             loadAllOrders(); // Load orders when modal opens
             startOrdersAutoRefresh(); // Start auto-refresh
         });
+    } else {
+        console.error('Missing orders modal elements');
     }
 
     // Close modal from both buttons
     [closeOrdersModalTop, closeOrdersModalBottom].forEach(btn => {
         if (btn) {
             btn.addEventListener("click", () => {
+                console.log('Closing orders modal');
                 ordersModal.classList.remove("active");
+                document.body.style.overflow = ''; // Restore scrolling
                 stopOrdersAutoRefresh(); // Stop auto-refresh
             });
         }
@@ -628,16 +642,21 @@ function initializeOrdersModal() {
     if (ordersModal) {
         ordersModal.addEventListener("click", (e) => {
             if (e.target === ordersModal) {
+                console.log('Closing orders modal from outside click');
                 ordersModal.classList.remove("active");
+                document.body.style.overflow = ''; // Restore scrolling
                 stopOrdersAutoRefresh(); // Stop auto-refresh
             }
         });
     }
 
     // Order status filter
-    document.getElementById("orderStatusFilter").addEventListener("change", function() {
-        loadAllOrders(this.value);
-    });
+    const orderStatusFilter = document.getElementById("orderStatusFilter");
+    if (orderStatusFilter) {
+        orderStatusFilter.addEventListener("change", function() {
+            loadAllOrders(this.value);
+        });
+    }
 }
 
 //new function to start the auto-cancellation checker
@@ -867,28 +886,45 @@ function completeReservation(reservationId) {
         button.textContent = '🎁 Pick Up';
     });
 }
-// Sales Report Modal Functions
+// Fixed Sales Report Modal Initialization
 function initializeSalesReportModal() {
     const salesReportModal = document.getElementById("salesReportModal");
     const openSalesReportModal = document.getElementById("openSalesReportModal");
     const closeSalesReportModalTop = document.getElementById("closeSalesReportModalTop");
     const closeSalesReportModalBottom = document.getElementById("closeSalesReportModalBottom");
 
+    console.log('Initializing sales report modal...');
+    console.log('Sales report modal element:', salesReportModal);
+    console.log('Open button:', openSalesReportModal);
+
     // Open modal
-    if (openSalesReportModal) {
-        openSalesReportModal.addEventListener("click", () => {
+    if (openSalesReportModal && salesReportModal) {
+        openSalesReportModal.addEventListener("click", (e) => {
+            e.preventDefault();
+            console.log('Opening sales report modal');
             salesReportModal.classList.add("active");
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            
             // Set today's date as default
-            document.getElementById("reportDate").value = formattedDate;
+            const today = new Date().toISOString().split('T')[0];
+            const reportDateInput = document.getElementById("reportDate");
+            if (reportDateInput) {
+                reportDateInput.value = today;
+            }
+            
             generateSalesReport();
         });
+    } else {
+        console.error('Missing sales report modal elements');
     }
 
     // Close modal from both buttons
     [closeSalesReportModalTop, closeSalesReportModalBottom].forEach(btn => {
         if (btn) {
             btn.addEventListener("click", () => {
+                console.log('Closing sales report modal');
                 salesReportModal.classList.remove("active");
+                document.body.style.overflow = ''; // Restore scrolling
             });
         }
     });
@@ -897,9 +933,84 @@ function initializeSalesReportModal() {
     if (salesReportModal) {
         salesReportModal.addEventListener("click", (e) => {
             if (e.target === salesReportModal) {
+                console.log('Closing sales report modal from outside click');
                 salesReportModal.classList.remove("active");
+                document.body.style.overflow = ''; // Restore scrolling
             }
         });
+    }
+}
+
+// Update the auto-refresh functions to use the correct modal class
+function startOrdersAutoRefresh() {
+    // Refresh orders every 5 seconds when modal is open
+    ordersRefreshInterval = setInterval(() => {
+        const ordersModal = document.getElementById("ordersModal");
+        if (ordersModal.classList.contains("active")) {
+            const currentFilter = document.getElementById("orderStatusFilter").value;
+            loadAllOrders(currentFilter);
+        }
+    }, 5000); // 5 seconds
+}
+
+// Update the auto-cancellation check to use the correct modal class
+function loadAllOrders(status = 'all') {
+    const ordersList = document.getElementById("orders-list");
+    ordersList.innerHTML = '<tr><td colspan="9" class="empty-orders">Loading orders...</td></tr>';
+
+    fetch("/reservations/")
+        .then(response => response.json())
+        .then(reservations => {
+            // ... existing code ...
+        })
+        .then(processedReservations => {
+            // Filter by status if specified
+            let filteredReservations = processedReservations;
+            if (status !== 'all') {
+                filteredReservations = processedReservations.filter(r => r.status === status);
+            }
+
+            displayOrders(filteredReservations);
+            
+            // Check for reservations that need auto-cancellation
+            checkReservationsForAutoCancel(processedReservations);
+        })
+        .catch(error => {
+            console.error("Error loading orders:", error);
+            ordersList.innerHTML = '<tr><td colspan="9" class="empty-orders">Error loading orders. Please try again.</td></tr>';
+        });
+}
+
+// Update the check for open orders modal
+async function checkAndAutoCancelReservations() {
+    try {
+        const response = await fetch('/reservations/check-overdue', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                timeout_ms: AUTO_CANCEL_TIMEOUT
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.rejected_count > 0) {
+            console.log(`Auto-rejected ${data.rejected_count} overdue reservations`);
+            
+            // Show notification
+            showNotification(`⚠️ Auto-rejected ${data.rejected_count} overdue reservations`, "info");
+            
+            // If orders modal is open, refresh the orders list
+            const ordersModal = document.getElementById("ordersModal");
+            if (ordersModal && ordersModal.classList.contains("active")) {
+                const currentFilter = document.getElementById("orderStatusFilter").value;
+                loadAllOrders(currentFilter);
+            }
+        }
+    } catch (error) {
+        console.error('Error in auto-rejection check:', error);
     }
 }
 
