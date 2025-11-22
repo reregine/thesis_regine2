@@ -338,6 +338,80 @@
       75% { transform: rotate(5deg); }
     }
 
+  /* Modern Edit Button Styles */
+  .btn-edit {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-edit::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  .btn-edit:hover::before {
+    left: 100%;
+  }
+
+  .btn-edit:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  }
+
+  .btn-edit:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+  }
+
+  .btn-edit-icon {
+    font-size: 0.9rem;
+    transition: transform 0.2s ease;
+  }
+
+  .btn-edit:hover .btn-edit-icon {
+    transform: scale(1.1);
+  }
+
+  .btn-edit-text {
+    white-space: nowrap;
+  }
+
+  /* Optional: Loading state for edit button */
+  .btn-edit.loading {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+
+  .btn-edit.loading .btn-edit-icon {
+    animation: pen-shake 0.5s ease-in-out infinite;
+  }
+
+  @keyframes pen-shake {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-5deg); }
+    75% { transform: rotate(5deg); }
+  }
+
     /* Table container for better scrolling */
     .table-container {
       overflow-x: auto;
@@ -1521,51 +1595,725 @@
     cursor: not-allowed;
 }
 
-/* Add Pricing Modal Styles */
+/* Modern Pricing Unit Modal with Hover Effects */
 .add-pricing-modal {
     display: none;
     position: fixed;
-    z-index: 10000;
+    z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
-    /* Prevent any transitions that might cause flickering */
-    transition: none !important;
-    animation: none !important;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    animation: fadeIn 0.3s ease-out;
 }
 
 .add-pricing-modal .modal-content {
-    background-color: #fefefe;
-    margin: 10% auto;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    margin: auto;
     padding: 0;
-    border-radius: 8px;
+    border-radius: 16px;
     width: 90%;
-    max-width: 500px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    /* Prevent content from closing when clicked */
-    pointer-events: auto;
+    max-width: 480px;
+    box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden;
     position: relative;
-    z-index: 10001;
+    z-index: 1001;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    animation: slideIn 0.3s ease-out;
+    transform-origin: center;
 }
 
-/* Force the modal to stay visible when opened */
-.add-pricing-modal[style*="display: block"] {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
-/* Ensure no other styles are interfering */
-.add-pricing-modal * {
-    box-sizing: border-box;
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to { 
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
-/* Prevent any animations that might cause the modal to disappear */
-.add-pricing-modal,
-.add-pricing-modal * {
-    animation: none !important;
-    transition: none !important;
+/* Ensure modal content is visible */
+.add-pricing-modal.active .modal-content,
+.add-pricing-modal[style*="display: flex"] .modal-content,
+.add-pricing-modal[style*="display: block"] .modal-content {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+}
+
+/* Modern Header */
+.add-pricing-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.75rem 2rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px 16px 0 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.add-pricing-modal .modal-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+}
+
+.add-pricing-modal .modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1;
+}
+
+.add-pricing-modal .close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: white;
+    padding: 0.5rem;
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 1;
+}
+
+.add-pricing-modal .close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.add-pricing-modal .close-btn:active {
+    transform: scale(0.95);
+}
+
+/* Modern Form Groups */
+.add-pricing-modal .form-group {
+    padding: 1.75rem 2rem;
+    position: relative;
+}
+
+.add-pricing-modal .form-group:not(:last-child) {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.add-pricing-modal .form-group label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.95rem;
+    transition: color 0.3s ease;
+}
+
+.add-pricing-modal .form-group:focus-within label {
+    color: #667eea;
+}
+
+.add-pricing-modal .required-star {
+    color: #ef4444;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Modern Input Fields */
+.add-pricing-modal .form-group input,
+.add-pricing-modal .form-group textarea {
+    width: 100%;
+    padding: 1rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #ffffff;
+    font-family: inherit;
+    resize: vertical;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.add-pricing-modal .form-group input::placeholder,
+.add-pricing-modal .form-group textarea::placeholder {
+    color: #9ca3af;
+    transition: color 0.3s ease;
+}
+
+.add-pricing-modal .form-group input:hover,
+.add-pricing-modal .form-group textarea:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
+.add-pricing-modal .form-group input:focus,
+.add-pricing-modal .form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 
+        0 0 0 4px rgba(102, 126, 234, 0.1),
+        0 4px 12px rgba(102, 126, 234, 0.2);
+    transform: translateY(-2px);
+    background: #ffffff;
+}
+
+.add-pricing-modal .form-group input:focus::placeholder,
+.add-pricing-modal .form-group textarea:focus::placeholder {
+    color: #cbd5e1;
+}
+
+/* Textarea specific styles */
+.add-pricing-modal .form-group textarea {
+    min-height: 100px;
+    line-height: 1.5;
+}
+
+/* Modern Action Buttons */
+.add-pricing-modal .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    border-top: 1px solid #f1f5f9;
+    background: linear-gradient(to bottom, #f8fafc, #ffffff);
+    border-radius: 0 0 16px 16px;
+}
+
+.add-pricing-modal .btn-cancel {
+    padding: 0.875rem 1.75rem;
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+    color: #64748b;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.add-pricing-modal .btn-cancel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transition: left 0.5s;
+}
+
+.add-pricing-modal .btn-cancel:hover {
+    background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+    color: #475569;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(100, 116, 139, 0.2);
+}
+
+.add-pricing-modal .btn-cancel:hover::before {
+    left: 100%;
+}
+
+.add-pricing-modal .btn-cancel:active {
+    transform: translateY(0);
+}
+
+.add-pricing-modal .btn-save {
+    padding: 0.875rem 2rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.add-pricing-modal .btn-save::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+}
+
+.add-pricing-modal .btn-save:hover {
+    background: linear-gradient(135deg, #764ba2, #667eea);
+    transform: translateY(-2px);
+    box-shadow: 
+        0 12px 25px rgba(102, 126, 234, 0.3),
+        0 0 0 1px rgba(102, 126, 234, 0.1);
+}
+
+.add-pricing-modal .btn-save:hover::before {
+    left: 100%;
+}
+
+.add-pricing-modal .btn-save:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.add-pricing-modal .btn-save:disabled {
+    background: linear-gradient(135deg, #9ca3af, #6b7280);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.add-pricing-modal .btn-save:disabled:hover {
+    background: linear-gradient(135deg, #9ca3af, #6b7280);
+    transform: none;
+    box-shadow: none;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+    .add-pricing-modal .modal-content {
+        width: 95%;
+        margin: 10px;
+        max-width: none;
+    }
+    
+    .add-pricing-modal .modal-header,
+    .add-pricing-modal .form-group,
+    .add-pricing-modal .modal-actions {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+    
+    .add-pricing-modal .modal-actions {
+        flex-direction: column-reverse;
+        gap: 0.75rem;
+    }
+    
+    .add-pricing-modal .btn-cancel,
+    .add-pricing-modal .btn-save {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* Smooth scroll for modal content */
+.add-pricing-modal .modal-content {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.add-pricing-modal .modal-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.add-pricing-modal .modal-content::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 3px;
+}
+
+.add-pricing-modal .modal-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.add-pricing-modal .modal-content::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Edit Product Modal Styles with Unique Class Names */
+.editproduct-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(17, 24, 39, 0.75);
+  backdrop-filter: blur(8px);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  padding: 20px; /* Added padding around the modal */
+  box-sizing: border-box;
+}
+
+.editproduct-modal.active {
+  display: flex;
+  opacity: 1;
+}
+
+.editproduct-modal-content {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 0;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+}
+
+.editproduct-modal.active .editproduct-modal-content {
+  transform: scale(1);
+}
+
+.editproduct-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: white;
+  margin-bottom: 0;
+}
+
+.editproduct-modal-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: white;
+}
+
+.editproduct-modal-header .close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  font-size: 1.5rem;
+  color: white;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.editproduct-modal-header .close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+/* Form container with vertical scroll */
+#editProductForm {
+  padding: 0 2rem 2rem 2rem; /* top, right, bottom, left */
+  max-height: calc(90vh - 80px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+/* Custom scrollbar for Webkit browsers (Chrome, Safari, Edge) */
+#editProductForm::-webkit-scrollbar {
+  width: 6px; /* Vertical scrollbar width */
+}
+
+#editProductForm::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+  margin: 3px 0; /* Padding top and bottom */
+}
+
+#editProductForm::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+  border: 1px solid #f1f5f9;
+}
+
+#editProductForm::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+#editProductForm::-webkit-scrollbar-button {
+  display: none; /* Hide scrollbar buttons */
+}
+
+/* Form styles with adjusted padding */
+#editProductModal .form-group {
+  margin-bottom: 1.5rem;
+  padding: 0 3px; /* Added 3px left and right padding */
+}
+
+#editProductModal .form-group:first-of-type {
+  margin-top: 1rem;
+  padding-top: 0;
+}
+
+#editProductModal .form-group:last-of-type {
+  margin-bottom: 0;
+}
+
+#editProductModal .form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #374151;
+  font-size: 0.95rem;
+  padding: 0 3px; /* Added 3px left and right padding */
+}
+
+#editProductModal input[type="text"],
+#editProductModal input[type="number"],
+#editProductModal input[type="date"],
+#editProductModal input[type="file"],
+#editProductModal select,
+#editProductModal textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f9fafb;
+  font-size: 15px;
+  color: #374151;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  box-sizing: border-box;
+  margin: 0 3px; /* Added 3px left and right margin */
+}
+
+#editProductModal input:focus,
+#editProductModal select:focus,
+#editProductModal textarea:focus {
+  border-color: #16a34a;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+  background-color: #ffffff;
+  margin: 0 3px; /* Ensure consistent spacing */
+}
+
+/* File input specific styling */
+#editProductModal input[type="file"] {
+  padding: 10px;
+  cursor: pointer;
+  margin: 0 3px;
+}
+
+#editProductModal input[type="file"]::-webkit-file-upload-button {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-right: 10px;
+}
+
+#editProductModal input[type="file"]::-webkit-file-upload-button:hover {
+  background: linear-gradient(135deg, #15803d, #16a34a);
+  transform: translateY(-1px);
+}
+
+/* Textarea styling */
+#editProductModal textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+  margin: 0 3px;
+}
+
+/* Select dropdown styling */
+#editProductModal select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #16a34a 50%),
+                    linear-gradient(135deg, #16a34a 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(1em + 2px),
+                      calc(100% - 13px) calc(1em + 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+  margin: 0 3px;
+}
+
+/* Image preview styling */
+#editProductModal #edit_image_preview {
+  margin-top: 10px;
+  padding: 0 3px;
+}
+
+#editProductModal #edit_preview_img {
+  max-width: 150px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 4px;
+  background: #f9fafb;
+  margin: 0 3px;
+}
+
+#editProductModal #edit_current_image {
+  padding: 0 3px;
+}
+
+#editProductModal #edit_current_image img {
+  max-width: 100px;
+  border-radius: 6px;
+  border: 2px solid #e5e7eb;
+  margin-top: 5px;
+}
+
+#editProductModal #edit_current_image small {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* Modal actions with adjusted padding */
+.editproduct-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 2rem;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e5e7eb;
+  background: #f8fafc;
+}
+
+.editproduct-modal-actions .btn-cancel,
+.editproduct-modal-actions .btn-save {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  border: none;
+}
+
+.editproduct-modal-actions .btn-cancel {
+  background: #6b7280;
+  color: white;
+}
+
+.editproduct-modal-actions .btn-cancel:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(107, 114, 128, 0.2);
+}
+
+.editproduct-modal-actions .btn-save {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.editproduct-modal-actions .btn-save::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.editproduct-modal-actions .btn-save:hover::before {
+  left: 100%;
+}
+
+.editproduct-modal-actions .btn-save:hover {
+  background: linear-gradient(135deg, #15803d, #16a34a);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(22, 163, 74, 0.3);
+}
+
+.editproduct-modal-actions .btn-save:active {
+  transform: translateY(0);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .editproduct-modal {
+    padding: 10px; /* Reduced padding on mobile */
+  }
+  
+  .editproduct-modal-content {
+    width: 95%;
+    margin: 0;
+  }
+  
+  .editproduct-modal-header {
+    padding: 1.25rem 1.5rem;
+  }
+  
+  #editProductForm {
+    padding: 0 1rem 1rem 1rem; /* Reduced padding on mobile */
+  }
+  
+  .editproduct-modal-actions {
+    flex-direction: column-reverse;
+    padding: 1rem 1.5rem;
+  }
+  
+  .editproduct-modal-actions .btn-cancel,
+  .editproduct-modal-actions .btn-save {
+    width: 100%;
+    text-align: center;
+  }
+  
+  /* Adjust form padding for mobile */
+  #editProductModal .form-group {
+    padding: 0 2px; /* Slightly reduced padding on mobile */
+  }
+  
+  #editProductModal input[type="text"],
+  #editProductModal input[type="number"],
+  #editProductModal input[type="date"],
+  #editProductModal input[type="file"],
+  #editProductModal select,
+  #editProductModal textarea {
+    margin: 0 2px; /* Slightly reduced margin on mobile */
+  }
+}
+
+/* Ensure proper scrolling on all devices */
+@media (max-height: 600px) {
+  #editProductForm {
+    max-height: calc(80vh - 80px);
+  }
 }

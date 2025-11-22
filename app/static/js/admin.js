@@ -10,6 +10,10 @@ const AUTO_CANCEL_TIMEOUT = 3 * 24 * 60 * 60 * 1000; // 3 days
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeAdmin();
+    initializePricingUnitModal();
+    initializeAdminManagement();
+    loadPricingUnits();
+    initializeEditProductModal();
 });
     // Users modal
     const openUsersModalBtn = document.getElementById('openUsersModal');
@@ -48,7 +52,7 @@ function initializeAdmin() {
     if (pricingUnitSearch) {
         initializePricingUnitSearch();
     }
-
+    initializeEditProductModal();
     startAutoCancellationChecker();  // Start auto-cancellation checker
 }
 function initializeEventListeners() {
@@ -290,26 +294,30 @@ function displayProducts(products) {
     }
 
     tableBody.innerHTML = products.map(product => `
-        <tr>
-            <td>${escapeHtml(product.name)}</td>
+        <tr data-product-id="${product.product_id}">
+            <td>${escapeHtml(product.incubatee_name || 'Unknown')}</td>
             <td>${escapeHtml(product.stock_no)}</td>
-            <td>${escapeHtml(product.products)}</td>
+            <td>${escapeHtml(product.name)}</td>
             <td>${product.stock_amount}</td>
             <td>₱${product.price_per_stocks.toFixed(2)}</td>
-            <td>${product.pricing_unit}</td>
+            <td>${product.pricing_unit || 'N/A'}</td>
             <td>
                 ${product.image_path ? 
-                `<img src="/${product.image_path}" width="60" style="border-radius:6px;" alt="${escapeHtml(product.name)}">` : 
-                'No Image'
+                `<img src="/${product.image_path}" class="product-image" alt="${escapeHtml(product.name)}" style="max-width: 50px; max-height: 50px; border-radius: 4px;">` : 
+                '<span class="no-image">No Image</span>'
                 }
             </td>
-            <td>${product.expiration_date}</td>
-            <td>${product.warranty ? product.warranty : "—"}</td>
+            <td>${product.expiration_date && product.expiration_date !== 'N/A' ? product.expiration_date : '—'}</td>
+            <td>${product.warranty && product.warranty !== 'N/A' ? product.warranty : '—'}</td>
             <td>${product.added_on}</td>
             <td>
-                <button class="btn-delete" onclick="deleteProduct(${product.incubatee_id})" title="Delete product">
-                <span class="btn-delete-icon">🗑️</span>
-                <span class="btn-delete-text">Delete</span>
+                <button class="btn-edit" onclick="openEditProductModal(${product.product_id})" title="Edit product">
+                    <span class="btn-edit-icon">✏️</span>
+                    <span class="btn-delete-text">Edit</span>
+                </button>
+                <button class="btn-delete" onclick="deleteProduct(${product.product_id})" title="Delete product">
+                    <span class="btn-delete-icon">🗑️</span>
+                    <span class="btn-delete-text">Delete</span>
                 </button>
             </td>
         </tr>
@@ -321,7 +329,7 @@ function showEmptyState() {
     const tableBody = document.getElementById("product-list");
     tableBody.innerHTML = `
         <tr>
-            <td colspan="9" style="text-align:center; color:#777; padding:20px;">
+            <td colspan="11" style="text-align:center; color:#777; padding:20px;">
                 No products added yet. Add your first product using the form on the left.
             </td>
         </tr>
@@ -1186,10 +1194,6 @@ function showSelectedUnitInfo(unit) {
     console.log(`Selected unit: ${unit.unit_name} (ID: ${unit.unit_id})`);
 }
 
-// Load pricing units when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    loadPricingUnits();
-});
 
 // Function to load pricing units
 async function loadPricingUnits() {
@@ -1220,107 +1224,8 @@ async function loadPricingUnits() {
     return [];
 }
 
-// Pricing Unit Modal functionality
-document.addEventListener('DOMContentLoaded', function() {
-    // Add Pricing Unit Modal
-    const addPricingUnitBtn = document.getElementById('addPricingUnitBtn');
-    const pricingUnitModal = document.getElementById('pricingUnitModal');
-    const closePricingUnitModal = document.getElementById('closePricingUnitModal');
-    const closePricingUnitModalBottom = document.getElementById('closePricingUnitModalBottom');
-    const pricingUnitForm = document.getElementById('pricingUnitForm');
 
-    // Open modal
-    if (addPricingUnitBtn) {
-        addPricingUnitBtn.addEventListener('click', function() {
-            pricingUnitModal.style.display = 'block';
-            // Clear form when opening
-            pricingUnitForm.reset();
-        });
-    }
-
-    // Close modal buttons
-    if (closePricingUnitModal) {
-        closePricingUnitModal.addEventListener('click', function() {
-            pricingUnitModal.style.display = 'none';
-        });
-    }
-
-    if (closePricingUnitModalBottom) {
-        closePricingUnitModalBottom.addEventListener('click', function() {
-            pricingUnitModal.style.display = 'none';
-        });
-    }
-
-    // Close modal when clicking outside
-    if (pricingUnitModal) {
-        pricingUnitModal.addEventListener('click', function(e) {
-            if (e.target === pricingUnitModal) {
-                pricingUnitModal.style.display = 'none';
-            }
-        });
-    }
-
-    // Handle Pricing Unit Form Submission
-    if (pricingUnitForm) {
-        pricingUnitForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const unitName = document.getElementById('unit_name').value.trim();
-            const unitDescription = document.getElementById('unit_description').value.trim();
-            
-            if (!unitName) {
-                alert('Please enter a unit name');
-                return;
-            }
-
-            // Show loading state
-            const submitBtn = pricingUnitForm.querySelector('.btn-save');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Saving...';
-            submitBtn.disabled = true;
-
-            try {
-                const response = await fetch('/admin/add-pricing-unit', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        unit_name: unitName,
-                        unit_description: unitDescription
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showToast('✅ Pricing unit added successfully!', 'success');
-                    pricingUnitForm.reset();
-                    pricingUnitModal.style.display = 'none';
-                    
-                    // Reload the pricing units dropdown
-                    await loadPricingUnits();
-                    
-                    // If search is initialized, reload it too
-                    if (typeof initializePricingUnitSearch === 'function') {
-                        initializePricingUnitSearch();
-                    }
-                } else {
-                    showToast('❌ Error: ' + data.error, 'error');
-                }
-            } catch (error) {
-                console.error('Error adding pricing unit:', error);
-                showToast('❌ Error adding pricing unit', 'error');
-            } finally {
-                // Reset button state
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }
-        });
-    }
-});
-
-// Pricing Unit Modal functionality - Fixed version
+// Pricing Unit Modal functionality - Fixed for your HTML structure
 function initializePricingUnitModal() {
     const addPricingUnitBtn = document.getElementById('addPricingUnitBtn');
     const pricingUnitModal = document.getElementById('pricingUnitModal');
@@ -1329,94 +1234,69 @@ function initializePricingUnitModal() {
     const pricingUnitForm = document.getElementById('pricingUnitForm');
 
     console.log('Initializing pricing unit modal...');
+    console.log('Add button:', addPricingUnitBtn);
+    console.log('Modal:', pricingUnitModal);
+    console.log('Form:', pricingUnitForm);
 
     // Ensure modal is hidden on initialization
     if (pricingUnitModal) {
         pricingUnitModal.style.display = 'none';
-        pricingUnitModal.classList.add('add-pricing-modal');
     }
-
-    // Track if modal is currently opening to prevent immediate close
-    let isOpening = false;
 
     // Open modal
-    if (addPricingUnitBtn) {
+    if (addPricingUnitBtn && pricingUnitModal) {
         addPricingUnitBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            e.stopPropagation(); // Prevent event bubbling
-            
-            console.log('Add pricing unit button clicked');
-            
-            if (pricingUnitModal) {
-                isOpening = true;
-                pricingUnitModal.style.display = 'block';
-                console.log('Add pricing modal should be visible now');
-                
-                // Clear form when opening
-                if (pricingUnitForm) {
-                    pricingUnitForm.reset();
-                }
-                
-                // Focus on the first input field
-                const unitNameInput = document.getElementById('unit_name');
-                if (unitNameInput) {
-                    setTimeout(() => {
-                        unitNameInput.focus();
-                    }, 100);
-                }
-                
-                // Reset opening flag after a short delay
-                setTimeout(() => {
-                    isOpening = false;
-                }, 100);
-            }
+            console.log('Add pricing unit button clicked - opening modal');
+            pricingUnitModal.style.display = 'flex'; // Use flex to match your other modals
+            pricingUnitModal.style.alignItems = 'center';
+            pricingUnitModal.style.justifyContent = 'center';
         });
     } else {
-        console.warn('Add pricing unit button not found');
+        console.error('Missing elements: add button=', !!addPricingUnitBtn, 'modal=', !!pricingUnitModal);
     }
 
-    // Close modal buttons
+    // Close modal from top close button
     if (closePricingUnitModal) {
         closePricingUnitModal.addEventListener('click', function(e) {
-            e.stopPropagation(); // Prevent event bubbling to modal
+            e.preventDefault();
+            console.log('Closing modal from top button');
             if (pricingUnitModal) {
                 pricingUnitModal.style.display = 'none';
-                console.log('Add pricing modal closed via top close button');
             }
         });
     }
 
+    // Close modal from bottom cancel button
     if (closePricingUnitModalBottom) {
         closePricingUnitModalBottom.addEventListener('click', function(e) {
-            e.stopPropagation(); // Prevent event bubbling to modal
+            e.preventDefault();
+            console.log('Closing modal from bottom button');
             if (pricingUnitModal) {
                 pricingUnitModal.style.display = 'none';
-                console.log('Add pricing modal closed via bottom close button');
             }
         });
     }
 
-    // Close modal when clicking outside - but not when opening
+    // Close modal when clicking outside
     if (pricingUnitModal) {
         pricingUnitModal.addEventListener('click', function(e) {
-            // Only close if clicking directly on the modal background (not the content)
-            // and not during the opening process
-            if (e.target === pricingUnitModal && !isOpening) {
+            if (e.target === pricingUnitModal) {
+                console.log('Closing modal from outside click');
                 pricingUnitModal.style.display = 'none';
-                console.log('Add pricing modal closed via outside click');
             }
         });
 
-        // Prevent clicks inside the modal content from closing the modal
+        // Prevent clicks inside modal content from closing the modal
         const modalContent = pricingUnitModal.querySelector('.modal-content');
         if (modalContent) {
             modalContent.addEventListener('click', function(e) {
-                e.stopPropagation(); // Prevent click from bubbling to modal background
+                e.stopPropagation();
             });
         }
     }
 
-    // Handle Pricing Unit Form Submission
+    // Handle form submission
     if (pricingUnitForm) {
         pricingUnitForm.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -1450,8 +1330,14 @@ function initializePricingUnitModal() {
                 
                 const data = await response.json();
                 
+                // In your form submission handler, update the success part:
                 if (data.success) {
-                    showToast('✅ Pricing unit added successfully!', 'success');
+                    if (data.existing) {
+                        showToast('ℹ️ Pricing unit already exists - using existing unit', 'info');
+                    } else {
+                        showToast('✅ Pricing unit added successfully!', 'success');
+                    }
+                    
                     pricingUnitForm.reset();
                     if (pricingUnitModal) {
                         pricingUnitModal.style.display = 'none';
@@ -1464,27 +1350,21 @@ function initializePricingUnitModal() {
                     if (typeof initializePricingUnitSearch === 'function') {
                         initializePricingUnitSearch();
                     }
-                } else {
-                    showToast('❌ Error: ' + data.error, 'error');
                 }
             } catch (error) {
                 console.error('Error adding pricing unit:', error);
                 showToast('❌ Error adding pricing unit', 'error');
             } finally {
-                // Reset button state
                 submitBtn.textContent = originalText;
                 submitBtn.disabled = false;
             }
         });
-    } else {
-        console.warn('Pricing unit form not found');
     }
 
-    // Add escape key to close modal
+    // Escape key to close modal
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && pricingUnitModal && pricingUnitModal.style.display === 'block') {
+        if (e.key === 'Escape' && pricingUnitModal && pricingUnitModal.style.display === 'flex') {
             pricingUnitModal.style.display = 'none';
-            console.log('Add pricing modal closed via Escape key');
         }
     });
 }
@@ -1751,14 +1631,235 @@ function initializeAdminManagement() {
     }
 }
 
-// Call this when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    initializeAdminManagement();
-});
+// Edit Product Modal Functions
+function initializeEditProductModal() {
+    console.log('Initializing edit product modal...');
+    
+    const editProductModal = document.getElementById("editProductModal");
+    const closeEditProductModalTop = document.getElementById("closeEditProductModalTop");
+    const closeEditProductModalBottom = document.getElementById("closeEditProductModalBottom");
+
+    // Close modal from both buttons
+    [closeEditProductModalTop, closeEditProductModalBottom].forEach(btn => {
+        if (btn) {
+            btn.addEventListener("click", () => {
+                console.log('Closing edit modal');
+                editProductModal.classList.remove("active");
+                resetEditForm();
+            });
+        }
+    });
+
+    // Close modal when clicking outside
+    if (editProductModal) {
+        editProductModal.addEventListener("click", (e) => {
+            if (e.target === editProductModal) {
+                console.log('Closing edit modal from outside click');
+                editProductModal.classList.remove("active");
+                resetEditForm();
+            }
+        });
+    }
+
+    // Handle edit form submission
+    const editProductForm = document.getElementById("editProductForm");
+    if (editProductForm) {
+        editProductForm.addEventListener("submit", handleEditProductSubmit);
+        console.log('Edit form submit listener added');
+    }
+
+    // Handle image preview for edit form
+    const editProductImageInput = document.getElementById("edit_product_image");
+    if (editProductImageInput) {
+        editProductImageInput.addEventListener("change", handleEditImagePreview);
+    }
+
+    console.log('Edit product modal initialized successfully');
+}
+
+// Open edit product modal and load product data
+async function openEditProductModal(productId) {
+    console.log('Opening edit modal for product:', productId);
+    
+    try {
+        const response = await fetch(`/admin/get-product/${productId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const product = data.product;
+            console.log('Product data loaded:', product);
+            populateEditForm(product);
+            
+            // Show the modal
+            const editProductModal = document.getElementById("editProductModal");
+            editProductModal.classList.add("active");
+            console.log('Edit modal opened successfully');
+        } else {
+            console.error('Error loading product:', data.error);
+            showNotification('❌ Error loading product data: ' + data.error, 'error');
+        }
+    } catch (error) {
+        console.error('Error loading product:', error);
+        showNotification('❌ Failed to load product data', 'error');
+    }
+}
+
+// Populate edit form with product data
+function populateEditForm(product) {
+    console.log('Populating form with product data:', product);
+    
+    document.getElementById('edit_product_id').value = product.product_id;
+    document.getElementById('edit_name').value = product.name || '';
+    document.getElementById('edit_stock_no').value = product.stock_no || '';
+    document.getElementById('edit_products').value = product.products || '';
+    document.getElementById('edit_stock_amount').value = product.stock_amount || '';
+    document.getElementById('edit_price_per_stocks').value = product.price_per_stocks || '';
+    document.getElementById('edit_details').value = product.details || '';
+    document.getElementById('edit_category').value = product.category || '';
+    document.getElementById('edit_warranty').value = product.warranty || '';
+    
+    // Set expiration date if exists
+    if (product.expiration_date && product.expiration_date !== 'N/A') {
+        document.getElementById('edit_expiration_date').value = product.expiration_date;
+    } else {
+        document.getElementById('edit_expiration_date').value = '';
+    }
+
+    // Load pricing units and set selected value
+    loadPricingUnitsForEdit(product.pricing_unit_id);
+
+    // Show current image
+    const currentImageDiv = document.getElementById('edit_current_image');
+    const previewImg = document.getElementById('edit_preview_img');
+    
+    if (product.image_path) {
+        currentImageDiv.innerHTML = `
+            <small>Current Image:</small><br>
+            <img src="/${product.image_path}" style="max-width: 100px; border-radius: 4px; margin-top: 5px;">
+        `;
+        previewImg.style.display = 'none';
+    } else {
+        currentImageDiv.innerHTML = '<small>No current image</small>';
+        previewImg.style.display = 'none';
+    }
+}
+
+// Load pricing units for edit form
+async function loadPricingUnitsForEdit(selectedUnitId) {
+    try {
+        const response = await fetch('/admin/get-pricing-units');
+        const data = await response.json();
+        
+        const select = document.getElementById('edit_pricing_unit');
+        select.innerHTML = '<option value="">Select Pricing Unit</option>';
+        
+        if (data.success) {
+            data.pricing_units.forEach(unit => {
+                const option = document.createElement('option');
+                option.value = unit.unit_id;
+                option.textContent = unit.unit_name;
+                if (unit.unit_id == selectedUnitId) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading pricing units:', error);
+    }
+}
+
+// Handle edit image preview
+function handleEditImagePreview(event) {
+    const file = event.target.files[0];
+    const previewImg = document.getElementById('edit_preview_img');
+    const currentImageDiv = document.getElementById('edit_current_image');
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            previewImg.style.display = "block";
+            currentImageDiv.innerHTML = '<small>New image preview:</small>';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Handle edit form submission
+async function handleEditProductSubmit(event) {
+    event.preventDefault();
+    console.log('Edit form submitted');
+    
+    const productId = document.getElementById('edit_product_id').value;
+    const formData = new FormData(this);
+    
+    try {
+        const submitBtn = this.querySelector('.btn-save');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Updating...';
+        submitBtn.disabled = true;
+
+        const response = await fetch(`/admin/update-product/${productId}`, {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+        console.log('Update response:', data);
+
+        if (data.success) {
+            showNotification('✅ Product updated successfully!', 'success');
+            document.getElementById('editProductModal').classList.remove('active');
+            resetEditForm();
+            loadProducts(); // Refresh the product list
+        } else {
+            showNotification('❌ Error updating product: ' + data.error, 'error');
+        }
+    } catch (error) {
+        console.error('Error updating product:', error);
+        showNotification('❌ Failed to update product', 'error');
+    } finally {
+        const submitBtn = document.querySelector('#editProductForm .btn-save');
+        if (submitBtn) {
+            submitBtn.textContent = 'Update Product';
+            submitBtn.disabled = false;
+        }
+    }
+}
+
+// Reset edit form
+function resetEditForm() {
+    document.getElementById('editProductForm').reset();
+    document.getElementById('edit_preview_img').style.display = 'none';
+    document.getElementById('edit_current_image').innerHTML = '';
+    document.getElementById('edit_pricing_unit').innerHTML = '<option value="">Select Pricing Unit</option>';
+}
+
 // Add this at the end of your admin.js to debug
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded - checking for pricing unit elements:');
     console.log('Add button:', document.getElementById('addPricingUnitBtn'));
     console.log('Add pricing modal:', document.getElementById('pricingUnitModal'));
     console.log('Form:', document.getElementById('pricingUnitForm'));
+});
+// Add this temporary debug function
+function debugModal() {
+    const modal = document.getElementById("editProductModal");
+    if (modal) {
+        console.log('Modal element exists:', modal);
+        console.log('Modal classes:', modal.classList);
+        console.log('Modal display style:', window.getComputedStyle(modal).display);
+        console.log('Modal position:', window.getComputedStyle(modal).position);
+        console.log('Modal z-index:', window.getComputedStyle(modal).zIndex);
+        console.log('Modal opacity:', window.getComputedStyle(modal).opacity);
+    } else {
+        console.error('Modal element not found!');
+    }
+}
+
+// Call this in your initialize function
+document.addEventListener('DOMContentLoaded', function() {
+    initializeEditProductModal();
+    debugModal(); // Temporary debug
 });

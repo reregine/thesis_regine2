@@ -623,6 +623,7 @@ async function handleAddIncubatee(e) {
     }
 }
 
+
 // Edit Incubatee Modal Functions
 function openEditIncubateeModal(incubateeId) {
     const incubatee = allIncubatees.find(i => i.incubatee_id === incubateeId);

@@ -106,6 +106,7 @@ def sales_reports():
     
     return render_template("admin/reports.html", today=today.isoformat(),today_minus_30=today_minus_30.isoformat())
 
+
 @admin_bp.route("/get-incubatee-products/<int:incubatee_id>")
 def get_incubatee_products(incubatee_id):
     """Get products for a specific incubatee"""
@@ -160,31 +161,25 @@ def add_pricing_unit():
             return jsonify({"success": False, "error": "Unit name is required"}), 400
             
         # Check if unit already exists (case-insensitive)
-        existing_unit = PricingUnit.query.filter(
-            db.func.lower(PricingUnit.unit_name) == db.func.lower(unit_name)
-        ).first()
+        existing_unit = PricingUnit.query.filter(db.func.lower(PricingUnit.unit_name) == db.func.lower(unit_name)).first()
         
         if existing_unit:
-            return jsonify({"success": False, "error": "Pricing unit already exists"}), 400
+            # Return success but indicate it's an existing unit
+            return jsonify({"success": True, "message": "Pricing unit already exists","unit_id": existing_unit.unit_id,"existing": True})
             
         # Create new pricing unit with is_active=True by default
-        pricing_unit = PricingUnit(
-            unit_name=unit_name,
-            unit_description=unit_description if unit_description else None,
-            is_active=True,  # Always set to True
-            created_at=datetime.utcnow()
-        )
+        pricing_unit = PricingUnit(unit_name=unit_name,unit_description=unit_description if unit_description else None,is_active=True, created_at=datetime.utcnow())
         
         db.session.add(pricing_unit)
         db.session.commit()
         
-        return jsonify({"success": True, "message": "Pricing unit added successfully!","unit_id": pricing_unit.unit_id})
+        return jsonify({"success": True, "message": "Pricing unit added successfully!","unit_id": pricing_unit.unit_id,"existing": False})
         
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error adding pricing unit: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
-    
+        
 @admin_bp.route("/search-pricing-units", methods=["GET"])
 def search_pricing_units():
     """Search pricing units by name or description"""
@@ -693,222 +688,163 @@ def admin_reports():
         return jsonify({"success": False, "error": str(e)}), 500
     
 
-# Admin route for uploading logos
-@admin_bp.route("/update-incubatee-logo/<int:incubatee_id>", methods=["POST"])
-def update_incubatee_logo(incubatee_id):
-    """Update incubatee logo"""
+@admin_bp.route("/get-product/<int:product_id>")
+def get_product(product_id):
+    """Get product data for editing"""
     if not session.get('admin_logged_in'):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
     
     try:
-        incubatee = Incubatee.query.get_or_404(incubatee_id)
+        product = IncubateeProduct.query.options(
+            db.joinedload(IncubateeProduct.incubatee),
+            db.joinedload(IncubateeProduct.pricing_unit)
+        ).get_or_404(product_id)
         
-        if 'logo' not in request.files:
-            return jsonify({"success": False, "error": "No file provided"}), 400
+        product_data = {
+            "product_id": product.product_id,
+            "name": product.name,
+            "stock_no": product.stock_no,
+            "products": product.products,
+            "stock_amount": product.stock_amount,
+            "price_per_stocks": float(product.price_per_stocks),
+            "pricing_unit_id": product.pricing_unit_id,
+            "details": product.details,
+            "category": product.category,
+            "expiration_date": product.expiration_date.strftime("%Y-%m-%d") if product.expiration_date else None,
+            "warranty": product.warranty,
+            "image_path": product.image_path,
+            "incubatee_name": f"{product.incubatee.first_name} {product.incubatee.last_name}" if product.incubatee else "Unknown"
+        }
         
-        logo_file = request.files['logo']
+        return jsonify({"success": True, "product": product_data})
         
-        if logo_file.filename == '':
-            return jsonify({"success": False, "error": "No file selected"}), 400
-            
-        if logo_file and allowed_logo_file(logo_file.filename):
-            # Generate secure filename
-            file_extension = logo_file.filename.rsplit('.', 1)[1].lower()
-            filename = f"incubatee_{incubatee_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.{file_extension}"
-            filename = secure_filename(filename)
-            
-            # Save file to the specified directory
-            save_path = os.path.join(LOGO_UPLOAD_FOLDER, filename)
-            os.makedirs(os.path.dirname(save_path), exist_ok=True)
-            logo_file.save(save_path)
-            
-            # Delete old logo if exists
-            if incubatee.logo_path:
-                old_logo_path = os.path.join(LOGO_UPLOAD_FOLDER, incubatee.logo_path)
-                if os.path.exists(old_logo_path):
-                    os.remove(old_logo_path)
-            
-            # Update incubatee logo filename
-            incubatee.logo_path = filename
-            db.session.commit()
-            
-            return jsonify({"success": True, "message": "Logo updated successfully!", "logo_url": incubatee.logo_url})
-        else:
-            return jsonify({"success": False, "error": f"Invalid file type. Allowed types: {', '.join(LOGO_ALLOWED_EXTENSIONS)}"}), 400
-            
     except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Error updating logo: {str(e)}")
+        current_app.logger.error(f"Error fetching product {product_id}: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
-    
-@admin_bp.route("/update-incubatee/<int:incubatee_id>", methods=["POST"])
-def update_incubatee(incubatee_id):
-    """Update incubatee details - Only updates changed fields"""
+
+@admin_bp.route("/update-product/<int:product_id>", methods=["POST"])
+def update_product(product_id):
+    """Update product information"""
     if not session.get('admin_logged_in'):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
     
     try:
-        incubatee = Incubatee.query.get_or_404(incubatee_id)
+        product = IncubateeProduct.query.get_or_404(product_id)
         updated_fields = []
         
-        if request.content_type and 'multipart/form-data' in request.content_type:
-            # Handle form data - only update fields that are provided
-            form_data = request.form
-            
-            # Store original values for comparison
-            original_values = {
-                'first_name': incubatee.first_name,
-                'last_name': incubatee.last_name,
-                'middle_name': incubatee.middle_name,
-                'company_name': incubatee.company_name,
-                'website': incubatee.website,
-                'email': incubatee.email,
-                'phone_number': incubatee.phone_number,
-                'contact_info': incubatee.contact_info,
-                'batch': incubatee.batch,
-                'is_approved': incubatee.is_approved
-            }
-            
-            # Check each field and only update if it's provided AND changed
-            if "first_name" in form_data and form_data["first_name"] != original_values['first_name']:
-                incubatee.first_name = form_data["first_name"]
-                updated_fields.append('first_name')
-                
-            if "last_name" in form_data and form_data["last_name"] != original_values['last_name']:
-                incubatee.last_name = form_data["last_name"]
-                updated_fields.append('last_name')
-                
-            if "middle_name" in form_data and form_data["middle_name"] != original_values['middle_name']:
-                incubatee.middle_name = form_data["middle_name"]
-                updated_fields.append('middle_name')
-                
-            if "company_name" in form_data and form_data["company_name"] != original_values['company_name']:
-                incubatee.company_name = form_data["company_name"]
-                updated_fields.append('company_name')
-                
-            if "website" in form_data and form_data["website"] != original_values['website']:
-                incubatee.website = form_data["website"]
-                updated_fields.append('website')
-                
-            if "email" in form_data and form_data["email"] != original_values['email']:
-                incubatee.email = form_data["email"]
-                updated_fields.append('email')
-                
-            if "phone_number" in form_data and form_data["phone_number"] != original_values['phone_number']:
-                incubatee.phone_number = form_data["phone_number"]
-                updated_fields.append('phone_number')
-                
-            if "contact_info" in form_data and form_data["contact_info"] != original_values['contact_info']:
-                incubatee.contact_info = form_data["contact_info"]
-                updated_fields.append('contact_info')
-                
-            if "batch" in form_data and form_data["batch"] != original_values['batch']:
-                incubatee.batch = form_data["batch"]
-                updated_fields.append('batch')
-                
-            # Handle is_approved checkbox - it might not be present in form data
-            is_approved = form_data.get("is_approved", "false").lower() == "true"
-            if is_approved != original_values['is_approved']:
-                incubatee.is_approved = is_approved
-                updated_fields.append('is_approved')
-            
-            # Handle logo update - only if a new file is provided
-            logo_file = request.files.get("company_logo")
-            if logo_file and logo_file.filename != '':
-                if allowed_logo_file(logo_file.filename):
-                    # Delete old logo if exists
-                    if incubatee.logo_path:
-                        old_logo_path = os.path.join(current_app.root_path, 'static', 'incubatee_logo', incubatee.logo_path)
-                        if os.path.exists(old_logo_path):
-                            os.remove(old_logo_path)
-                    
-                    # Generate new filename
-                    file_extension = logo_file.filename.rsplit('.', 1)[1].lower()
-                    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-                    filename = f"logo_{incubatee_id}_{timestamp}.{file_extension}"
-                    filename = secure_filename(filename)
-                    
-                    # Save new logo
-                    save_path = os.path.join(current_app.root_path, 'static', 'incubatee_logo', filename)
-                    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-                    logo_file.save(save_path)
-                    incubatee.logo_path = filename
-                    updated_fields.append('logo')
-                else:
-                    return jsonify({
-                        "success": False, 
-                        "error": f"Invalid file type. Allowed types: {', '.join(LOGO_ALLOWED_EXTENSIONS)}"
-                    }), 400
+        # Handle form data
+        form_data = request.form
         
-        else:
-            # Handle JSON data - only update fields that are provided
-            data = request.get_json()
-            if not data:
-                return jsonify({"success": False, "error": "No data provided"}), 400
+        # Update basic fields
+        if 'name' in form_data and form_data['name'] != product.name:
+            product.name = form_data['name']
+            updated_fields.append('name')
             
-            # Store original values for comparison
-            original_values = {
-                'first_name': incubatee.first_name,
-                'last_name': incubatee.last_name,
-                'middle_name': incubatee.middle_name,
-                'company_name': incubatee.company_name,
-                'website': incubatee.website,
-                'email': incubatee.email,
-                'phone_number': incubatee.phone_number,
-                'contact_info': incubatee.contact_info,
-                'batch': incubatee.batch,
-                'is_approved': incubatee.is_approved
-            }
+        if 'stock_no' in form_data and form_data['stock_no'] != product.stock_no:
+            product.stock_no = form_data['stock_no']
+            updated_fields.append('stock_no')
             
-            # Check each field and only update if it's provided AND changed
-            if "first_name" in data and data["first_name"] != original_values['first_name']:
-                incubatee.first_name = data["first_name"]
-                updated_fields.append('first_name')
+        if 'products' in form_data and form_data['products'] != product.products:
+            product.products = form_data['products']
+            updated_fields.append('products')
+            
+        if 'stock_amount' in form_data:
+            try:
+                new_stock = int(form_data['stock_amount'])
+                if new_stock != product.stock_amount:
+                    product.stock_amount = new_stock
+                    updated_fields.append('stock_amount')
+            except (TypeError, ValueError):
+                return jsonify({"success": False, "error": "Invalid stock amount"}), 400
                 
-            if "last_name" in data and data["last_name"] != original_values['last_name']:
-                incubatee.last_name = data["last_name"]
-                updated_fields.append('last_name')
+        if 'price_per_stocks' in form_data:
+            try:
+                new_price = float(form_data['price_per_stocks'])
+                if new_price != product.price_per_stocks:
+                    product.price_per_stocks = new_price
+                    updated_fields.append('price_per_stocks')
+            except (TypeError, ValueError):
+                return jsonify({"success": False, "error": "Invalid price per stock"}), 400
                 
-            if "middle_name" in data and data["middle_name"] != original_values['middle_name']:
-                incubatee.middle_name = data["middle_name"]
-                updated_fields.append('middle_name')
+        if 'pricing_unit_id' in form_data:
+            try:
+                new_unit_id = int(form_data['pricing_unit_id'])
+                if new_unit_id != product.pricing_unit_id:
+                    product.pricing_unit_id = new_unit_id
+                    updated_fields.append('pricing_unit_id')
+            except (TypeError, ValueError):
+                return jsonify({"success": False, "error": "Invalid pricing unit ID"}), 400
                 
-            if "company_name" in data and data["company_name"] != original_values['company_name']:
-                incubatee.company_name = data["company_name"]
-                updated_fields.append('company_name')
-                
-            if "website" in data and data["website"] != original_values['website']:
-                incubatee.website = data["website"]
-                updated_fields.append('website')
-                
-            if "email" in data and data["email"] != original_values['email']:
-                incubatee.email = data["email"]
-                updated_fields.append('email')
-                
-            if "phone_number" in data and data["phone_number"] != original_values['phone_number']:
-                incubatee.phone_number = data["phone_number"]
-                updated_fields.append('phone_number')
-                
-            if "contact_info" in data and data["contact_info"] != original_values['contact_info']:
-                incubatee.contact_info = data["contact_info"]
-                updated_fields.append('contact_info')
-                
-            if "batch" in data and data["batch"] != original_values['batch']:
-                incubatee.batch = data["batch"]
-                updated_fields.append('batch')
-                
-            if "is_approved" in data and data["is_approved"] != original_values['is_approved']:
-                incubatee.is_approved = bool(data["is_approved"])
-                updated_fields.append('is_approved')
+        if 'details' in form_data and form_data['details'] != product.details:
+            product.details = form_data['details']
+            updated_fields.append('details')
+            
+        if 'category' in form_data and form_data['category'] != product.category:
+            product.category = form_data['category']
+            updated_fields.append('category')
+            
+        if 'warranty' in form_data and form_data['warranty'] != product.warranty:
+            product.warranty = form_data['warranty'] if form_data['warranty'] else None
+            updated_fields.append('warranty')
+            
+        # Handle expiration date
+        if 'expiration_date' in form_data:
+            new_expiration = None
+            if form_data['expiration_date']:
+                try:
+                    new_expiration = datetime.strptime(form_data['expiration_date'], '%Y-%m-%d').date()
+                except ValueError:
+                    return jsonify({"success": False, "error": "Invalid expiration date format"}), 400
+            
+            current_expiration = product.expiration_date
+            if new_expiration != current_expiration:
+                product.expiration_date = new_expiration
+                updated_fields.append('expiration_date')
         
-        # Only commit if there are actual changes
+        # Handle image upload
+        if 'product_image' in request.files:
+            image_file = request.files['product_image']
+            if image_file and image_file.filename and allowed_file(image_file.filename):
+                # Generate secure filename
+                file_extension = image_file.filename.rsplit('.', 1)[1].lower()
+                timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+                filename = f"product_{product_id}_{timestamp}.{file_extension}"
+                filename = secure_filename(filename)
+                
+                # Save the new image
+                save_path = os.path.join(current_app.root_path, UPLOAD_FOLDER, filename)
+                os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                image_file.save(save_path)
+                
+                # Delete old image if exists
+                if product.image_path:
+                    try:
+                        old_image_path = os.path.join(current_app.root_path, product.image_path)
+                        if os.path.exists(old_image_path):
+                            os.remove(old_image_path)
+                    except Exception as e:
+                        current_app.logger.warning(f"Failed to delete old product image: {str(e)}")
+                
+                product.image_path = f"{UPLOAD_FOLDER}/{filename}"
+                updated_fields.append('image_path')
+        
+        # Only update timestamp and commit if there are actual changes
         if updated_fields:
+            product.updated_at = datetime.utcnow()
             db.session.commit()
-            return jsonify({"success": True, "message": f"Incubatee updated successfully! Updated fields: {', '.join(updated_fields)}","updated_fields": updated_fields})
+            return jsonify({
+                "success": True,
+                "message": f"Product updated successfully! Updated fields: {', '.join(updated_fields)}",
+                "updated_fields": updated_fields
+            })
         else:
-            return jsonify({"success": True,"message": "No changes detected - incubatee information is up to date","updated_fields": []})
+            return jsonify({
+                "success": True,
+                "message": "No changes detected - product information is up to date",
+                "updated_fields": []
+            })
         
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error updating incubatee: {str(e)}")
+        current_app.logger.error(f"Error updating product {product_id}: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
