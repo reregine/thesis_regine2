@@ -1,4 +1,8 @@
 from flask import Blueprint, jsonify, render_template, session, redirect, url_for
+from app.extension import db
+from app.models.admin import Incubatee, IncubateeProduct, ProductPopularity
+from sqlalchemy import desc, func, and_, or_
+from datetime import datetime, timedelta
 
 home_bp = Blueprint("home", __name__, url_prefix="/")
 
@@ -13,8 +17,17 @@ def index():
     admin_logged_in = session.get("admin_logged_in")
     username = session.get("username")
     
+    # Get featured products for carousel
+    featured_products = get_featured_products()
+    
     # This will render templates/home/index.html
-    return render_template("home/index.html", user_logged_in=user_logged_in,admin_logged_in=admin_logged_in,username=username)
+    return render_template(
+        "home/index.html", 
+        user_logged_in=user_logged_in,
+        admin_logged_in=admin_logged_in,
+        username=username,
+        featured_products=featured_products
+    )
 
 @home_bp.route("/dashboard-content")
 def dashboard_content():
@@ -22,3 +35,180 @@ def dashboard_content():
         return jsonify({"success": False, "message": "Not logged in"}), 401
     
     return render_template("dashboard/dashboard.html",username=session.get("username"),user_logged_in=session.get("user_logged_in"))
+
+# New routes for product data
+@home_bp.route("/api/featured-products")
+def get_featured_products_api():
+    """API endpoint to get featured products for carousel"""
+    try:
+        featured_products = get_featured_products()
+        return jsonify({
+            "success": True,
+            "featured_products": featured_products
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"Error fetching featured products: {str(e)}"
+        }), 500
+
+@home_bp.route("/api/refresh-rankings", methods=["POST"])
+def refresh_rankings():
+    """Manual trigger to refresh product rankings"""
+    try:
+        update_product_rankings()
+        return jsonify({
+            "success": True,
+            "message": "Product rankings updated successfully"
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"Error updating rankings: {str(e)}"
+        }), 500
+
+def get_featured_products():
+    """Get products for the featured carousel with tags"""
+    try:
+        # Update rankings first to ensure data is current
+        update_product_rankings()
+        
+        # Get best sellers (top 5 weekly)
+        best_sellers = db.session.query(
+            IncubateeProduct,
+            ProductPopularity,
+            Incubatee
+        ).join(
+            ProductPopularity, 
+            IncubateeProduct.product_id == ProductPopularity.product_id
+        ).join(
+            Incubatee,
+            IncubateeProduct.incubatee_id == Incubatee.incubatee_id
+        ).filter(
+            ProductPopularity.is_best_seller == True,
+            Incubatee.is_approved == True
+        ).order_by(
+            desc(ProductPopularity.weekly_rank)
+        ).limit(5).all()
+        
+        # Get known products (top 10 by monthly customers)
+        known_products = db.session.query(
+            IncubateeProduct,
+            ProductPopularity,
+            Incubatee
+        ).join(
+            ProductPopularity, 
+            IncubateeProduct.product_id == ProductPopularity.product_id
+        ).join(
+            Incubatee,
+            IncubateeProduct.incubatee_id == Incubatee.incubatee_id
+        ).filter(
+            ProductPopularity.is_known_product == True,
+            Incubatee.is_approved == True
+        ).order_by(
+            desc(ProductPopularity.monthly_customers)
+        ).limit(10).all()
+        
+        # Format best sellers
+        best_sellers_data = []
+        for product, popularity, incubatee in best_sellers:
+            best_sellers_data.append({
+                'product_id': product.product_id,
+                'name': product.name,
+                'image_path': product.image_path,
+                'price_per_stocks': float(product.price_per_stocks),
+                'incubatee_name': incubatee.company_name or f"{incubatee.first_name} {incubatee.last_name}",
+                'incubatee_batch': incubatee.batch,
+                'weekly_sold': popularity.weekly_sold,
+                'weekly_rank': popularity.weekly_rank,
+                'tag': 'best_seller',
+                'tag_text': f'🔥 #{popularity.weekly_rank} Best Seller',
+                'period_text': f'{popularity.weekly_sold} sold this week'
+            })
+        
+        # Format known products
+        known_products_data = []
+        for product, popularity, incubatee in known_products:
+            known_products_data.append({
+                'product_id': product.product_id,
+                'name': product.name,
+                'image_path': product.image_path,
+                'price_per_stocks': float(product.price_per_stocks),
+                'incubatee_name': incubatee.company_name or f"{incubatee.first_name} {incubatee.last_name}",
+                'incubatee_batch': incubatee.batch,
+                'monthly_customers': popularity.monthly_customers,
+                'tag': 'known_product',
+                'tag_text': f'👥 Popular Choice',
+                'period_text': f'{popularity.monthly_customers} customers this month'
+            })
+        
+        # Combine and shuffle for carousel (alternate between best sellers and known products)
+        featured_products = []
+        max_length = max(len(best_sellers_data), len(known_products_data))
+        
+        for i in range(max_length):
+            if i < len(best_sellers_data):
+                featured_products.append(best_sellers_data[i])
+            if i < len(known_products_data):
+                featured_products.append(known_products_data[i])
+        
+        return featured_products[:15]  # Limit to 15 products max
+        
+    except Exception as e:
+        print(f"Error in get_featured_products: {str(e)}")
+        return []
+
+def update_product_rankings():
+    """Update product rankings based on current sales data"""
+    try:
+        # Get current period dates
+        current_week_start = datetime.now().date() - timedelta(days=datetime.now().weekday())
+        current_month_start = datetime.now().replace(day=1).date()
+        
+        # Update weekly rankings
+        weekly_ranks = db.session.query(
+            ProductPopularity.popularity_id,
+            func.rank().over(
+                partition_by=ProductPopularity.incubatee_id,
+                order_by=ProductPopularity.weekly_sold.desc()
+            ).label('rank')
+        ).filter(
+            ProductPopularity.weekly_sold > 0,
+            ProductPopularity.week_start_date >= current_week_start
+        ).subquery()
+        
+        # Update monthly customer rankings
+        monthly_customer_ranks = db.session.query(
+            ProductPopularity.popularity_id,
+            func.rank().over(
+                partition_by=ProductPopularity.incubatee_id,
+                order_by=ProductPopularity.monthly_customers.desc()
+            ).label('rank')
+        ).filter(
+            ProductPopularity.monthly_customers > 0,
+            ProductPopularity.month_start_date >= current_month_start
+        ).subquery()
+        
+        # Batch update best sellers (top 5 weekly)
+        db.session.query(ProductPopularity).update({'is_best_seller': False})
+        db.session.query(ProductPopularity).filter(
+            weekly_ranks.c.rank <= 5
+        ).update({'is_best_seller': True}, synchronize_session=False)
+        
+        # Batch update known products (top 10 monthly customers)
+        db.session.query(ProductPopularity).update({'is_known_product': False})
+        db.session.query(ProductPopularity).filter(
+            monthly_customer_ranks.c.rank <= 10
+        ).update({'is_known_product': True}, synchronize_session=False)
+        
+        # Update rank numbers
+        for popularity in db.session.query(ProductPopularity).join(
+            weekly_ranks, ProductPopularity.popularity_id == weekly_ranks.c.popularity_id
+        ):
+            popularity.weekly_rank = weekly_ranks.c.rank
+        
+        db.session.commit()
+        
+    except Exception as e:
+        print(f"Error in update_product_rankings: {str(e)}")
+        db.session.rollback()

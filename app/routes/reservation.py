@@ -32,7 +32,8 @@ def process_reservation_queues():
 def process_product_reservations(product_id):
     """
     Process pending reservations for a specific product using FCFS algorithm
-    Automatically approves when stock available, rejects when insufficient stock
+    Automatically approves when stock is available after 2-minute delay
+    Rejects reservations when stock is insufficient
     """
     try:
         product = IncubateeProduct.query.get(product_id)
@@ -40,26 +41,50 @@ def process_product_reservations(product_id):
             return False
 
         # Get all pending reservations for this product, ordered by reservation time (FCFS)
-        pending_reservations = Reservation.query.filter_by(product_id=product_id, status="pending").order_by(Reservation.reserved_at.asc()).all()
+        pending_reservations = Reservation.query.filter_by(
+            product_id=product_id, 
+            status="pending"
+        ).order_by(Reservation.reserved_at.asc()).all()
 
         available_stock = product.stock_amount or 0
+        current_time = datetime.now(timezone.utc)
         
         for reservation in pending_reservations:
-            if available_stock >= reservation.quantity:
-                # Enough stock - approve reservation and deduct stock
-                reservation.status = "approved"
-                reservation.approved_at = datetime.now(timezone.utc)
-                available_stock -= reservation.quantity
-                product.stock_amount = available_stock
-                
-                current_app.logger.info(f"Reservation {reservation.reservation_id} auto-approved. "f"Stock deducted: {reservation.quantity}, Remaining: {available_stock}")
+            # Calculate how long the reservation has been pending
+            time_pending = current_time - reservation.reserved_at
+            time_pending_minutes = time_pending.total_seconds() / 60
+            
+            # Check if reservation has been pending for at least 2 minutes
+            if time_pending_minutes >= 2:
+                if available_stock >= reservation.quantity:
+                    # Enough stock AND 2 minutes have passed - APPROVE the reservation
+                    reservation.status = "approved"
+                    reservation.approved_at = current_time
+                    available_stock -= reservation.quantity
+                    product.stock_amount = available_stock
+                    
+                    current_app.logger.info(
+                        f"Reservation {reservation.reservation_id} auto-approved after {time_pending_minutes:.1f} minutes. "
+                        f"Stock deducted: {reservation.quantity}, Remaining: {available_stock}"
+                    )
+                else:
+                    # Not enough stock - REJECT the reservation
+                    reservation.status = "rejected"
+                    reservation.rejected_at = current_time
+                    reservation.rejected_reason = "Insufficient stock - product out of stock"
+                    
+                    current_app.logger.info(
+                        f"Reservation {reservation.reservation_id} auto-rejected after {time_pending_minutes:.1f} minutes. "
+                        f"Requested: {reservation.quantity}, Available: {available_stock}"
+                    )
             else:
-                # Not enough stock - reject reservation
-                reservation.status = "rejected"
-                reservation.rejected_at = datetime.now(timezone.utc)
-                reservation.rejected_reason = "Insufficient stock - product out of stock"
-                
-                current_app.logger.info(f"Reservation {reservation.reservation_id} auto-rejected. "f"Requested: {reservation.quantity}, Available: {available_stock}")
+                # Reservation is still within the 2-minute waiting period
+                minutes_remaining = 2 - time_pending_minutes
+                current_app.logger.info(
+                    f"Reservation {reservation.reservation_id} still pending. "
+                    f"Time elapsed: {time_pending_minutes:.1f} minutes, "
+                    f"Time remaining: {minutes_remaining:.1f} minutes"
+                )
         
         db.session.commit()
         return True
@@ -68,8 +93,7 @@ def process_product_reservations(product_id):
         db.session.rollback()
         current_app.logger.error(f"Error processing reservations for product {product_id}: {e}")
         return False
-
-    #CREATE A RESERVATION (with automatic FCFS processing)
+    
 @reservation_bp.route("/create", methods=["POST"])
 def create_reservation():
     try:
@@ -92,31 +116,77 @@ def create_reservation():
         current_stock = product.stock_amount or 0
         if current_stock <= 0:
             # Immediately reject if no stock
-            reservation = Reservation(user_id=user_id,product_id=product_id,quantity=quantity,status="rejected",reserved_at=datetime.now(timezone.utc),rejected_at=datetime.now(timezone.utc),rejected_reason="Product out of stock")
+            reservation = Reservation(
+                user_id=user_id,
+                product_id=product_id,
+                quantity=quantity,
+                status="rejected",
+                reserved_at=datetime.now(timezone.utc),
+                rejected_at=datetime.now(timezone.utc),
+                rejected_reason="Product out of stock"
+            )
             db.session.add(reservation)
             db.session.commit()
             
-            return jsonify({"message": "Reservation created but rejected - product out of stock","reservation_id": reservation.reservation_id,"status": "rejected","reason": "Product out of stock"}), 201
+            return jsonify({
+                "message": "Reservation created but rejected - product out of stock",
+                "reservation_id": reservation.reservation_id,
+                "status": "rejected",
+                "reason": "Product out of stock"
+            }), 201
 
-        # Create reservation as pending first
-        reservation = Reservation(user_id=user_id,product_id=product_id,quantity=quantity,status="pending",reserved_at=datetime.now(timezone.utc))
+        # Create reservation as pending first (will be processed after 2 minutes)
+        reservation = Reservation(
+            user_id=user_id,
+            product_id=product_id,
+            quantity=quantity,
+            status="pending",
+            reserved_at=datetime.now(timezone.utc)
+        )
         db.session.add(reservation)
         db.session.commit()
 
-        #CRITICAL FIX: Process immediately after creation
+        # Process immediately to check if it should be approved/rejected
+        # But with the 2-minute delay logic, it will remain pending if stock is available
         process_product_reservations(product_id)
         
-        #Refresh to get the final status
+        # Refresh to get the final status
         db.session.refresh(reservation)
 
+        # Calculate time until potential approval
+        time_until_approval = "2 minutes" if reservation.status == "pending" else "immediately"
+        
         return jsonify({
-            "message": "Reservation processed successfully","reservation_id": reservation.reservation_id,
-            "status": reservation.status,"reason": reservation.rejected_reason if reservation.status == "rejected" else None}), 201
+            "message": f"Reservation created successfully. Status will be updated in {time_until_approval}",
+            "reservation_id": reservation.reservation_id,
+            "status": reservation.status,
+            "estimated_approval_time": time_until_approval,
+            "reason": reservation.rejected_reason if reservation.status == "rejected" else None
+        }), 201
 
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error creating reservation: {e}")
         return jsonify({"error": "Server error"}), 500
+
+@reservation_bp.route("/process-delayed", methods=["POST"])
+def process_delayed_reservations():
+    """
+    Manually trigger processing of all pending reservations
+    Useful for testing the 2-minute delay functionality
+    """
+    try:
+        success = process_reservation_queues()
+        
+        if success:
+            return jsonify({"success": True, "message": "Delayed reservations processed successfully","note": "Reservations pending for 2+ minutes were approved if stock available"})
+        else:
+            return jsonify({"success": False, "message": "Error processing delayed reservations"})
+            
+    except Exception as e:
+        current_app.logger.error(f"Error processing delayed reservations: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
 # BULK CREATE RESERVATIONS (from cart)
 @reservation_bp.route("/create-bulk", methods=["POST"])
 def create_bulk_reservations():
@@ -209,12 +279,16 @@ def update_reservation_status(reservation_id):
         reservation.status = new_status
         reservation.completed_at = datetime.now(timezone.utc)
 
-        # Create sales report entry
-        sales_report = SalesReport(reservation_id=reservation.reservation_id,
-            product_id=reservation.product_id,user_id=reservation.user_id,product_name=product.name,
-            quantity=reservation.quantity,unit_price=product.price_per_stocks,total_price=product.price_per_stocks * reservation.quantity,
-            sale_date=datetime.now(timezone.utc).date(),  # Today's date
-            completed_at=datetime.now(timezone.utc))
+        # Create sales report entry - REMOVE completed_at as it's not in SalesReport model
+        sales_report = SalesReport(
+            reservation_id=reservation.reservation_id,
+            product_id=reservation.product_id,
+            user_id=reservation.user_id,
+            product_name=product.name,
+            quantity=reservation.quantity,
+            unit_price=product.price_per_stocks,
+            total_price=product.price_per_stocks * reservation.quantity,
+            sale_date=datetime.now(timezone.utc).date())  # Today's date
         
         db.session.add(sales_report)
         db.session.commit()
@@ -225,7 +299,6 @@ def update_reservation_status(reservation_id):
         db.session.rollback()
         current_app.logger.error(f"Error updating reservation: {e}")
         return jsonify({"error": "Server error"}), 500
-    
 # GET ALL RESERVATIONS (ADMIN / STAFF)
 @reservation_bp.route("/", methods=["GET"])
 def get_all_reservations():
@@ -238,20 +311,28 @@ def get_all_reservations():
         
         result = []
         for reservation, product in reservations:
-            result.append({"reservation_id": reservation.reservation_id,"user_id": reservation.user_id,"product_id": product.product_id,
-                "product_name": product.name,"price_per_stocks": float(product.price_per_stocks or 0),
-                "quantity": reservation.quantity,"status": reservation.status,
-                "reserved_at": reservation.reserved_at.strftime("%Y-%m-%d %H:%M:%S"),
-                "approved_at": reservation.approved_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.approved_at else None,
-                "completed_at": reservation.completed_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.completed_at else None,
-                "rejected_at": reservation.rejected_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.rejected_at else None,
-                "rejected_reason": reservation.rejected_reason})
+            result.append({
+                "reservation_id": reservation.reservation_id,
+                "user_id": reservation.user_id,
+                "product_id": product.product_id,
+                "product_name": product.name,
+                "price_per_stocks": float(product.price_per_stocks or 0),
+                "quantity": reservation.quantity,
+                "status": reservation.status,
+                "reserved_at": reservation.reserved_at.isoformat() if reservation.reserved_at else None,
+                "approved_at": reservation.approved_at.isoformat() if reservation.approved_at else None,
+                "completed_at": reservation.completed_at.isoformat() if reservation.completed_at else None,
+                "rejected_at": reservation.rejected_at.isoformat() if reservation.rejected_at else None,
+                "rejected_reason": reservation.rejected_reason
+            })
 
-        return jsonify(result), 200
+        # CONSISTENT JSON RESPONSE FORMAT
+        return jsonify({"success": True,"reservations": result,"count": len(result),"message": "Reservations retrieved successfully"}), 200
+        
     except Exception as e:
         current_app.logger.error(f"Error fetching all reservations: {e}")
-        return jsonify({"error": "Server error"}), 500    
-
+        return jsonify({"success": False, "error": str(e),"reservations": [],"count": 0,"message": "Error fetching reservations"}), 500
+        
 # FORCE PROCESS ALL PENDING RESERVATIONS
 @reservation_bp.route("/process-pending", methods=["POST"])
 def process_pending_reservations():
@@ -292,7 +373,6 @@ def get_product_reservation_queue(product_id):
     except Exception as e:
         current_app.logger.error(f"Error fetching product queue: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
-
 
 # GET RESERVATIONS BY STATUS (Shopee-style tab)
 @reservation_bp.route("/user/<int:user_id>", methods=["GET"])
@@ -345,7 +425,22 @@ def get_reservations_by_status(status):
             .all())
 
         reservations_list = []
+        current_time = datetime.now(timezone.utc)
+        
         for reservation, product in reservations:
+            # Calculate pending time for pending reservations
+            pending_info = None
+            if status == "pending":
+                time_pending = current_time - reservation.reserved_at
+                time_pending_minutes = time_pending.total_seconds() / 60
+                minutes_remaining = max(0, 2 - time_pending_minutes)
+                
+                pending_info = {
+                    "time_elapsed_minutes": round(time_pending_minutes, 1),
+                    "time_remaining_minutes": round(minutes_remaining, 1),
+                    "will_approve_at": (reservation.reserved_at + timedelta(minutes=2)).strftime("%Y-%m-%d %H:%M:%S")
+                }
+
             reservations_list.append({
                 "reservation_id": reservation.reservation_id,
                 "product_id": product.product_id,
@@ -358,14 +453,15 @@ def get_reservations_by_status(status):
                 "approved_at": reservation.approved_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.approved_at else None,
                 "completed_at": reservation.completed_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.completed_at else None,
                 "rejected_at": reservation.rejected_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.rejected_at else None,
-                "rejected_reason": reservation.rejected_reason})
+                "rejected_reason": reservation.rejected_reason,
+                "pending_info": pending_info  # Only for pending reservations
+            })
 
         return jsonify({"success": True, "reservations": reservations_list}), 200
 
     except Exception as e:
         current_app.logger.error(f"Error fetching {status} reservations: {e}")
         return jsonify({"success": False, "message": "Server error"}), 500
-
 
 # DELETE RESERVATION
 @reservation_bp.route("/<int:reservation_id>", methods=["DELETE"])

@@ -136,3 +136,66 @@ class SalesReport(db.Model):
     
     def __repr__(self):
         return f"<SalesReport {self.sales_id}>"
+    
+class ProductPopularity(db.Model):
+    """Enhanced product popularity tracking with period-based stats"""
+    __tablename__ = "product_popularity"
+    
+    popularity_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("incubatee_products.product_id"), nullable=False)
+    incubatee_id = db.Column(db.Integer, db.ForeignKey("incubatees.incubatee_id"), nullable=False)
+    
+    # Sales statistics
+    weekly_sold = db.Column(db.Integer, default=0)
+    monthly_sold = db.Column(db.Integer, default=0)
+    total_sold = db.Column(db.Integer, default=0)
+    
+    # Customer statistics
+    weekly_customers = db.Column(db.Integer, default=0)
+    monthly_customers = db.Column(db.Integer, default=0)
+    total_customers = db.Column(db.Integer, default=0)
+    
+    # Revenue statistics
+    weekly_revenue = db.Column(db.Numeric(10, 2), default=0.00)
+    monthly_revenue = db.Column(db.Numeric(10, 2), default=0.00)
+    total_revenue = db.Column(db.Numeric(10, 2), default=0.00)
+    
+    # Period tracking
+    week_start_date = db.Column(db.Date)
+    month_start_date = db.Column(db.Date)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Display flags
+    is_best_seller = db.Column(db.Boolean, default=False)
+    is_known_product = db.Column(db.Boolean, default=False)
+    
+    # Rankings
+    weekly_rank = db.Column(db.Integer, default=0)
+    monthly_rank = db.Column(db.Integer, default=0)
+    
+    # Relationships
+    product = db.relationship("IncubateeProduct", backref="popularity")
+    incubatee = db.relationship("Incubatee", backref="popular_products")
+    
+    def __repr__(self):
+        return f"<ProductPopularity {self.product_id}>"
+
+class ProductSalesLog(db.Model):
+    """Log individual sales for detailed tracking"""
+    __tablename__ = "product_sales_log"
+    
+    log_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("incubatee_products.product_id"), nullable=False)
+    incubatee_id = db.Column(db.Integer, db.ForeignKey("incubatees.incubatee_id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id_no"), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    revenue = db.Column(db.Numeric(10, 2), nullable=False)
+    sale_date = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    product = db.relationship("IncubateeProduct")
+    incubatee = db.relationship("Incubatee")
+    user = db.relationship("User")
+    
+    def __repr__(self):
+        return f"<ProductSalesLog {self.log_id}>"

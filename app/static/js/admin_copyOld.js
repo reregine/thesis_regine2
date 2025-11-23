@@ -1,4 +1,3 @@
-
 // Global variables
 let allProducts = [];
 let ordersRefreshInterval;
@@ -12,6 +11,7 @@ const formattedDate = today.toISOString().split('T')[0];
 // For production, use: 
 const AUTO_CANCEL_TIMEOUT = 3 * 24 * 60 * 60 * 1000; // 3 days
 
+
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeAdmin();
@@ -20,9 +20,9 @@ document.addEventListener('DOMContentLoaded', function() {
     loadPricingUnits();
     initializeEditProductModal();
     initializeOrdersModal();
-    // REMOVED: initializeSalesReportModal(); - No longer used
-    initializeConfirmationModal(); // This will now check if elements exist
-    
+    initializeSalesReportModal();
+    initializeConfirmationModal();
+});
     // Users modal
     const openUsersModalBtn = document.getElementById('openUsersModal');
     if (openUsersModalBtn) {
@@ -33,7 +33,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof initUsersManagement === 'function') {
         initUsersManagement();
     }
-});
 
 function initializeAdmin() {
     console.log('🎯 Initializing main admin functionality...');
@@ -52,7 +51,7 @@ function initializeAdmin() {
 
     initializeEventListeners();
     initializeOrdersModal();
-    // REMOVED: initializeSalesReportModal(); - No longer used
+    initializeSalesReportModal();
     initializePricingUnitModal();
     initializeEditProductModal();
     loadPricingUnits(); // Load pricing units
@@ -123,7 +122,8 @@ function initializeEventListeners() {
     
     // Initialize orders modal
     initializeOrdersModal();
-    // REMOVED: initializeSalesReportModal(); - No longer used
+    // Initialize sales report modal
+    initializeSalesReportModal();
 }
 
 function initializeModalHandlers() {
@@ -196,6 +196,7 @@ function initializeIncubateeAddForm() {
         });
     }
 }
+
 
 async function initializeIncubateeSearch() {
     const searchContainer = document.querySelector(".incubatee-search-container");
@@ -589,7 +590,7 @@ function startOrdersAutoRefresh() {
     // Refresh orders every 10 seconds when modal is open (increased from 5s for better UX)
     ordersRefreshInterval = setInterval(async () => {
         const ordersModal = document.getElementById("ordersModal");
-        if (ordersModal && ordersModal.classList.contains("active")) {
+        if (ordersModal.classList.contains("active")) {
             const currentFilter = document.getElementById("orderStatusFilter").value;
             await loadAllOrdersSmooth(currentFilter);
         }
@@ -887,17 +888,11 @@ function createOrderRowHTML(reservation) {
     `;
 }
 
-// Initialize confirmation modal - WITH NULL CHECK
+// Initialize confirmation modal
 function initializeConfirmationModal() {
     const confirmationModal = document.getElementById('confirmationModal');
     const confirmAction = document.getElementById('confirmAction');
     const confirmCancel = document.getElementById('confirmCancel');
-
-    // Check if confirmation modal elements exist
-    if (!confirmationModal || !confirmAction || !confirmCancel) {
-        console.log('Confirmation modal elements not found - skipping initialization');
-        return;
-    }
 
     // Confirm action
     confirmAction.addEventListener('click', handleConfirmAction);
@@ -970,19 +965,13 @@ function closeConfirmationModal() {
     const confirmBtn = document.getElementById('confirmAction');
     const cancelBtn = document.getElementById('confirmCancel');
     
-    if (confirmationModal) {
-        confirmationModal.classList.remove('active');
-    }
+    confirmationModal.classList.remove('active');
     document.body.style.overflow = '';
     
     // Reset button states
-    if (confirmBtn) {
-        confirmBtn.classList.remove('loading');
-        confirmBtn.textContent = 'Yes, Complete';
-    }
-    if (cancelBtn) {
-        cancelBtn.disabled = false;
-    }
+    confirmBtn.classList.remove('loading');
+    confirmBtn.textContent = 'Yes, Complete';
+    cancelBtn.disabled = false;
     
     resetButtonState();
 }
@@ -995,7 +984,6 @@ function resetButtonState() {
     currentReservationId = null;
     currentButton = null;
 }
-
 // Smooth update for completed row
 function updateCompletedRow(reservationId) {
     const row = document.querySelector(`tr[data-reservation-id="${reservationId}"]`);
@@ -1010,7 +998,6 @@ function updateCompletedRow(reservationId) {
         }, 2000);
     }
 }
-
 // Fixed Orders Modal Initialization
 function initializeOrdersModal() {
     const ordersModal = document.getElementById("ordersModal");
@@ -1342,21 +1329,71 @@ function completeReservation(reservationId, button) {
     currentButton = button;
     
     // Set the confirmation message
-    const confirmationMessage = document.getElementById('confirmationMessage');
-    if (confirmationMessage) {
-        confirmationMessage.textContent = 
-            "Are you sure you want to mark this order as completed/picked up?";
-    }
+    document.getElementById('confirmationMessage').textContent = 
+        "Are you sure you want to mark this order as completed/picked up?";
     
     // Show the modern confirmation modal
     const confirmationModal = document.getElementById('confirmationModal');
-    if (confirmationModal) {
-        confirmationModal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
+    confirmationModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
-// REMOVED: Fixed Sales Report Modal Initialization - No longer used
+// Fixed Sales Report Modal Initialization
+function initializeSalesReportModal() {
+    const salesReportModal = document.getElementById("salesReportModal");
+    const openSalesReportModal = document.getElementById("openSalesReportModal");
+    const closeSalesReportModalTop = document.getElementById("closeSalesReportModalTop");
+    const closeSalesReportModalBottom = document.getElementById("closeSalesReportModalBottom");
+
+    console.log('🚀 Initializing sales report modal...');
+    console.log('📊 Sales report modal:', salesReportModal);
+    console.log('🖱️ Open button:', openSalesReportModal);
+
+    if (!salesReportModal || !openSalesReportModal) {
+        console.log('ℹ️ Sales report modal elements not found (might be on different page)');
+        return;
+    }
+
+    // Open modal
+    openSalesReportModal.addEventListener("click", (e) => {
+        e.preventDefault();
+        console.log('🎯 Opening sales report modal');
+        salesReportModal.classList.add("active");
+        document.body.style.overflow = 'hidden';
+        
+        // Set today's date as default
+        const todayDate = new Date().toISOString().split('T')[0];
+        const reportDateInput = document.getElementById("reportDate");
+        if (reportDateInput) {
+            reportDateInput.value = todayDate;
+            console.log('📅 Set report date to:', todayDate);
+        }
+        
+        generateSalesReport();
+    });
+
+    // Close modal from both buttons
+    [closeSalesReportModalTop, closeSalesReportModalBottom].forEach(btn => {
+        if (btn) {
+            btn.addEventListener("click", () => {
+                console.log('🔒 Closing sales report modal');
+                salesReportModal.classList.remove("active");
+                document.body.style.overflow = '';
+            });
+        }
+    });
+
+    // Close modal when clicking outside
+    salesReportModal.addEventListener("click", (e) => {
+        if (e.target === salesReportModal) {
+            console.log('🔒 Closing sales report modal from outside');
+            salesReportModal.classList.remove("active");
+            document.body.style.overflow = '';
+        }
+    });
+
+    console.log('✅ Sales report modal initialized');
+}
 
 // Update the auto-cancellation check to use the correct modal class
 async function loadAllOrders(status = 'all') {
@@ -1485,11 +1522,96 @@ async function checkAndAutoCancelReservations() {
     }
 }
 
-// REMOVED: Generate Sales Report function - No longer used
-// REMOVED: Display Sales Report function - No longer used
-// REMOVED: Update Sales Summary function - No longer used
-// REMOVED: Reset Sales Summary function - No longer used
-// REMOVED: Export Sales Report to CSV function - No longer used
+// Generate Sales Report
+function generateSalesReport() {
+    const reportDate = document.getElementById("reportDate").value;
+    const salesReportList = document.getElementById("sales-report-list");
+    
+    salesReportList.innerHTML = '<tr><td colspan="9" class="empty-orders">Generating report...</td></tr>';
+
+    fetch(`/reservations/sales-report?date=${reportDate}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displaySalesReport(data.report);
+                updateSalesSummary(data.summary);
+            } else {
+                throw new Error(data.error || 'Failed to generate report');
+            }
+        })
+        .catch(error => {
+            console.error("Error generating sales report:", error);
+            salesReportList.innerHTML = '<tr><td colspan="9" class="empty-orders">Error generating report. Please try again.</td></tr>';
+            resetSalesSummary();
+        });
+}
+
+// Display Sales Report
+function displaySalesReport(report) {
+    const salesReportList = document.getElementById("sales-report-list");
+    
+    if (report.length === 0) {
+        salesReportList.innerHTML = '<tr><td colspan="9" class="empty-orders">No sales data for selected date.</td></tr>';
+        return;
+    }
+
+    salesReportList.innerHTML = report.map(sale => `
+        <tr>
+            <td>#${sale.reservation_id}</td>
+            <td>${sale.user_id}</td>
+            <td><strong>${escapeHtml(sale.product_name)}</strong></td>
+            <td>${sale.quantity}</td>
+            <td>₱${(sale.unit_price || 0).toFixed(2)}</td>
+            <td><strong>₱${((sale.unit_price || 0) * sale.quantity).toFixed(2)}</strong></td>
+            <td>
+                <span class="status-badge status-${sale.status}">
+                    ${sale.status}
+                </span>
+            </td>
+            <td>${formatDateToExact(sale.reserved_at)}</td>
+            <td>${sale.completed_at ? formatDateToExact(sale.completed_at) : '—'}</td>
+        </tr>
+    `).join('');
+}
+
+// Update Sales Summary
+function updateSalesSummary(summary) {
+    document.getElementById("totalSales").textContent = `₱${summary.total_sales.toFixed(2)}`;
+    document.getElementById("totalOrders").textContent = summary.total_orders;
+    document.getElementById("completedOrders").textContent = summary.completed_orders;
+    document.getElementById("totalProducts").textContent = summary.total_products;
+}
+
+// Reset Sales Summary
+function resetSalesSummary() {
+    document.getElementById("totalSales").textContent = "₱0.00";
+    document.getElementById("totalOrders").textContent = "0";
+    document.getElementById("completedOrders").textContent = "0";
+    document.getElementById("totalProducts").textContent = "0";
+}
+
+// Export Sales Report to CSV
+function exportSalesReport() {
+    const reportDate = document.getElementById("reportDate").value;
+    
+    fetch(`/reservations/sales-report/export?date=${reportDate}`)
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `sales-report-${reportDate}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            showNotification("✅ Sales report exported successfully!", "success");
+        })
+        .catch(error => {
+            console.error("Error exporting sales report:", error);
+            showNotification("❌ Failed to export sales report", "error");
+        });
+}
 
 // Date formatting utility function with time
 function formatDateToReadable(dateString) {
@@ -1685,12 +1807,12 @@ function initializePricingUnitSearch() {
         }
     });
 }
-
 // Function to show selected unit information
 function showSelectedUnitInfo(unit) {
     // You can add visual feedback here if needed
     console.log(`Selected unit: ${unit.unit_name} (ID: ${unit.unit_id})`);
 }
+
 
 // Function to load pricing units
 async function loadPricingUnits() {
@@ -1720,6 +1842,7 @@ async function loadPricingUnits() {
     }
     return [];
 }
+
 
 // Pricing Unit Modal functionality - Fixed for your HTML structure
 function initializePricingUnitModal() {
@@ -1865,6 +1988,7 @@ function initializePricingUnitModal() {
     });
 }
 
+// Close Pricing Unit Modal
 // Close Pricing Unit Modal - WITH NULL CHECK
 const closePricingModal = document.getElementById('closePricingUnitModal');
 if (closePricingModal) {
@@ -2382,7 +2506,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Add pricing modal:', document.getElementById('pricingUnitModal'));
     console.log('Form:', document.getElementById('pricingUnitForm'));
 });
-
 // Add this temporary debug function
 function debugModal() {
     const modal = document.getElementById("editProductModal");

@@ -580,61 +580,298 @@ def toggle_incubatee_approval(incubatee_id):
 
 @admin_bp.route("/sales-summary")
 def sales_summary():
-    """Get sales summary per incubatee"""
+    """Get sales summary for reports - FIXED for User model without names"""
     if not session.get('admin_logged_in'):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
     
     try:
-        # Sales by incubatee - FIXED: Use sales_id instead of report_id
-        sales_by_incubatee = db.session.query(
-            Incubatee.incubatee_id,
-            Incubatee.first_name,
-            Incubatee.last_name,
-            Incubatee.company_name,
-            func.count(SalesReport.sales_id).label('total_sales_count'),  # FIXED
-            func.coalesce(func.sum(SalesReport.total_price), 0).label('total_revenue')
-        ).outerjoin(SalesReport, Incubatee.incubatee_id == SalesReport.incubatee_id
-        ).group_by(Incubatee.incubatee_id).all()
+        # Get date range from query parameters
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        report_type = request.args.get('type', 'overview')
         
-        # Total statistics
-        total_revenue = db.session.query(func.coalesce(func.sum(SalesReport.total_price), 0)).scalar()
-        total_orders = db.session.query(func.count(Reservation.reservation_id)).scalar()
-        completed_orders = db.session.query(func.count(Reservation.reservation_id)).filter_by(status='completed').scalar()
+        # Base query for sales data
+        sales_query = SalesReport.query
         
-        # Monthly sales trend (last 6 months)
-        monthly_sales = db.session.query(
-            func.date_trunc('month', SalesReport.sale_date).label('month'),
-            func.sum(SalesReport.total_price).label('monthly_revenue')
-        ).filter(SalesReport.sale_date >= func.date('now', '-6 months')
-        ).group_by(func.date_trunc('month', SalesReport.sale_date)
-        ).order_by(func.date_trunc('month', SalesReport.sale_date)).all()
+        # Apply date filter if provided
+        start_date_obj = None
+        end_date_obj = None
+        if start_date and end_date:
+            try:
+                start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+                sales_query = sales_query.filter(
+                    SalesReport.sale_date >= start_date_obj,
+                    SalesReport.sale_date <= end_date_obj
+                )
+            except ValueError:
+                return jsonify({"success": False, "error": "Invalid date format"}), 400
         
-        summary = {
-            "total_revenue": float(total_revenue),
-            "total_orders": total_orders,
-            "completed_orders": completed_orders,
-            "completion_rate": (completed_orders / total_orders * 100) if total_orders > 0 else 0,
-            "sales_by_incubatee": [
-                {
-                    "incubatee_id": sale.incubatee_id,
-                    "name": f"{sale.first_name} {sale.last_name}",
-                    "company": sale.company_name,
-                    "sales_count": sale.total_sales_count,
-                    "revenue": float(sale.total_revenue)
-                } for sale in sales_by_incubatee
-            ],
-            "monthly_trend": [
-                {
-                    "month": sale.month.strftime("%Y-%m"),
-                    "revenue": float(sale.monthly_revenue) if sale.monthly_revenue else 0
-                } for sale in monthly_sales]}
+        # Get sales data with related information
+        sales_data = sales_query.options(
+            db.joinedload(SalesReport.incubatee),
+            db.joinedload(SalesReport.product),
+            db.joinedload(SalesReport.user)
+        ).all()
         
-        return jsonify({"success": True, "summary": summary})
+        # Process sales data
+        sales_list = []
+        for sale in sales_data:
+            # Get customer name from username (since User model only has username)
+            customer_name = "Unknown"
+            if sale.user:
+                customer_name = sale.user.username
+            
+            # Get incubatee name
+            incubatee_name = "Unknown"
+            if sale.incubatee:
+                incubatee_name = f"{sale.incubatee.first_name} {sale.incubatee.last_name}"
+            elif sale.product and sale.product.incubatee:
+                incubatee_name = f"{sale.product.incubatee.first_name} {sale.product.incubatee.last_name}"
+            
+            sales_list.append({
+                "sale_date": sale.sale_date.isoformat() if sale.sale_date else None,
+                "reservation_id": sale.reservation_id,
+                "incubatee_name": incubatee_name,
+                "product_name": sale.product_name,
+                "customer_name": customer_name,
+                "quantity": sale.quantity,
+                "unit_price": float(sale.unit_price) if sale.unit_price else 0,
+                "total_price": float(sale.total_price) if sale.total_price else 0,
+                "status": "completed"  # Sales reports are typically for completed sales
+            })
+        
+        # Calculate summary statistics
+        total_revenue = sum(float(sale.total_price) for sale in sales_data if sale.total_price)
+        total_orders = len(sales_data)
+        completed_orders = len(sales_data)  # All sales reports are completed orders
+        completion_rate = 100.0 if total_orders > 0 else 0
+        
+        # Get unique incubatees
+        incubatee_ids = set()
+        for sale in sales_data:
+            if sale.incubatee_id:
+                incubatee_ids.add(sale.incubatee_id)
+            elif sale.product and sale.product.incubatee_id:
+                incubatee_ids.add(sale.product.incubatee_id)
+        
+        active_incubatees = len(incubatee_ids)
+        
+        # Incubatee performance data
+        incubatee_performance = []
+        incubatee_sales = {}
+        
+        # Group sales by incubatee
+        for sale in sales_data:
+            incubatee_id = None
+            incubatee_name = "Unknown"
+            
+            if sale.incubatee:
+                incubatee_id = sale.incubatee_id
+                incubatee_name = f"{sale.incubatee.first_name} {sale.incubatee.last_name}"
+            elif sale.product and sale.product.incubatee:
+                incubatee_id = sale.product.incubatee_id
+                incubatee_name = f"{sale.product.incubatee.first_name} {sale.product.incubatee.last_name}"
+            
+            if incubatee_id not in incubatee_sales:
+                incubatee_sales[incubatee_id] = {
+                    'name': incubatee_name,
+                    'revenue': 0,
+                    'order_count': 0,
+                    'product_count': 0,
+                    'completed_orders': 0,
+                    'products': set()
+                }
+            
+            incubatee_sales[incubatee_id]['revenue'] += float(sale.total_price) if sale.total_price else 0
+            incubatee_sales[incubatee_id]['order_count'] += 1
+            incubatee_sales[incubatee_id]['products'].add(sale.product_name)
+            incubatee_sales[incubatee_id]['completed_orders'] += 1
+        
+        # Format incubatee performance data
+        for incubatee_id, data in incubatee_sales.items():
+            incubatee_performance.append({
+                'name': data['name'],
+                'revenue': data['revenue'],
+                'order_count': data['order_count'],
+                'product_count': len(data['products']),
+                'completion_rate': (data['completed_orders'] / data['order_count'] * 100) if data['order_count'] > 0 else 0,
+                'top_product': next(iter(data['products'])) if data['products'] else 'N/A'
+            })
+        
+        # Sort incubatees by revenue
+        incubatee_performance.sort(key=lambda x: x['revenue'], reverse=True)
+        
+        # Chart data - Revenue trend by date
+        revenue_trend_labels = []
+        revenue_trend_data = []
+        
+        if start_date and end_date and sales_data:
+            try:
+                # Group sales by date
+                date_sales = {}
+                for sale in sales_data:
+                    sale_date = sale.sale_date.isoformat() if sale.sale_date else datetime.utcnow().date().isoformat()
+                    if sale_date not in date_sales:
+                        date_sales[sale_date] = 0
+                    date_sales[sale_date] += float(sale.total_price) if sale.total_price else 0
+                
+                # Convert to sorted lists
+                sorted_dates = sorted(date_sales.keys())
+                revenue_trend_labels = [date[5:] for date in sorted_dates]  # Show MM-DD format
+                revenue_trend_data = [date_sales[date] for date in sorted_dates]
+                
+            except Exception as e:
+                current_app.logger.error(f"Error processing revenue trend: {str(e)}")
+                revenue_trend_labels = ['Total']
+                revenue_trend_data = [total_revenue]
+        else:
+            revenue_trend_labels = ['Total']
+            revenue_trend_data = [total_revenue]
+        
+        # Category sales - get from products
+        category_sales = {}
+        for sale in sales_data:
+            category = "Uncategorized"
+            if sale.product and sale.product.category:
+                category = sale.product.category
+            elif sale.product_name:
+                # Try to infer category from product name
+                product_lower = sale.product_name.lower()
+                if any(keyword in product_lower for keyword in ['agriculture', 'aqua', 'crop', 'farm', 'fish', 'seed']):
+                    category = "Agri-Aqua Business"
+                elif any(keyword in product_lower for keyword in ['food', 'processing', 'recipe', 'cook', 'bake']):
+                    category = "Food Processing Technology"
+            
+            if category not in category_sales:
+                category_sales[category] = 0
+            category_sales[category] += float(sale.total_price) if sale.total_price else 0
+        
+        category_sales_labels = list(category_sales.keys())
+        category_sales_data = list(category_sales.values())
+        
+        # Top incubatees for chart (limit to 5)
+        top_incubatees_labels = [inc['name'] for inc in incubatee_performance[:5]]
+        top_incubatees_data = [inc['revenue'] for inc in incubatee_performance[:5]]
+        
+        # Status distribution (all completed for sales reports)
+        status_labels = ['Completed']
+        status_data = [total_orders]
+        
+        response_data = {
+            "success": True,
+            "summary": {
+                "total_revenue": total_revenue,
+                "total_orders": total_orders,
+                "completed_orders": completed_orders,
+                "completion_rate": completion_rate,
+                "active_incubatees": active_incubatees
+            },
+            "sales_data": sales_list,
+            "incubatee_performance": incubatee_performance,
+            "charts": {
+                "revenue_trend": {
+                    "labels": revenue_trend_labels,
+                    "data": revenue_trend_data
+                },
+                "category_sales": {
+                    "labels": category_sales_labels,
+                    "data": category_sales_data
+                },
+                "top_incubatees": {
+                    "labels": top_incubatees_labels,
+                    "data": top_incubatees_data
+                },
+                "status_distribution": {
+                    "labels": status_labels,
+                    "data": status_data
+                }
+            }
+        }
+        
+        return jsonify(response_data)
         
     except Exception as e:
-        current_app.logger.error(f"Error in sales_summary: {e}")
+        current_app.logger.error(f"Error in sales_summary: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
-
+    
+@admin_bp.route("/export-report")
+def export_report():
+    """Export sales report to CSV - FIXED variable name"""
+    if not session.get('admin_logged_in'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    try:
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        report_type = request.args.get('type', 'overview')
+        
+        # Get sales data (similar to sales_summary)
+        sales_query = SalesReport.query.options(
+            db.joinedload(SalesReport.incubatee),
+            db.joinedload(SalesReport.product),
+            db.joinedload(SalesReport.user)
+        )
+        
+        if start_date and end_date:
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+            sales_query = sales_query.filter(
+                SalesReport.sale_date >= start_date_obj,
+                SalesReport.sale_date <= end_date_obj
+            )
+        
+        sales_data = sales_query.all()
+        
+        import csv
+        from io import StringIO
+        
+        # Create CSV content
+        output = StringIO()
+        writer = csv.writer(output)
+        
+        # Write header
+        writer.writerow(['Date', 'Order ID', 'Incubatee', 'Product', 'Customer', 'Quantity', 'Unit Price', 'Total', 'Status'])
+        
+        for sale in sales_data:
+            # Get customer name from username
+            customer_name = "Unknown"
+            if sale.user:
+                customer_name = sale.user.username
+            
+            # Get incubatee name
+            incubatee_name = "Unknown"
+            if sale.incubatee:
+                incubatee_name = f"{sale.incubatee.first_name} {sale.incubatee.last_name}"
+            elif sale.product and sale.product.incubatee:
+                incubatee_name = f"{sale.product.incubatee.first_name} {sale.product.incubatee.last_name}"
+            
+            writer.writerow([
+                sale.sale_date.isoformat() if sale.sale_date else '',
+                sale.reservation_id,
+                incubatee_name,
+                sale.product_name,
+                customer_name,
+                sale.quantity,
+                float(sale.unit_price) if sale.unit_price else 0,
+                float(sale.total_price) if sale.total_price else 0,
+                'completed'
+            ])
+        
+        # Return CSV file - FIXED: Changed endDate to end_date
+        from flask import Response
+        response = Response(
+            output.getvalue(),
+            mimetype="text/csv",
+            headers={"Content-disposition": f"attachment; filename=incubatee-report-{start_date}-to-{end_date}.csv"}
+        )
+        
+        return response
+        
+    except Exception as e:
+        current_app.logger.error(f"Error exporting report: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+    
 @admin_bp.route("/reports")
 def admin_reports():
     """Generate various reports"""
