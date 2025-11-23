@@ -3,16 +3,71 @@ let allIncubatees = [];
 let currentFilter = 'all';
 let editingIncubateeId = null;
 
+// API Service Functions
+class IncubateeAPI {
+    static async getIncubateeLogo(incubateeId) {
+        try {
+            const response = await fetch(`/admin/get-incubatee-logo/${incubateeId}`);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error fetching incubatee logo:', error);
+            return { success: false, error: 'Failed to load logo' };
+        }
+    }
+
+    static async getIncubateeDetails(incubateeId) {
+        try {
+            const response = await fetch(`/admin/get-incubatee-details/${incubateeId}`);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error fetching incubatee details:', error);
+            return { success: false, error: 'Failed to load incubatee details' };
+        }
+    }
+
+    static async loadAllIncubateeLogos() {
+        const logoContainers = document.querySelectorAll('.incubatee-avatar');
+        
+        logoContainers.forEach(async (container) => {
+            const incubateeId = container.getAttribute('data-incubatee-id');
+            if (!incubateeId) return;
+
+            try {
+                const result = await this.getIncubateeLogo(incubateeId);
+                
+                if (result.success && result.logo_url) {
+                    const img = container.querySelector('img.avatar-logo');
+                    if (img) {
+                        img.src = result.logo_url;
+                        img.style.display = 'block';
+                        const placeholder = container.querySelector('.avatar-placeholder');
+                        if (placeholder) placeholder.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error(`Error loading logo for incubatee ${incubateeId}:`, error);
+            }
+        });
+    }
+}
+
 // Load incubatees when page loads
 document.addEventListener('DOMContentLoaded', function() {
     initializeIncubateesPage();
     initializeFileUpload();
+
 });
 
 function initializeIncubateesPage() {
     loadIncubatees();
     initializeIncubateesEventListeners();
     initializeIncubateeModalHandlers();
+    // Load logos after a short delay to ensure DOM is ready
+    setTimeout(() => {
+        IncubateeAPI.loadAllIncubateeLogos();
+    }, 500);
 }
 
 function initializeIncubateesEventListeners() {
@@ -350,11 +405,17 @@ function displayIncubatees(incubatees) {
     container.innerHTML = incubatees.map(incubatee => `
         <div class="incubatee-card ${incubatee.is_approved ? 'approved' : 'pending'}">
             <div class="incubatee-header">
-                <div class="incubatee-avatar">
-                    ${incubatee.logo_url ? 
-                        `<img src="/${incubatee.logo_url}" alt="${escapeHtml(incubatee.full_name)}" class="avatar-logo">` :
-                        `<div class="avatar-placeholder">${incubatee.full_name.charAt(0).toUpperCase()}</div>`
+                <div class="incubatee-avatar" data-incubatee-id="${incubatee.incubatee_id}">
+                    ${incubatee.logo_path ? 
+                        `<img src="/admin/get-incubatee-logo/${incubatee.incubatee_id}" 
+                              alt="${escapeHtml(incubatee.full_name)}" 
+                              class="avatar-logo"
+                              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` :
+                        ''
                     }
+                    <div class="avatar-placeholder" style="${incubatee.logo_path ? 'display: none;' : ''}">
+                        ${incubatee.full_name.charAt(0).toUpperCase()}
+                    </div>
                 </div>
                 <div class="incubatee-basic-info">
                     <h3>${escapeHtml(incubatee.full_name)}</h3>
@@ -408,6 +469,11 @@ function displayIncubatees(incubatees) {
             </div>
         </div>
     `).join('');
+
+    // Load logos via API after DOM is updated
+    setTimeout(() => {
+        IncubateeAPI.loadAllIncubateeLogos();
+    }, 100);
 }
 
 function updateIncubateeStats(incubatees) {
@@ -657,13 +723,18 @@ function openEditIncubateeModal(incubateeId) {
     document.getElementById('edit_website').value = window.originalIncubateeData.website;
     document.getElementById('edit_is_approved').checked = window.originalIncubateeData.is_approved;
 
-    // Handle logo preview
+    // Handle logo preview using API
     const logoPreview = document.getElementById('edit_logo_preview');
     const currentLogo = document.getElementById('edit_current_logo');
     
-    if (incubatee.logo_url) {
-        currentLogo.src = `/${incubatee.logo_url}`;
+    if (incubatee.logo_path) {
+        // Use API endpoint for logo
+        currentLogo.src = `/admin/get-incubatee-logo/${incubateeId}`;
         currentLogo.style.display = 'block';
+        currentLogo.onerror = () => {
+            currentLogo.style.display = 'none';
+            logoPreview.innerHTML = '<p style="color: var(--text-tertiary);">No logo available</p>';
+        };
         logoPreview.innerHTML = `<p style="margin-bottom: 10px; font-weight: 600; color: var(--text-secondary);">Current Logo:</p>`;
         logoPreview.appendChild(currentLogo);
     } else {
@@ -837,16 +908,16 @@ function handleEditLogoPreview(event) {
 // View Incubatee Details Functions
 async function showIncubateeDetails(incubateeId) {
     try {
-        const incubatee = allIncubatees.find(i => i.incubatee_id === incubateeId);
-        if (!incubatee) return;
+        const result = await IncubateeAPI.getIncubateeDetails(incubateeId);
+        
+        if (!result.success) {
+            showNotification('Failed to load incubatee details: ' + result.error, 'error');
+            return;
+        }
 
+        const incubatee = result.incubatee;
         const modal = document.getElementById('incubateeDetailsModal');
         const content = document.getElementById('incubateeDetailsContent');
-
-        // Load incubatee products
-        const productsResponse = await fetch(`/admin/get-incubatee-products/${incubateeId}`);
-        const productsData = await productsResponse.json();
-        const products = productsData.success ? productsData.products : [];
 
         content.innerHTML = `
             <div class="incubatee-detail-section">
@@ -854,7 +925,7 @@ async function showIncubateeDetails(incubateeId) {
                 <div class="detail-grid">
                     <div class="detail-item">
                         <label>Incubatee ID:</label>
-                        <span>${incubatee.incubatee_id}</span>
+                        <span>${incubatee.id}</span>
                     </div>
                     <div class="detail-item">
                         <label>Full Name:</label>
@@ -901,36 +972,38 @@ async function showIncubateeDetails(incubateeId) {
                         <div class="stat-label">Total Revenue</div>
                     </div>
                     <div class="stat-card mini">
-                        <div class="stat-value">${products.filter(p => p.stock_amount > 0).length}</div>
+                        <div class="stat-value">${incubatee.products.filter(p => p.stock > 0).length}</div>
                         <div class="stat-label">In Stock</div>
                     </div>
                     <div class="stat-card mini">
-                        <div class="stat-value">${products.filter(p => p.stock_amount === 0).length}</div>
+                        <div class="stat-value">${incubatee.products.filter(p => p.stock === 0).length}</div>
                         <div class="stat-label">Out of Stock</div>
                     </div>
                 </div>
             </div>
 
             <div class="incubatee-detail-section">
-                <h3>Products (${products.length})</h3>
-                ${products.length === 0 ? 
+                <h3>Products (${incubatee.products.length})</h3>
+                ${incubatee.products.length === 0 ? 
                     '<p class="no-data">No products added yet.</p>' :
                     `<div class="products-list">
-                        ${products.map(product => `
+                        ${incubatee.products.map(product => `
                             <div class="product-item">
                                 <div class="product-image">
-                                    ${product.image_path ? 
-                                        `<img src="/${product.image_path}" alt="${escapeHtml(product.name)}">` :
-                                        '<div class="no-image">📷</div>'
+                                    ${product.image_url 
+                                        ? `<img src="${product.image_url}" alt="${escapeHtml(product.name)}"
+                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` :
+                                        ''
                                     }
+                                    <div class="no-image" style="${product.image_url ? 'display: none;' : ''}">📷</div>
                                 </div>
                                 <div class="product-info">
                                     <h4>${escapeHtml(product.name)}</h4>
                                     <p class="product-category">${product.category || 'Uncategorized'}</p>
-                                    <p class="product-stock">Stock: ${product.stock_amount} • Price: ₱${product.price_per_stocks.toFixed(2)}</p>
+                                    <p class="product-stock">Stock: ${product.stock} • Price: ₱${product.price.toFixed(2)}</p>
                                 </div>
-                                <div class="product-status ${product.stock_amount > 0 ? 'in-stock' : 'out-of-stock'}">
-                                    ${product.stock_amount > 0 ? 'In Stock' : 'Out of Stock'}
+                                <div class="product-status ${product.stock > 0 ? 'in-stock' : 'out-of-stock'}">
+                                    ${product.stock > 0 ? 'In Stock' : 'Out of Stock'}
                                 </div>
                             </div>
                         `).join('')}

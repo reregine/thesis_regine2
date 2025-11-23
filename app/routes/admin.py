@@ -28,7 +28,7 @@ def allowed_logo_file(filename):
 def get_logo_url(logo_path):
     """Get the URL path for the logo"""
     if logo_path:
-        return f"/static/incubatee_logo/{logo_path}"
+        return f"static/incubatee_logo/{logo_path}"
     return None
 
 def allowed_file(filename):
@@ -106,6 +106,71 @@ def sales_reports():
     
     return render_template("admin/reports.html", today=today.isoformat(),today_minus_30=today_minus_30.isoformat())
 
+@admin_bp.route("/get-incubatee-logo/<int:incubatee_id>")
+def get_incubatee_logo(incubatee_id):
+    """Get incubatee logo via API"""
+    try:
+        incubatee = Incubatee.query.get_or_404(incubatee_id)
+        
+        if not incubatee.logo_path:
+            return jsonify({"success": False, "error": "No logo available"}), 404
+        
+        # Return the logo URL using the model's property
+        return jsonify({"success": True, "logo_url": incubatee.logo_url,"company_name": incubatee.company_name})
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+@admin_bp.route("/get-incubatee-details/<int:incubatee_id>")
+def get_incubatee_details(incubatee_id):
+    """Get complete incubatee details including logo URL"""
+    try:
+        incubatee = Incubatee.query.get_or_404(incubatee_id)
+        
+        # Get incubatee products
+        products = IncubateeProduct.query.filter_by(incubatee_id=incubatee_id).all()
+        products_list = []
+        
+        for product in products:
+            product_data = {
+                "product_id": product.product_id,
+                "name": product.name,
+                "category": product.category,
+                "description": product.details,
+                "price": float(product.price_per_stocks),
+                "stock": product.stock_amount,
+                "image_path": product.image_path
+            }
+            # Add image URL if exists
+            if product.image_path:
+                product_data["image_url"] = url_for('static', filename=product.image_path)
+            products_list.append(product_data)
+        
+        # Build response with proper URLs
+        response_data = {
+            "success": True,
+            "incubatee": {
+                "id": incubatee.incubatee_id,
+                "company_name": incubatee.company_name,
+                "full_name": f"{incubatee.first_name} {incubatee.last_name}",
+                "email": incubatee.email,
+                "phone": incubatee.phone_number,
+                "website": incubatee.website,
+                "contact_info": incubatee.contact_info,
+                "batch": incubatee.batch,
+                "year_joined": incubatee.created_at.year if incubatee.created_at else None,
+                "description": incubatee.contact_info or "No description available",
+                "logo_url": url_for('static', filename=f'incubatee_logo/{incubatee.logo_path}') if incubatee.logo_path else None,
+                "logo_path": incubatee.logo_path,  # Keep for reference
+                "products": products_list,
+                "product_count": len(products_list)
+            }
+        }
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @admin_bp.route("/get-incubatee-products/<int:incubatee_id>")
 def get_incubatee_products(incubatee_id):
@@ -336,6 +401,7 @@ def get_products():
         current_app.logger.error(f"Error fetching products: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
+
 @admin_bp.route("/add-incubatee", methods=["POST"])
 def add_incubatee():
     """Add a new incubatee (person/company)"""
@@ -370,10 +436,7 @@ def add_incubatee():
                     logo_file.save(save_path)
                     logo_path = filename
                 else:
-                    return jsonify({
-                        "success": False, 
-                        "error": f"Invalid file type. Allowed types: {', '.join(LOGO_ALLOWED_EXTENSIONS)}"
-                    }), 400
+                    return jsonify({"success": False, "error": f"Invalid file type. Allowed types: {', '.join(LOGO_ALLOWED_EXTENSIONS)}"}), 400
         else:
             # Handle JSON data (backward compatibility)
             data = request.get_json()
@@ -544,7 +607,7 @@ def get_incubatees_list():
                 "full_name": f"{incubatee.first_name} {incubatee.last_name}",
                 "company_name": incubatee.company_name or "No Company",
                 "website": incubatee.website,
-                "logo_url": incubatee.logo_url,  # Add logo URL
+                "logo_url": incubatee.logo_url,
                 "email": incubatee.email or "No email",
                 "phone": incubatee.phone_number or "No phone",
                 "batch": incubatee.batch,

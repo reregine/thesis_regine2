@@ -38,11 +38,10 @@ def incubatee_showroom():
             "email": incubatee.email,
             "phone": incubatee.phone_number,
             "website": incubatee.website,
-            "logo_url": incubatee.logo_url,  # Use the property
+            "logo_url": incubatee.logo_url,
             "product_count": product_count,
             "status": status,
-            "year_joined": incubatee.created_at.year if incubatee.created_at else "Unknown"
-        })
+            "year_joined": incubatee.created_at.year if incubatee.created_at else "Unknown"})
     
     # Get unique batches for navigation
     unique_batches = sorted(set(incubatee.batch for incubatee in incubatees if incubatee.batch is not None))
@@ -62,6 +61,11 @@ def get_incubatee_details(incubatee_id):
         products_list = []
         
         for product in products:
+            # Build proper image URL for products
+            product_image_url = None
+            if product.image_path:
+                product_image_url = f"/{product.image_path}"
+            
             products_list.append({
                 "product_id": product.product_id,
                 "name": product.name,
@@ -69,10 +73,11 @@ def get_incubatee_details(incubatee_id):
                 "description": product.details or "No description available",
                 "price": float(product.price_per_stocks),
                 "stock": product.stock_amount,
-                "image_path": product.image_path
+                "image_path": product.image_path,
+                "image_url": product_image_url  # Add this for proper URL handling
             })
         
-        # Build incubatee details with new fields
+        # Build incubatee details with proper logo URL
         incubatee_details = {
             "incubatee_id": incubatee.incubatee_id,
             "company_name": incubatee.company_name or incubatee.full_name,
@@ -83,7 +88,7 @@ def get_incubatee_details(incubatee_id):
             "phone": incubatee.phone_number or "No phone provided",
             "website": incubatee.website or "No website provided",
             "display_website": incubatee.display_website,
-            "logo_url": incubatee.logo_url,  # Use the property
+            "logo_url": incubatee.logo_url,  # This will use the fixed property
             "contact_info": incubatee.contact_info or "No contact information available",
             "status": "Active" if incubatee.batch and incubatee.batch >= 3 else "Graduated",
             "year_joined": incubatee.created_at.year if incubatee.created_at else "Unknown",

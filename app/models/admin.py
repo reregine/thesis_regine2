@@ -39,9 +39,15 @@ class Incubatee(db.Model):
     @property
     def logo_url(self):
         """Return the logo URL only if it's a custom uploaded logo."""
-        if self.logo_path and 'incubatee_logo' in self.logo_path:
-            return f"incubatee_logo/{self.logo_path}"
-        return None  # Return None instead of batch image
+        if self.logo_path:
+            # Check if the logo_path already contains the full path
+            if 'incubatee_logo' in self.logo_path:
+                # If it already has the path, return it as is
+                return f"/{self.logo_path}"
+            else:
+                # If it's just the filename, construct the full path
+                return f"/static/incubatee_logo/{self.logo_path}"
+        return None
 
     @property
     def display_website(self):
