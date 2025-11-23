@@ -5,7 +5,7 @@ from .routes.reservation import reservation_bp
 from .routes.cart import cart_bp
 from .routes.favorites import favorites_bp
 from .routes.dashboard import dashboard_bp
-from .routes import home, incubatee_showroom, layouts, shop, notification, showroom, login, admin, contact, about
+from .routes import home, incubatee_showroom, layouts, shop, notification, showroom, login, admin, contact, about, user
 
 def create_app(config_class=Config):
     app = Flask(__name__, template_folder="templates", static_folder="static")
@@ -30,6 +30,7 @@ def create_app(config_class=Config):
     app.register_blueprint(cart_bp) 
     app.register_blueprint(favorites_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(user.user_bp)
     
     @app.context_processor
     def inject_user_data():
