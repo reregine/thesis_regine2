@@ -867,3 +867,93 @@ body {
         grid-template-columns: 1fr;
     }
 }
+  /* ===== LOGOUT BUTTON ===== */
+  .logout-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 3px 10px rgba(239, 68, 68, 0.3);
+  }
+
+  .logout-btn:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(239, 68, 68, 0.4);
+  }
+
+    /* Overlay */
+    .logout-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    /* Hidden by default */
+    .logout-modal.hidden {
+      display: none;
+    }
+
+    /* Modal Box */
+    .logout-content {
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 16px;
+      text-align: center;
+      width: 320px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      border-top: 6px solid #1a73e8; /* highlight with brand blue */
+    }
+
+    .logout-content p {
+      font-size: 1.1rem;
+      color: #333;
+      margin: 0;
+    }
+
+    /* Actions Container */
+    .logout-actions {
+      margin-top: 18px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    /* Buttons */
+    .logout-actions button {
+      flex: 1;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.95rem;
+      transition: all 0.25s ease-in-out;
+    }
+
+    /* Confirm Logout (use project red accent) */
+    #confirm-logout {
+      background: #e63946;
+      color: white;
+    }
+    #confirm-logout:hover {
+      background: #c92a38;
+    }
+
+    /* Cancel Button (use project green) */
+    #cancel-logout {
+      background: #34a853;
+      color: white;
+    }
+    #cancel-logout:hover {
+      background: #2c8a44;
+    }
