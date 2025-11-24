@@ -81,12 +81,13 @@
                     </div>
                     
                     <div class="profile-section">
+                        <!-- In the profile tab -->
                         <div class="profile-card">
                             <h4><i class="fas fa-user"></i> Personal Information</h4>
                             <form id="profileForm" class="profile-form">
                                 <div class="form-group">
                                     <label for="username">Username</label>
-                                    <input type="text" id="username" name="username" value="{{ username }}" readonly>
+                                    <input type="text" id="username" name="username" readonly>
                                     <small>Username cannot be changed</small>
                                 </div>
                                 <div class="form-group">
@@ -130,21 +131,71 @@
                     </div>
                 </div>
 
+
                 <!-- Notifications Tab -->
                 <div id="notifications-tab" class="tab-content">
                     <div class="tab-header">
-                        <h3>Notifications</h3>
-                        <button class="clear-all-btn" id="clearNotifications">
-                            <i class="fas fa-trash"></i> Clear All
-                        </button>
+                        <h3><i class="fas fa-bell"></i> Notifications</h3>
+                        <div class="notification-controls">
+                            <button class="mark-all-read-btn" id="markAllNotificationsRead">
+                                <i class="fas fa-check-double"></i> Mark All Read
+                            </button>
+                            <button class="clear-all-btn" id="clearAllNotifications">
+                                <i class="fas fa-trash"></i> Clear All
+                            </button>
+                        </div>
                     </div>
                     
-                    <div class="notifications-list" id="notificationsList">
-                        <div class="empty-state">
+                    <!-- Notification Stats -->
+                    <div class="notification-stats-bar">
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalNotifications">0</span>
+                            <span class="stat-label">Total</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number unread-count" id="unreadNotifications">0</span>
+                            <span class="stat-label">Unread</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="reservationNotifications">0</span>
+                            <span class="stat-label">Reservations</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Notifications Filter -->
+                    <div class="notifications-filter">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="unread">Unread</button>
+                        <button class="filter-btn" data-filter="reservation">Reservations</button>
+                        <button class="filter-btn" data-filter="system">System</button>
+                    </div>
+                    
+                    <!-- Notifications List -->
+                    <div class="notifications-container">
+                        <div id="notificationsLoading" class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading notifications...</p>
+                        </div>
+                        
+                        <div id="notificationsEmptyState" class="empty-state" style="display: none;">
                             <i class="fas fa-bell-slash"></i>
                             <p>No notifications yet</p>
-                            <small>You'll see important updates here</small>
+                            <small>You'll see important updates about your reservations here</small>
                         </div>
+                        
+                        <div class="notifications-list" id="notificationsList">
+                            <!-- Notifications will be dynamically loaded here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Auto-refresh Toggle -->
+                    <div class="auto-refresh-control">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="autoRefreshToggle" checked>
+                            <span class="slider"></span>
+                            <span class="toggle-label">Auto-refresh notifications</span>
+                        </label>
+                        <small class="refresh-info">Updates every 30 seconds</small>
                     </div>
                 </div>
             </div>
@@ -157,10 +208,10 @@
                 <div class="sidebar-content">
                     <div class="location-card">
                         <h5>ATBI Office Location</h5>
-                        <p><i class="fas fa-building"></i> Capiz State University</p>
-                        <p><i class="fas fa-map-pin"></i> Roxas City, Capiz, Philippines</p>
+                        <p><i class="fas fa-building"></i> CAPSU Dayao Satellite College</p>
+                        <p><i class="fas fa-map-pin"></i> Dayao Roxas City, Capiz, Philippines</p>
                         <p><i class="fas fa-clock"></i> Mon-Fri: 8:00 AM - 5:00 PM</p>
-                        <p><i class="fas fa-phone"></i> +63 912 345 6789</p>
+                        <p><i class="fas fa-phone"></i> Not yet Identify</p>
                     </div>
                     
                     <div class="instructions-card">
@@ -176,7 +227,7 @@
                     <div class="map-placeholder">
                         <i class="fas fa-map"></i>
                         <p>Campus Map</p>
-                        <small>ATBI Building, Main Campus</small>
+                        <small>ATBI Building, CAPSU Dayao Satellite College</small>
                     </div>
                 </div>
             </div>

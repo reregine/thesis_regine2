@@ -1,0 +1,289 @@
+ATBI Web shopping Cart (0 - 50%)
+Francisco et al. 
+okay nani- provide details and the actual prices (i.e. Per item, per kilo, package, etc. ) of products and/or services offered per incubatee
+
+okay nani-  provide info about each incubate
+
+okay nani- provide per batch info/details per incubatee
+
+- improve the main page to display per incubatee best seller/know products/services
+
+okay nani check lang- provide profile and dashboard for register user after login and logout button
+
+okay nani check lang- Admin dashboard: ptofile of admin, view pending/approved users, view list of incubatees, view confirm/delivered/pending orders, summary of sales per incubatee, other required reports
+
+wala pa ni- incubatee dashboard: profile of user, list products on stock/out of stock, services, view feedbacks/comments of customers, reports needed and others
+
+gina tapos- customer dashboard: user profile, make order, view list of view current (approved/pending) and history of ordered  products or availed services. 
+
+wala pa ni- in system messaging
+wala pa ni- securing of web pages (e.g. Session destroy, others) to prevent data leaks
+
+Weekly Sales Tracking: Counts quantity from completed reservations for the current week
+
+Monthly Customer Tracking: Counts unique customers from completed reservations for the current month
+
+Best Sellers: Top 5 products per incubatee based on weekly sales
+
+Known Products: Top 10 products per incubatee based on monthly customer reach
+
+Eva Britana - Nanay Patring's Recipe (2 products)
+Product 1: Special Banana Ketchup
+
+Category: Food Processing Technology
+
+Incubatee Name: Eva Britana (Nanay Patring's Recipe)
+
+Product Name: Special Banana Ketchup
+
+Stock Number: BK-2024-001
+
+Offered Services: Condiment Production
+
+Stock Amount: 150
+
+Price per Stock: 85.50
+
+Pricing Unit: per bottle
+
+Product Description: Traditional homemade banana ketchup with natural ingredients, no artificial preservatives. Perfect for Filipino dishes and snacks.
+
+Expiration Date: 2025-12-31
+
+Warranty: 6 months
+
+Product 2: Spicy Bagoong Paste
+
+Category: Food Processing Technology
+
+Incubatee Name: Eva Britana (Nanay Patring's Recipe)
+
+Product Name: Spicy Bagoong Paste
+
+Stock Number: BG-2024-002
+
+Offered Services: Fermented Products
+
+Stock Amount: 80
+
+Price per Stock: 120.00
+
+Pricing Unit: per jar
+
+Product Description: Premium fermented shrimp paste with chili, made using traditional methods. Great for pinakbet and other Ilocano dishes.
+
+Expiration Date: 2026-06-30
+
+Warranty: 1 year
+
+Maria Reyes - GreenHarvest Aqua Farms (2 products)
+Product 1: Fresh Tilapia Fillets
+
+Category: Agri-Aqua Business
+
+Incubatee Name: Maria Reyes (GreenHarvest Aqua Farms)
+
+Product Name: Fresh Tilapia Fillets
+
+Stock Number: TF-2024-001
+
+Offered Services: Aquaculture
+
+Stock Amount: 200
+
+Price per Stock: 180.00
+
+Pricing Unit: per kilo
+
+Product Description: Premium fresh tilapia fillets, sustainably farmed. Boneless and ready to cook. Perfect for sinigang and grilled dishes.
+
+Expiration Date: 2024-11-28
+
+Warranty: none
+
+Product 2: Live Prawns
+
+Category: Agri-Aqua Business
+
+Incubatee Name: Maria Reyes (GreenHarvest Aqua Farms)
+
+Product Name: Live Prawns
+
+Stock Number: LP-2024-002
+
+Offered Services: Aquaculture
+
+Stock Amount: 50
+
+Price per Stock: 350.00
+
+Pricing Unit: per kilo
+
+Product Description: Fresh live prawns, perfect for sinigang and other seafood dishes. Delivered fresh daily.
+
+Expiration Date: 2024-11-25
+
+Warranty: none
+
+Juan Gonzales - OrganicRice Coop (2 products)
+Product 1: Premium Organic Brown Rice
+
+Category: Agri-Aqua Business
+
+Incubatee Name: Juan Gonzales (OrganicRice Coop)
+
+Product Name: Premium Organic Brown Rice
+
+Stock Number: BR-2024-001
+
+Offered Services: Organic Farming
+
+Stock Amount: 300
+
+Price per Stock: 95.00
+
+Pricing Unit: per kilo
+
+Product Description: 100% organic brown rice from Ifugao terraces. Rich in fiber and nutrients, naturally grown without chemicals.
+
+Expiration Date: 2025-06-30
+
+Warranty: none
+
+Product 2: Heirloom Rice Mix
+
+Category: Agri-Aqua Business
+
+Incubatee Name: Juan Gonzales (OrganicRice Coop)
+
+Product Name: Heirloom Rice Mix
+
+Stock Number: HR-2024-002
+
+Offered Services: Organic Farming
+
+Stock Amount: 120
+
+Price per Stock: 150.00
+
+Pricing Unit: per pack
+
+Product Description: Special blend of traditional heirloom rice varieties from the Cordillera region. Unique flavors and textures.
+
+Expiration Date: 2025-08-15
+
+Warranty: none
+
+Andrea Tan - UrbanHydroponics PH (2 products)
+Product 1: Fresh Lettuce Greens
+
+Category: Agri-Aqua Business
+
+Incubatee Name: Andrea Tan (UrbanHydroponics PH)
+
+Product Name: Fresh Lettuce Greens
+
+Stock Number: LG-2024-001
+
+Offered Services: Hydroponic Farming
+
+Stock Amount: 100
+
+Price per Stock: 75.00
+
+Pricing Unit: per pack
+
+Product Description: Crisp fresh lettuce grown using urban hydroponics. Pesticide-free and harvested daily.
+
+Expiration Date: 2024-11-26
+
+Warranty: none
+
+Product 2: Hydroponic Basil
+
+Category: Agri-Aqua Business
+
+Incubatee Name: Andrea Tan (UrbanHydroponics PH)
+
+Product Name: Hydroponic Basil
+
+Stock Number: HB-2024-002
+
+Offered Services: Hydroponic Farming
+
+Stock Amount: 60
+
+Price per Stock: 45.00
+
+Pricing Unit: per bunch
+
+Product Description: Fresh sweet basil grown in controlled hydroponic environment. Perfect for pasta and salads.
+
+Expiration Date: 2024-11-24
+
+Warranty: none
+
+Roberto Aquino - MushroomMagic Farms (2 products)
+Product 1: Fresh Oyster Mushrooms
+
+Category: Agri-Aqua Business
+
+Incubatee Name: Roberto Aquino (MushroomMagic Farms)
+
+Product Name: Fresh Oyster Mushrooms
+
+Stock Number: OM-2024-001
+
+Offered Services: Mushroom Cultivation
+
+Stock Amount: 80
+
+Price per Stock: 120.00
+
+Pricing Unit: per kilo
+
+Product Description: Freshly harvested oyster mushrooms, rich in nutrients and flavor. Perfect for stir-fry and soups.
+
+Expiration Date: 2024-11-23
+
+Warranty: none
+
+Product 2: Dried Shiitake Mushrooms
+
+Category: Agri-Aqua Business
+
+Incubatee Name: Roberto Aquino (MushroomMagic Farms)
+
+Product Name: Dried Shiitake Mushrooms
+
+Stock Number: DS-2024-002
+
+Offered Services: Mushroom Processing
+
+Stock Amount: 40
+
+Price per Stock: 250.00
+
+Pricing Unit: per pack
+
+Product Description: Premium dried shiitake mushrooms with intense umami flavor. Great for soups and Asian dishes.
+
+Expiration Date: 2025-12-31
+
+Warranty: 1 year
+
+Note: You'll need to create these pricing units first in your system:
+
+per bottle
+
+per jar
+
+per kilo
+
+per pack
+
+per bunch
+
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);

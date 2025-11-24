@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Our Incubates - ATBI</title>
+  <title>Our Incubatees - ATBI</title>
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/agrilogo.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/incubates.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/incubates-modal.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
   <!-- Navigation Bar -->
@@ -20,7 +21,7 @@
         <ul class="nav-list">
           <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
           <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
-          <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
+          <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link active">INCUBATEES</a></li>
           <li><a href="{{ url_for('about.about_page')}}" class="nav-link">ABOUT</a></li>
           <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
           <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒<span id="cartCountBadge" class="cart-count-badge">0</span></a></li>
@@ -41,103 +42,60 @@
   </header>
 
   <main>
-    <!-- Batch 1 -->
-    <section class="batch" id="batch1">
-      <h3>Batch 1</h3>
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1 class="page-title">Our Incubatees</h1>
+      <p class="page-subtitle">Discover the innovative Agri-Aqua technology startups and businesses nurtured through our incubation program.</p>
+    </div>
+
+    <!-- Dynamic Incubatee Sections -->
+    {% for batch_key, incubatees in incubatees_by_batch.items() %}
+    <section class="batch" id="{{ batch_key }}">
+      <h3>Batch {{ incubatees[0].batch }}</h3>
       <div class="incubates-grid">
-        <a href="#" class="incubate-card">
-          <div class="incubate-image-container">
-            <img src="{{ url_for('static', filename='images/B1.png') }}" alt="7JF Steel Fabrication" class="incubate-image">
+        {% for incubatee in incubatees %}
+        <div class="incubate-card" onclick="openIncubateeModal({{ incubatee.id }})">
+          
+        <!-- In the main incubatee grid -->
+        <div class="incubate-image-container" data-incubatee-id="{{ incubatee.id }}">
+            <!-- Logo will be loaded via JavaScript -->
+            <div class="incubate-image-placeholder">
+                <i class="fas fa-building"></i>
+                <span>Loading Logo...</span>
+            </div>
+        </div>
+          
+          <div class="incubate-content">
+            <div class="incubate-category">Batch {{ incubatee.batch }}</div>
+            <div class="incubate-name">{{ incubatee.company_name }}</div>
+            <div class="incubate-description">{{ incubatee.description[:100] }}{% if incubatee.description|length > 100 %}...{% endif %}</div>
+            
+            <!-- Website Link if available -->
+            {% if incubatee.website and incubatee.website != 'No website provided' %}
+            <div class="incubate-website">
+              <i class="fas fa-globe"></i>
+              <a href="{{ incubatee.website }}" target="_blank" onclick="event.stopPropagation();">Visit Website</a>
+            </div>
+            {% endif %}
+            
+            <div class="incubate-meta">
+              <span class="incubate-year">Since {{ incubatee.year_joined }}</span>
+            </div>
           </div>
-          <div class="incubate-name">7JF Steel Fabrication</div>
-        </a>
-        <a href="#" class="incubate-card">
-          <div class="incubate-image-container">
-            <img src="{{ url_for('static', filename='images/B4.png') }}" alt="GreenEco" class="incubate-image">
-          </div>
-          <div class="incubate-name">GreenEco</div>
-        </a>
-        <a href="#" class="incubate-card">
-          <div class="incubate-image-container">
-            <img src="{{ url_for('static', filename='images/B5.png') }}" alt="Obra Capisnon" class="incubate-image">
-          </div>
-          <div class="incubate-name">Obra Capisnon</div>
-        </a>
+        </div>
+        {% endfor %}
       </div>
     </section>
+    {% else %}
+    <!-- Empty state if no incubatees -->
+    <div class="empty-state">
+      <i class="fas fa-seedling"></i>
+      <h3>No Incubatees Available</h3>
+      <p>There are currently no approved incubatees to display. Check back later for updates.</p>
+    </div>
+    {% endfor %}
 
-    <!-- Batch 2 -->
-    <section class="batch" id="batch2">
-      <h3>Batch 2</h3>
-      <div class="incubates-grid">
-        <a href="#" class="incubate-card">
-          <div class="incubate-image-container">
-            <img src="{{ url_for('static', filename='images/B2.png') }}" alt="Foodies" class="incubate-image">
-          </div>
-          <div class="incubate-name">Foodies</div>
-        </a>
-        <a href="#" class="incubate-card">
-          <div class="incubate-image-container">
-            <img src="{{ url_for('static', filename='images/B6.png') }}" alt="MediLink" class="incubate-image">
-          </div>
-          <div class="incubate-name">MediLink</div>
-        </a>
-      </div>
-    </section>
-
-    <!-- Batch 3 -->
-    <section class="batch" id="batch3">
-      <h3>Batch 3</h3>
-      <div class="incubates-grid">
-        <a href="#" class="incubate-card">
-          <div class="incubate-image-container">
-            <img src="{{ url_for('static', filename='images/agri_smart.png') }}" alt="AgriSmart" class="incubate-image">
-          </div>
-          <div class="incubate-name">AgriSmart</div>
-        </a>
-        <a href="#" class="incubate-card">
-          <div class="incubate-image-container">
-            <img src="{{ url_for('static', filename='images/bio_farm.png') }}" alt="BioFarm" class="incubate-image">
-          </div>
-          <div class="incubate-name">BioFarm Solutions</div>
-        </a>
-      </div>
-    </section>
-
-    <!-- Batch 4 -->
-    <section class="batch" id="batch4">
-      <h3>Batch 4</h3>
-      <div class="incubates-grid">
-        <a href="#" class="incubate-card">
-          <div class="incubate-image-container">
-            <img src="{{ url_for('static', filename='images/aquagrow.jpg') }}" alt="AquaGrow" class="incubate-image">
-          </div>
-          <div class="incubate-name">AquaGrow</div>
-        </a>
-        <a href="#" class="incubate-card">
-          <div class="incubate-image-container">
-            <img src="{{ url_for('static', filename='images/tech.jpg') }}" alt="TechHarvest" class="incubate-image">
-          </div>
-          <div class="incubate-name">TechHarvest</div>
-        </a>
-      </div>
-      <div class="incubates-grid">
-        <a href="#" class="incubate-card">
-          <div class="incubate-image-container">
-            <img src="{{ url_for('static', filename='images/echo_feed.png') }}" alt="EcoFeed" class="incubate-image">
-          </div>
-          <div class="incubate-name">EcoFeed Innovations</div>
-        </a>
-        <a href="#" class="incubate-card">
-          <div class="incubate-image-container">
-            <img src="{{ url_for('static', filename='images/farmBot.png') }}" alt="FarmBot" class="incubate-image">
-          </div>
-          <div class="incubate-name">FarmBot Solutions</div>
-        </a>
-      </div>
-    </section>
-
-    <!-- Batch 5 - Call for Applications -->
+    <!-- Batch 5 - Call for Applications (Static Section) -->
     <section class="batch" id="batch5">
       <h3>Batch 5 - Coming Soon!</h3>
       <div class="call-to-action">
@@ -173,34 +131,147 @@
     </section>
   </main>
 
+  <!-- Incubatee Details Modal -->
+  <div id="incubateeModal" class="modal">
+    <div class="modal-content incubatee-modal">
+      <span class="close-modal" onclick="closeIncubateeModal()">&times;</span>
+      <div id="incubateeModalContent">
+        <!-- Content will be loaded dynamically -->
+      </div>
+    </div>
+  </div>
+
   <footer>
     <p>&copy; 2025 ATBI. All Rights Reserved.</p>
   </footer>
 
-  <!-- Floating Buttons -->
+  <!-- Dynamic Floating Batch Navigation -->
   <div class="floating-btn back-home">
     <a href="{{ url_for('home.index') }}" class="back-to-home">← Home</a>
   </div>
 
   <div class="floating-btn batch-nav">
-    <a href="#batch1">Batch 1</a> |
-    <a href="#batch2">Batch 2</a> |
-    <a href="#batch3">Batch 3</a> |
-    <a href="#batch4">Batch 4</a> |
-    <a href="#batch5">Batch 5</a>
+    {% for batch in unique_batches %}
+    <a href="#batch{{ batch }}">Batch {{ batch }}</a> {% if not loop.last %}|{% endif %}
+    {% endfor %}
+    | <a href="#batch5">Batch 5</a>
   </div>
 
-  <!-- 🛒 CART MODAL -->
+  <!-- Cart Modal -->
   <div id="cartModal" class="cart-modal">
     <div class="cart-modal-content">
       <div id="cartContent"></div>
     </div>
   </div>
-    <!-- ================= DASHBOARD MODAL ================= -->
-    <div id="dashboardModal" class="dashboard-modal">
-        <!-- Dashboard content will be loaded here dynamically -->
-    </div>
+
+  <!-- Dashboard Modal -->
+  <div id="dashboardModal" class="dashboard-modal">
+    <!-- Dashboard content will be loaded here dynamically -->
+  </div>
+
   <script>
+    // Function to open incubatee modal - Update the logo handling
+    function openIncubateeModal(incubateeId) {
+      fetch(`/incubates/get-incubatee-details/${incubateeId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const incubatee = data.incubatee;
+            const modalContent = document.getElementById('incubateeModalContent');
+            
+            // Generate modal content with proper logo handling
+            modalContent.innerHTML = `
+              <div class="incubatee-modal-header">
+                <div class="incubatee-modal-image">
+                  ${incubatee.logo_url 
+                      ? `<img src="${incubatee.logo_url}" alt="${incubatee.company_name}" 
+                          class="incubatee-logo-img"
+                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`
+                      : ''
+                  }
+                  ${!incubatee.logo_url ? `
+                  <div class="incubatee-logo-placeholder">
+                      <i class="fas fa-building"></i>
+                      <span>No Logo Available</span>
+                  </div>
+                  ` : ''}
+                </div>
+                <div class="incubatee-modal-info">
+                  <h2>${incubatee.company_name}</h2>
+                  <p class="incubatee-batch">Batch ${incubatee.batch} • Since ${incubatee.year_joined}</p>
+                </div>
+              </div>
+              
+              <div class="incubatee-modal-body">
+                <!-- Rest of your modal content remains the same -->
+                ${incubatee.products && incubatee.products.length > 0 ? `
+                <div class="incubatee-section">
+                  <h3>Products & Services (${incubatee.product_count})</h3>
+                  <div class="incubatee-products">
+                    ${incubatee.products.map(product => `
+                    <div class="incubatee-product-item" 
+                        data-low-stock="${product.stock > 0 && product.stock < 10}" 
+                        data-out-of-stock="${product.stock === 0}">
+                        <div class="incubatee-product-image">
+                            ${product.image_url 
+                                ? `<img src="${product.image_url}" 
+                                    alt="${product.name}" 
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`
+                                : ''
+                            }
+                            <div class="incubatee-product-image-placeholder" style="${product.image_url ? 'display: none;' : ''}">
+                                <i class="fas fa-cube"></i>
+                                <span>No Image</span>
+                            </div>
+                        </div>
+                        <div class="incubatee-product-info">
+                            <h4>${product.name}</h4>
+                            <p class="incubatee-product-category">${product.category || 'Uncategorized'}</p>
+                            <p class="incubatee-product-description">${product.description}</p>
+                            <div class="incubatee-product-meta">
+                                <span class="incubatee-product-price">₱${product.price.toFixed(2)}</span>
+                                <span class="incubatee-product-stock">${product.stock} in stock</span>
+                            </div>
+                        </div>
+                    </div>
+                    `).join('')}
+                  </div>
+                </div>
+                ` : `
+                <div class="incubatee-section">
+                  <h3>Products & Services</h3>
+                  <p>No products listed yet.</p>
+                </div>
+                `}
+              </div>
+            `;
+            
+            // Show modal
+            document.getElementById('incubateeModal').style.display = 'block';
+          } else {
+            alert('Error loading incubatee details: ' + data.error);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error loading incubatee details');
+        });
+    }
+
+    // Function to close incubatee modal
+    function closeIncubateeModal() {
+      document.getElementById('incubateeModal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('incubateeModal');
+      if (event.target === modal) {
+        closeIncubateeModal();
+      }
+    }
+
+    // Cart functionality
     async function updateCartCountFromBackend() {
       try {
         const res = await fetch('/cart/count');
@@ -227,6 +298,60 @@
     // Optional: auto-update every 10-15 seconds
     setInterval(updateCartCountFromBackend, 15000);
   </script>
+
+  <!-- Add CSS for logo placeholders -->
+  <style>
+    .incubate-image-placeholder {
+      width: 100%;
+      height: 200px;
+      background: #f8f9fa;
+      border: 2px dashed #dee2e6;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #6c757d;
+    }
+    
+    .incubate-image-placeholder i {
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+    
+    .incubatee-logo-placeholder {
+      width: 120px;
+      height: 120px;
+      background: #f8f9fa;
+      border: 2px dashed #dee2e6;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #6c757d;
+      text-align: center;
+    }
+    
+    .incubatee-logo-placeholder i {
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+    
+    .incubate-website {
+      margin: 8px 0;
+    }
+    
+    .incubate-website a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    
+    .incubate-website a:hover {
+      text-decoration: underline;
+    }
+  </style>
+
   <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
   <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>

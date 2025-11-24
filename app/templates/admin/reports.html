@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Reports - ATBI Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/agrilogo.png') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Sales Reports & Analytics</h1>
+        <div class="header-actions">
+            <a href="{{ url_for('admin.admin_dashboard') }}" class="btn-back">← Back to Dashboard</a>
+            <a href="{{ url_for('admin.admin_profile') }}" class="profile-btn">
+                <span class="icon">👤</span> Profile
+            </a>
+            <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+        </div>
+    </div>
+
+    <!-- Floating Logout Confirmation -->
+    <div id="logout-modal" class="logout-modal hidden">
+        <div class="logout-content">
+        <p>🚪 Are you sure you want to logout?</p>
+        <div class="logout-actions">
+            <button id="confirm-logout">Yes, Logout</button>
+            <button id="cancel-logout">Cancel</button>
+        </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Date Range Selector -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Report Period</h2>
+            </div>
+            <div class="date-range-selector">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>From Date</label>
+                        <input type="date" id="startDate" value="{{ today_minus_30 }}">
+                    </div>
+                    <div class="form-group">
+                        <label>To Date</label>
+                        <input type="date" id="endDate" value="{{ today }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Report Type</label>
+                        <select id="reportType">
+                            <option value="overview">Overview</option>
+                            <option value="incubatee">By Incubatee</option>
+                            <option value="category">By Category</option>
+                            <option value="product">By Product</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button class="btn-generate" onclick="generateReport()">📈 Generate Report</button>
+                        <button class="btn-export" onclick="exportReport()">📥 Export Report</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card primary">
+                <div class="metric-icon">💰</div>
+                <div class="metric-content">
+                    <div class="metric-value" id="totalRevenue">₱0.00</div>
+                    <div class="metric-label">Total Revenue</div>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">📦</div>
+                <div class="metric-content">
+                    <div class="metric-value" id="totalOrders">0</div>
+                    <div class="metric-label">Total Orders</div>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">✅</div>
+                <div class="metric-content">
+                    <div class="metric-value" id="completedOrders">0</div>
+                    <div class="metric-label">Completed Orders</div>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">📊</div>
+                <div class="metric-content">
+                    <div class="metric-value" id="completionRate">0%</div>
+                    <div class="metric-label">Completion Rate</div>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">🏪</div>
+                <div class="metric-content">
+                    <div class="metric-value" id="activeIncubatees">0</div>
+                    <div class="metric-label">Active Incubatees</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-grid">
+            <div class="card chart-card">
+                <h3>Revenue Trend</h3>
+                <canvas id="revenueChart" height="250"></canvas>
+            </div>
+            <div class="card chart-card">
+                <h3>Sales by Category</h3>
+                <canvas id="categoryChart" height="250"></canvas>
+            </div>
+            <div class="card chart-card">
+                <h3>Top Incubatees</h3>
+                <canvas id="incubateeChart" height="250"></canvas>
+            </div>
+            <div class="card chart-card">
+                <h3>Order Status Distribution</h3>
+                <canvas id="statusChart" height="250"></canvas>
+            </div>
+        </div>
+
+        <!-- Detailed Reports -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Detailed Sales Data</h2>
+                <div class="card-actions">
+                    <button class="btn-refresh" onclick="generateReport()">🔄 Refresh</button>
+                    <div class="view-toggle">
+                        <button class="view-btn active" onclick="setView('table')">📋 Table</button>
+                        <button class="view-btn" onclick="setView('cards')">🃏 Cards</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tableView" class="report-view active">
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Order ID</th>
+                            <th>Incubatee</th>
+                            <th>Product</th>
+                            <th>Customer</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportTableBody">
+                        <tr>
+                            <td colspan="9" class="no-data">Select date range and generate report</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="cardsView" class="report-view">
+                <div id="reportCards" class="report-cards">
+                    <div class="no-data">Select date range and generate report</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Incubatee Performance -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Incubatee Performance</h2>
+            </div>
+            <div id="incubateePerformance" class="performance-grid">
+                <div class="no-data">Generate report to see incubatee performance</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Load the dedicated reports JavaScript -->
+    <script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

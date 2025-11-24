@@ -11,79 +11,34 @@
   <!-- 🌿 Header with Logout and Add Incubatee -->
   <div class="header">
     <h1>🏢 ATBI Admin Dashboard</h1>
-    <div class="header-actions">
-      <button class="sales-report-btn" id="openSalesReportModal">
-        <span class="icon">📊</span> Sales Report
-      </button>
-      <button class="view-orders-btn" id="openOrdersModal">
-        <span class="icon">📋</span> View Orders
-      </button>
-      <button class="add-incubatee-btn" id="openIncubateeModal">
-        <span class="icon">➕</span> Add Incubatee
-      </button>
-      <button class="logout-btn" onclick="logout()">🚪 Logout</button>
-    </div>
-  </div>
-
-  <!-- Add Incubatee Modal -->
-  <div id="incubateeModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Add New Incubatee</h2>
-        <button class="close-btn" id="closeIncubateeModalTop">&times;</button>
+      <div class="header-actions">
+          <!-- Management Sections (Keep as pages if needed) -->
+          <a href="{{ url_for('admin.users_management') }}" class="users-btn">
+              <span class="icon">👥</span> Users
+          </a>
+          <a href="{{ url_for('admin.incubatees_management') }}" class="incubatees-btn">
+              <span class="icon">🏢</span> Incubatees
+          </a>
+          
+          <!-- Reports & Analytics -->
+          <a href="{{ url_for('admin.sales_reports') }}" class="reports-btn">
+              <span class="icon">📊</span> Incubatee Reports
+          </a>         
+          <!-- Operations -->
+          <button class="view-orders-btn" id="openOrdersModal">
+              <span class="icon">📋</span> View Orders
+          </button>
+          
+          <!-- User & System -->
+          <a href="{{ url_for('admin.admin_profile') }}" class="profile-btn">
+              <span class="icon">👤</span> Profile
+          </a>
+          <button class="logout-btn" onclick="logout()">🚪 Logout</button>
       </div>
-
-      <form id="incubateeAddForm">
-        <div class="form-group">
-          <label>First Name</label>
-          <input type="text" id="first_name" name="first_name" required>
-        </div>
-
-        <div class="form-group">
-          <label>Middle Name</label>
-          <input type="text" id="middle_name" name="middle_name">
-        </div>
-
-        <div class="form-group">
-          <label>Last Name</label>
-          <input type="text" id="last_name" name="last_name" required>
-        </div>
-
-        <div class="form-group">
-          <label>Company Name</label>
-          <input type="text" id="company_name" name="company_name">
-        </div>
-
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="email" name="email" required>
-        </div>
-
-        <div class="form-group">
-          <label>Phone Number</label>
-          <input type="text" id="phone_number" name="phone_number">
-        </div>
-
-        <div class="form-group">
-          <label>Contact Info</label>
-          <textarea id="contact_info" name="contact_info" rows="2"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label>Batch</label>
-          <input type="number" id="batch" name="batch">
-        </div>
-
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" id="closeIncubateeModalBottom">Cancel</button>
-          <button type="submit" class="btn-save">Save</button>
-        </div>
-      </form>
-    </div>
   </div>
 
   <!-- Orders Modal -->
-  <div id="ordersModal" class="modal">
+  <div id="ordersModal" class="orders-modal">
     <div class="modal-content large-modal">
       <div class="modal-header">
         <h2>📋 Order Reservations</h2>
@@ -127,8 +82,9 @@
       </div>
     </div>
   </div>
+
   <!-- Sales Report Modal -->
-  <div id="salesReportModal" class="modal">
+  <div id="salesReportModal" class="sales-report-modal">
     <div class="modal-content large-modal">
       <div class="modal-header">
         <h2>📊 Sales Report</h2>
@@ -189,7 +145,7 @@
       </div>
     </div>
   </div>
-
+  
   <div class="container">
     <!-- LEFT: Entry Form -->
     <div class="card-incubatee">
@@ -203,9 +159,6 @@
             <option value="" disabled selected>Select Category</option>
             <option value="Agri-Aqua Business">Agri-Aqua Business</option>
             <option value="Food Processing Technology">Food Processing Technology</option>
-            <option value="Industrial and Engineering">Industrial and Engineering</option>
-            <option value="ICT Solution">ICT Solution</option>
-            <option value="Food Technology">Food Technology</option>
           </select>
         </div>
         <div class="form-group incubatee-search-container">
@@ -237,6 +190,18 @@
           <label for="price_per_stocks">Price per Stock (₱) <span class="required-star">*</span></label>
           <input type="number" step="0.01" id="price_per_stocks" name="price_per_stocks" placeholder="Enter price" required>
         </div>
+        <!-- Add this form group after the price_per_stocks field -->
+        <div class="form-group">
+          <label for="pricing_unit">Pricing Unit <span class="required-star">*</span></label>
+          <div class="pricing-unit-search-container">
+            <input type="text" id="pricing_unit_search" placeholder="Search pricing unit..." autocomplete="off">
+            <div id="pricingUnitDropdown" class="dropdown hidden"></div>
+          </div>
+          <input type="hidden" id="pricing_unit" name="pricing_unit_id" required>
+          <button type="button" class="btn-add-unit" id="addPricingUnitBtn" style="margin-top: 5px; padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            + Add New Pricing Unit
+          </button>
+        </div>
         <div class="form-group">
           <label for="details">Product Description <span class="required-star">*</span></label>
           <textarea id="details" name="details" rows="3" placeholder="Enter product details" required></textarea>
@@ -262,29 +227,28 @@
       </form>
     </div>
 
-    <!-- RIGHT: Product List -->
-    <div class="card">
-      <div class="filter-bar">
-        <label for="categoryFilter">Filter by Category:</label>
-        <select id="categoryFilter" class="filter-select">
-          <option value="all" selected>All Categories</option>
-          <option value="Agri-Aqua Business">Agri-Aqua Business</option>
-          <option value="Food Processing Technology">Food Processing Technology</option>
-          <option value="Industrial and Engineering">Industrial and Engineering</option>
-          <option value="ICT Solution">ICT Solution</option>
-          <option value="Food Technology">Food Technology</option>
-        </select>
-      </div>
+  <!-- RIGHT: Product List -->
+  <div class="card">
+    <div class="filter-bar">
+      <label for="categoryFilter">Filter by Category:</label>
+      <select id="categoryFilter" class="filter-select">
+        <option value="all" selected>All Categories</option>
+        <option value="Agri-Aqua Business">Agri-Aqua Business</option>
+        <option value="Food Processing Technology">Food Processing Technology</option>
+      </select>
+    </div>
 
-      <h2>Incubatee Product List</h2>
+    <h2>Incubatee Product List</h2>
+    <div class="table-container">
       <table>
         <thead>
           <tr>
             <th>Incubatee</th>
             <th>Stock No</th>
-            <th>Service</th>
+            <th>Product Name</th>
             <th>Stock</th>
             <th>Price</th>
+            <th>Unit</th>
             <th>Image</th>
             <th>Expiration</th>
             <th>Warranty</th>
@@ -293,10 +257,12 @@
           </tr>
         </thead>
         <tbody id="product-list">
+          <!-- Products will be populated here by JavaScript -->
         </tbody>
       </table>
     </div>
   </div>
+
   <!-- Floating Logout Confirmation -->
   <div id="logout-modal" class="logout-modal hidden">
     <div class="logout-content">
@@ -306,6 +272,132 @@
         <button id="cancel-logout">Cancel</button>
       </div>
     </div>
+  </div>
+  
+  <!-- Edit Product Modal -->
+  <div id="editProductModal" class="editproduct-modal">
+    <div class="editproduct-modal-content large-modal">
+      <div class="editproduct-modal-header">
+        <h2>✏️ Edit Product</h2>
+        <button class="close-btn" id="closeEditProductModalTop">&times;</button>
+      </div>
+      
+      <form id="editProductForm" enctype="multipart/form-data">
+        <input type="hidden" id="edit_product_id" name="product_id">
+        
+        <div class="form-group">
+          <label for="edit_name">Product Name <span class="required-star">*</span></label>
+          <input type="text" id="edit_name" name="name" placeholder="Enter product name" required>
+        </div>
+
+        <div class="form-group">
+          <label for="edit_stock_no">Stock Number <span class="required-star">*</span></label>
+          <input type="text" id="edit_stock_no" name="stock_no" placeholder="Only numbers and dash (-)" required>
+        </div>
+
+        <div class="form-group">
+          <label for="edit_products">Offered Services <span class="required-star">*</span></label>
+          <input type="text" id="edit_products" name="products" placeholder="Letters only" required>
+        </div>
+
+        <div class="form-group">
+          <label for="edit_stock_amount">Stock Amount <span class="required-star">*</span></label>
+          <input type="number" id="edit_stock_amount" name="stock_amount" placeholder="Enter stock amount" required>
+        </div>
+
+        <div class="form-group">
+          <label for="edit_price_per_stocks">Price per Stock (₱) <span class="required-star">*</span></label>
+          <input type="number" step="0.01" id="edit_price_per_stocks" name="price_per_stocks" placeholder="Enter price" required>
+        </div>
+
+        <div class="form-group">
+          <label for="edit_pricing_unit">Pricing Unit <span class="required-star">*</span></label>
+          <select id="edit_pricing_unit" name="pricing_unit_id" class="form-control" required>
+            <option value="">Select Pricing Unit</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="edit_details">Product Description <span class="required-star">*</span></label>
+          <textarea id="edit_details" name="details" rows="3" placeholder="Enter product details" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="edit_category">Category <span class="required-star">*</span></label>
+          <select id="edit_category" name="category" class="form-control" required>
+            <option value="">Select Category</option>
+            <option value="Agri-Aqua Business">Agri-Aqua Business</option>
+            <option value="Food Processing Technology">Food Processing Technology</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="edit_product_image">Product Image</label>
+          <input type="file" id="edit_product_image" name="product_image" accept="image/*">
+          <div id="edit_image_preview" style="margin-top:10px;">
+            <img id="edit_preview_img" src="" alt="Preview" style="max-width:150px; display:none; border:1px solid #ccc; padding:5px; border-radius:6px;">
+            <div id="edit_current_image" style="margin-top: 5px;"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="edit_expiration_date">Expiration Date</label>
+          <input type="date" id="edit_expiration_date" name="expiration_date">
+        </div>
+
+        <div class="form-group">
+          <label for="edit_warranty">Warranty</label>
+          <input type="text" id="edit_warranty" name="warranty" placeholder="e.g., 6 months, 1 year, or none">
+        </div>
+
+        <div class="editproduct-modal-actions">
+          <button type="button" class="btn-cancel" id="closeEditProductModalBottom">Cancel</button>
+          <button type="submit" class="btn-save">Update Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Pricing Unit Modal -->
+  <div id="pricingUnitModal" class="add-pricing-modal">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h2>Add New Pricing Unit</h2>
+              <button class="close-btn" id="closePricingUnitModal">&times;</button>
+          </div>
+          
+          <form id="pricingUnitForm">
+              <div class="form-group">
+                  <label for="unit_name">Unit Name <span class="required-star">*</span></label>
+                  <input type="text" id="unit_name" name="unit_name" placeholder="e.g., Per Kilo, Per Item, Per Package" required>
+              </div>
+              
+              <div class="form-group">
+                  <label for="unit_description">Description (Optional)</label>
+                  <textarea id="unit_description" name="unit_description" rows="3" placeholder="Brief description of the unit"></textarea>
+              </div>
+              
+              <div class="modal-actions">
+                  <button type="button" class="btn-cancel" id="closePricingUnitModalBottom">Cancel</button>
+                  <button type="submit" class="btn-save">Save Unit</button>
+              </div>
+          </form>
+      </div>
+  </div>
+
+  <!-- Modern Confirmation Modal -->
+  <div id="confirmationModal" class="confirmation-modal">
+      <div class="confirmation-content">
+          <div class="confirmation-icon">🎁</div>
+          <h3 class="confirmation-title">Complete Reservation</h3>
+          <p class="confirmation-message" id="confirmationMessage">
+              Are you sure you want to mark this order as completed/picked up?
+          </p>
+          <div class="confirmation-actions">
+              <button class="cancel-btn" id="confirmCancel">Cancel</button>
+              <button class="confirm-btn" id="confirmAction">Yes, Complete</button>
+          </div>
+      </div>
   </div>
 
   <!-- Include the external JavaScript file -->

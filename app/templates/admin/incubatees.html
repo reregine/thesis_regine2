@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incubatee Management - ATBI Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/incubate.css') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/agrilogo.png') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="header">
+        <h1>🏢 Incubatee Management</h1>
+        <div class="header-actions">
+            <a href="{{ url_for('admin.admin_dashboard') }}" class="btn-back">← Back to Dashboard</a>
+            <a href="{{ url_for('admin.admin_profile') }}" class="profile-btn">
+                <span class="icon">👤</span> Profile
+            </a>
+            <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2>Incubatees List</h2>
+                <div class="card-actions">
+                    <button class="btn-refresh" onclick="loadIncubatees()">🔄 Refresh</button>
+                    <button class="btn-add" onclick="openAddIncubateeModal()">➕ Add Incubatee</button>
+                    <div class="search-box">
+                        <input type="text" id="incubateeSearch" placeholder="Search incubatees..." onkeyup="filterIncubatees()">
+                        <span class="search-icon">🔍</span>
+                    </div>
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" onclick="setIncubateeFilter('all')">All</button>
+                        <button class="filter-tab" onclick="setIncubateeFilter('approved')">Approved</button>
+                        <button class="filter-tab" onclick="setIncubateeFilter('pending')">Pending</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-summary">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalIncubatees">0</div>
+                    <div class="stat-label">Total Incubatees</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value approved" id="approvedIncubatees">0</div>
+                    <div class="stat-label">Approved</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value pending" id="pendingIncubatees">0</div>
+                    <div class="stat-label">Pending Approval</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalProducts">0</div>
+                    <div class="stat-label">Total Products</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value revenue">₱0.00</div>
+                    <div class="stat-label">Total Revenue</div>
+                </div>
+            </div>
+
+            <div class="incubatees-container" id="incubatees-container">
+                <div class="loading-state">Loading incubatees...</div>
+            </div>
+        </div>
+
+        <!-- Incubatee Details Modal -->
+        <div id="incubateeDetailsModal" class="modal">
+            <div class="modal-content large-modal">
+                <div class="modal-header">
+                    <h2>Incubatee Details</h2>
+                    <button class="close-btn" onclick="closeIncubateeModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="incubateeDetailsContent">
+                        <!-- Incubatee details will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeIncubateeModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Edit Incubatee Modal -->
+    <div id="editIncubateeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Incubatee</h2>
+                <button class="close-btn" onclick="closeEditIncubateeModal()">&times;</button>
+            </div>
+            <form id="editIncubateeForm" enctype="multipart/form-data">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>First Name *</label>
+                        <input type="text" id="edit_first_name" name="first_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name *</label>
+                        <input type="text" id="edit_last_name" name="last_name" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Middle Name</label>
+                    <input type="text" id="edit_middle_name" name="middle_name">
+                </div>
+                
+                <div class="form-group">
+                    <label>Company Name</label>
+                    <input type="text" id="edit_company_name" name="company_name">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="edit_email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="text" id="edit_phone_number" name="phone_number">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Website</label>
+                    <input type="url" id="edit_website" name="website" placeholder="https://example.com">
+                </div>
+                
+                <div class="form-group">
+                    <label>Contact Info</label>
+                    <textarea id="edit_contact_info" name="contact_info" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Batch</label>
+                    <input type="number" id="edit_batch" name="batch">
+                </div>
+                
+                <!-- Logo Upload Section -->
+                <div class="form-group">
+                    <label>Company Logo</label>
+                    <div class="logo-upload-section">
+                        <div id="edit_logo_preview" class="logo-preview">
+                            <!-- Current logo will be displayed here -->
+                        </div>
+                        <input type="file" id="edit_company_logo" name="company_logo" 
+                            accept="image/*" onchange="handleEditLogoPreview(event)">
+                        <div id="edit_new_logo_container" style="margin-top: 10px;">
+                            <img id="edit_new_logo_preview" src="" alt="New Logo Preview" 
+                                style="max-width: 150px; max-height: 150px; display: none; border: 1px solid #ccc; padding: 5px; border-radius: 6px;">
+                        </div>
+                        <small class="file-hint">Supported formats: JPG, PNG, GIF, SVG. Max size: 5MB</small>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="edit_is_approved" name="is_approved">
+                        Approve incubatee
+                    </label>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeEditIncubateeModal()">Cancel</button>
+                    <button type="submit" class="btn-save">Update Incubatee</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Incubatee Modal (with logo upload) -->
+    <div id="incubateeModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Add New Incubatee</h2>
+            <button class="close-btn" id="closeIncubateeModalTop">&times;</button>
+          </div>
+    
+          <form id="incubateeAddForm" enctype="multipart/form-data">
+            <div class="form-group">
+              <label>First Name <span class="required-star">*</span></label>
+              <input type="text" id="first_name" name="first_name" required>
+            </div>
+    
+            <div class="form-group">
+              <label>Middle Name</label>
+              <input type="text" id="middle_name" name="middle_name">
+            </div>
+    
+            <div class="form-group">
+              <label>Last Name <span class="required-star">*</span></label>
+              <input type="text" id="last_name" name="last_name" required>
+            </div>
+    
+            <div class="form-group">
+              <label>Company Name</label>
+              <input type="text" id="company_name" name="company_name">
+            </div>
+    
+            <div class="form-group">
+              <label>Company Website</label>
+              <input type="url" id="website" name="website" placeholder="https://incubatee.com">
+            </div>
+    
+            <div class="form-group">
+                <label>Company Logo</label>
+                <div class="file-upload-container">
+                    <input type="file" id="company_logo" name="company_logo" accept="image/*" class="file-input">
+                    <label for="company_logo" class="file-upload-label">
+                        <div class="file-upload-content">
+                            <div class="file-upload-icon">📁</div>
+                            <div class="file-upload-text">
+                                <span class="file-upload-title">Choose Company Logo</span>
+                                <span class="file-upload-subtitle">PNG, JPG, GIF, SVG up to 5MB</span>
+                            </div>
+                        </div>
+                    </label>
+                    <div id="logo-preview" class="logo-preview-container">
+                        <img id="preview-logo" src="" alt="Logo Preview" class="logo-preview-image">
+                    </div>
+                </div>
+            </div>
+    
+            <div class="form-group">
+              <label>Email <span class="required-star">*</span></label>
+              <input type="email" id="email" name="email" required>
+            </div>
+    
+            <div class="form-group">
+              <label>Phone Number</label>
+              <input type="text" id="phone_number" name="phone_number">
+            </div>
+    
+            <div class="form-group">
+              <label>Contact Info</label>
+              <textarea id="contact_info" name="contact_info" rows="2"></textarea>
+            </div>
+    
+            <div class="form-group">
+              <label>Batch</label>
+              <input type="number" id="batch" name="batch">
+            </div>
+    
+            <div class="modal-actions">
+              <button type="button" class="btn-cancel" id="closeIncubateeModalBottom">Cancel</button>
+              <button type="submit" class="btn-save">Save</button>
+            </div>
+          </form>
+        </div>
+    </div>
+
+    <!-- Hidden image for current logo -->
+    <img id="edit_current_logo" src="" alt="Current Logo" style="max-width: 150px; max-height: 150px; display: none; border: 1px solid #ccc; padding: 5px; border-radius: 6px;">
+    <script src="{{ url_for('static', filename='js/incubatee.js') }}"></script>
+</body>
+</html>

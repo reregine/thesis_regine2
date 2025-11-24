@@ -22,8 +22,8 @@
           <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
           <li><a href="{{ url_for('shop.shop_home') }}" class="nav-link">SHOP</a></li>
           <li><a href="{{ url_for('incubatee_showroom.incubatee_showroom') }}" class="nav-link">INCUBATES</a></li>
-          <li><a href="{{ url_for('about.about_page')}}" class="nav-link">ABOUT</a></li>
-          <li><a href="{{ url_for('contact.contact_page')}}" class="nav-link">CONTACTS</a></li>
+          <li><a href="{{ url_for('about.about_page') }}" class="nav-link">ABOUT</a></li>
+          <li><a href="{{ url_for('contact.contact_page') }}" class="nav-link">CONTACTS</a></li>
           <li><a href="#" id="openCartBtn" class="nav-link cart-btn">🛒<span id="cartCountBadge" class="cart-count-badge">0</span></a></li>
           <!-- Dynamic Login/Logout Button -->
           {% if user_logged_in or admin_logged_in %}

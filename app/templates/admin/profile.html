@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Profile - ATBI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="header">
+        <h1>👤 Admin Profile</h1>
+        <div class="header-actions">
+            <a href="{{ url_for('admin.admin_dashboard') }}" class="btn-back">← Back to Dashboard</a>
+            <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Profile Information</h2>
+            <form id="profileForm">
+                <div class="form-group">
+                    <input type="text" id="username" value="{{ admin_profile.username if admin_profile else session.get('admin_username') }}" readonly placeholder=" ">
+                    <label for="username">Username</label>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="full_name" value="{{ admin_profile.full_name if admin_profile else '' }}" required placeholder=" ">
+                    <label for="full_name">Full Name</label>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="email" value="{{ admin_profile.email if admin_profile else '' }}" required placeholder=" ">
+                    <label for="email">Email</label>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="phone" value="{{ admin_profile.phone if admin_profile else '' }}" placeholder=" ">
+                    <label for="phone">Phone</label>
+                </div>
+                <button type="submit" class="btn">
+                    <span class="btn-text">Update Profile</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+    <script>
+        document.getElementById('profileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = this.querySelector('.btn');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const originalText = btnText.textContent;
+            
+            // Add loading state
+            submitBtn.classList.add('loading');
+            btnText.textContent = 'Updating...';
+            
+            const formData = {
+                full_name: document.getElementById('full_name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value
+            };
+            
+            try {
+                const response = await fetch('/admin/update-profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Show success state
+                    submitBtn.style.background = 'linear-gradient(135deg, var(--secondary), #059669)';
+                    btnText.textContent = '✅ Updated!';
+                    
+                    setTimeout(() => {
+                        submitBtn.style.background = '';
+                        btnText.textContent = originalText;
+                        submitBtn.classList.remove('loading');
+                    }, 2000);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                // Show error state
+                submitBtn.style.background = 'linear-gradient(135deg, var(--danger), #dc2626)';
+                btnText.textContent = '❌ Failed!';
+                
+                setTimeout(() => {
+                    submitBtn.style.background = '';
+                    btnText.textContent = originalText;
+                    submitBtn.classList.remove('loading');
+                }, 2000);
+            }
+        });
+
+        // Add floating label functionality
+        document.querySelectorAll('.form-group input').forEach(input => {
+            if (input.value) {
+                input.parentElement.classList.add('filled');
+            }
+            
+            input.addEventListener('input', function() {
+                this.parentElement.classList.toggle('filled', this.value !== '');
+            });
+        });
+    </script>
+</body>
+</html>

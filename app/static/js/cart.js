@@ -103,6 +103,390 @@ if (typeof window.notification === 'undefined') {
 let quantityUpdateTimeout = null;
 const DEBOUNCE_DELAY = 800; // Wait 800ms after user stops clicking
 
+// 🟢 GLOBAL HELPER FUNCTIONS - MOVED OUTSIDE OF attachCartScripts
+window.getUserId = function() {
+    // Try sessionStorage first
+    let userId = sessionStorage.getItem('user_id');
+    
+    if (!userId) {
+        // Try to get from the page if available
+        const userDataElement = document.querySelector('[data-user-id]');
+        if (userDataElement) {
+            userId = userDataElement.getAttribute('data-user-id');
+            if (userId) {
+                sessionStorage.setItem('user_id', userId);
+            }
+        }
+    }
+    
+    return userId || ''; // Return empty string if not found, don't fetch here
+}
+
+// 🟢 GLOBAL: Fetch user info from server
+window.fetchUserInfo = async function() {
+    try {
+        const res = await fetch("/login/status");
+        if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.user_id) {
+                sessionStorage.setItem("user_id", data.user_id);
+                sessionStorage.setItem("username", data.username || "");
+                console.log("User ID fetched from server:", data.user_id);
+                return data.user_id;
+            }
+        }
+    } catch (err) {
+        console.error("Error fetching user info:", err);
+    }
+    return null;
+}
+
+// 🟢 GLOBAL: Load reservation counts for all status tabs
+window.loadReservationCounts = async function(container) {
+    try {
+        const userId = window.getUserId();
+        if (!userId) {
+            console.error("User ID not found");
+            return { pending: 0, approved: 0, completed: 0, rejected: 0 };
+        }
+        
+        const res = await fetch("/reservations/user/" + userId);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        if (data.success) {
+            const reservations = data.reservations || [];
+            
+            // Count reservations by status
+            const counts = {
+                pending: 0,
+                approved: 0,
+                completed: 0,
+                rejected: 0
+            };
+            
+            reservations.forEach(reservation => {
+                if (counts.hasOwnProperty(reservation.status)) {
+                    counts[reservation.status]++;
+                }
+            });
+            
+            // Update tab counts in the UI
+            Object.keys(counts).forEach(status => {
+                const tab = container.querySelector(`.status-tab[data-tab="${status}"]`);
+                if (tab) {
+                    const badge = tab.querySelector('.tab-count');
+                    if (badge) {
+                        badge.textContent = counts[status];
+                        // Show/hide badge based on count
+                        if (counts[status] > 0) {
+                            badge.style.display = 'inline-flex';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    }
+                }
+            });
+            
+            console.log("Reservation counts updated:", counts);
+            return counts;
+        } else {
+            console.error("Failed to load reservations:", data.message);
+            return { pending: 0, approved: 0, completed: 0, rejected: 0 };
+        }
+    } catch (err) {
+        console.error("❌ Error loading reservation counts:", err);
+        return { pending: 0, approved: 0, completed: 0, rejected: 0 };
+    }
+};
+
+// 🟢 GLOBAL: Enhanced loadReservationsByStatus with real-time data
+window.loadReservationsByStatus = async function(status, container) {
+    const dynamicContent = container.querySelector("#dynamicContent");
+    if (!dynamicContent) return;
+
+    try {
+        dynamicContent.innerHTML = `
+            <div style="text-align:center;padding:40px 20px;color:#666;">
+                <div style="font-size:32px;margin-bottom:12px;">⏳</div>
+                <p>Loading ${status} reservations...</p>
+            </div>
+        `;
+
+        console.log("Loading reservations for status:", status);
+        
+        const res = await fetch(`/reservations/status/${status}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        
+        if (data.success) {
+            const reservations = data.reservations || [];
+            console.log(`Found ${reservations.length} ${status} reservations`);
+            
+            if (reservations.length === 0) {
+                dynamicContent.innerHTML = `
+                <div class="empty-status">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076505.png" alt="No ${status} reservations">
+                    <p>No ${status} reservations</p>
+                    <small>
+                        ${status === 'pending' ? 'Reservations waiting for approval will appear here' : 
+                            status === 'approved' ? 'Approved reservations ready for pickup/delivery' :
+                            status === 'completed' ? 'Completed reservations history' :
+                            'Rejected reservations with reasons'}
+                    </small>
+                </div>`;
+            } else {
+                dynamicContent.innerHTML = reservations.map(reservation => {
+                    // FIXED: Proper image path handling
+                    let imagePath = reservation.image_path;
+                    
+                    if (imagePath) {
+                        // Handle Windows absolute path
+                        if (imagePath.includes('\\')) {
+                            const parts = imagePath.split('\\');
+                            const filename = parts[parts.length - 1];
+                            imagePath = `/static/uploads/${filename}`;
+                        } else if (imagePath.includes('/')) {
+                            const parts = imagePath.split('/');
+                            const filename = parts[parts.length - 1];
+                            imagePath = `/static/uploads/${filename}`;
+                        } else {
+                            imagePath = `/static/uploads/${imagePath}`;
+                        }
+                    } else {
+                        imagePath = 'https://cdn-icons-png.flaticon.com/512/4076/4076505.png';
+                    }
+                    
+                    // Format date
+                    const reservedDate = new Date(reservation.reserved_at);
+                    const formattedDate = new Intl.DateTimeFormat('en-US', {
+                        timeZone: 'Asia/Manila',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        hour12: true
+                    }).format(reservedDate);
+                    
+                    // Inside the reservation mapping in loadReservationsByStatus function
+                    return `
+                    <div class="reservation-item" data-reservation-id="${reservation.reservation_id}">
+                        <img src="${imagePath}" alt="${reservation.product_name}" 
+                            onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/512/4076/4076505.png'">
+                        <div class="reservation-info">
+                            <div class="reservation-name">${reservation.product_name}</div>
+                            <div class="reservation-price">₱${reservation.price_per_stocks.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                            
+                            <div class="reservation-meta">
+                                <div class="reservation-quantity">Quantity: ${reservation.quantity}</div>
+                                <div class="reservation-date">Reserved: ${formattedDate}</div>
+                                ${reservation.pending_info ? `
+                                <div class="pending-timer" style="color: #f59e0b; font-size: 12px; margin-top: 4px;">
+                                    ⏰ Approving in ${Math.ceil(reservation.pending_info.time_remaining_minutes)} minutes
+                                </div>
+                                ` : ''}
+                            </div>
+                            
+                            <div class="status-section">
+                                <div class="status-badge status-${reservation.status}">
+                                    ${reservation.status.toUpperCase()}
+                                </div>
+                                ${reservation.status === 'pending' ? `
+                                <div class="reservation-actions">
+                                    <button class="action-btn secondary" 
+                                            onclick="cancelReservation(${reservation.reservation_id}, '${reservation.product_name.replace(/'/g, "\\'")}')">
+                                        Cancel
+                                    </button>
+                                </div>
+                                ` : ''}
+                            </div>
+                            
+                            ${reservation.rejected_reason ? `
+                            <div class="rejection-reason">
+                                ${reservation.rejected_reason}
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    `;
+                }).join("");
+            }
+        } else {
+            dynamicContent.innerHTML = `
+                <div style="text-align:center;padding:40px 20px;color:#d32f2f;">
+                    <div style="font-size:32px;margin-bottom:12px;">❌</div>
+                    <p>${data.message || "Failed to load reservations."}</p>
+                </div>`;
+        }
+    } catch (err) {
+        console.error(`❌ Error loading ${status} reservations:`, err);
+        dynamicContent.innerHTML = `
+            <div style="text-align:center;padding:40px 20px;color:#d32f2f;">
+                <div style="font-size:32px;margin-bottom:12px;">⚠️</div>
+                <p>Server error while loading ${status} reservations.</p>
+            </div>`;
+    }
+};
+
+// 🟢 GLOBAL: Initialize status tabs with auto-loading
+window.initializeStatusTabs = async function(container) {
+    const tabs = container.querySelectorAll(".status-tab");
+    
+    // FIX: Ensure user ID is available before loading counts
+    let userId = window.getUserId();
+    if (!userId) {
+        userId = await window.fetchUserInfo();
+    }
+    
+    // Load reservation counts and auto-show pending tab
+    await window.loadReservationCounts(container);
+    
+    // AUTO-SHOW PENDING TAB IF THERE ARE PENDING RESERVATIONS
+    const pendingTab = container.querySelector('.status-tab[data-tab="pending"]');
+    const pendingCount = pendingTab ? parseInt(pendingTab.querySelector('.tab-count').textContent) || 0 : 0;
+    
+    if (pendingCount > 0) {
+        // Switch to pending tab automatically
+        tabs.forEach(t => t.classList.remove("active"));
+        pendingTab.classList.add("active");
+        await window.loadReservationsByStatus("pending", container);
+    }
+    
+    tabs.forEach((tab) => {
+        tab.addEventListener("click", async () => {
+            tabs.forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+            const tabName = tab.dataset.tab;
+            
+            if (tabName === "cart") {
+                loadCartItems(container);
+            } else {
+                await window.loadReservationsByStatus(tabName, container);
+            }
+        });
+    });
+}
+    // Modern confirmation dialog for cancel reservation
+    window.cancelReservation = async function(reservationId, productName = 'this product') {
+        return new Promise((resolve) => {
+            const dialogOverlay = document.createElement('div');
+            dialogOverlay.className = 'confirm-dialog-overlay';
+            dialogOverlay.innerHTML = `
+                <div class="confirm-dialog">
+                    <div class="confirm-dialog-icon">⚠️</div>
+                    <div class="confirm-dialog-title">Cancel Reservation?</div>
+                    <div class="confirm-dialog-message">
+                        Are you sure you want to cancel the reservation for <strong>${productName}</strong>? 
+                        This item will be returned to your cart.
+                    </div>
+                    <div class="confirm-dialog-buttons">
+                        <button class="confirm-btn no">Keep Reserved</button>
+                        <button class="confirm-btn yes">Yes, Cancel</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(dialogOverlay);
+
+            setTimeout(() => {
+                dialogOverlay.classList.add('show');
+                dialogOverlay.querySelector('.confirm-dialog').classList.add('show');
+            }, 10);
+
+            const noBtn = dialogOverlay.querySelector('.confirm-btn.no');
+            const yesBtn = dialogOverlay.querySelector('.confirm-btn.yes');
+
+            const closeDialog = async (confirmed) => {
+                dialogOverlay.classList.remove('show');
+                dialogOverlay.querySelector('.confirm-dialog').classList.remove('show');
+                
+                setTimeout(() => {
+                    if (dialogOverlay.parentElement) {
+                        dialogOverlay.remove();
+                    }
+                }, 300);
+
+                if (confirmed) {
+                    try {
+                        const response = await fetch(`/cart/cancel-reservation/${reservationId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        });
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            window.notification.success("Reservation canceled! Item returned to cart.", 4000);
+                            
+                            // Enhanced refresh: reload both counts and current tab
+                            const container = document.querySelector('.cart-sidebar') || document.querySelector('#cartContent');
+                            if (container) {
+                                // Reload reservation counts
+                                await window.loadReservationCounts(container);
+                                
+                                // Get current active tab and reload it
+                                const activeTab = container.querySelector('.status-tab.active');
+                                const currentTab = activeTab ? activeTab.dataset.tab : 'pending';
+                                await window.loadReservationsByStatus(currentTab, container);
+                                
+                                console.log("Reservation canceled, refreshed:", currentTab);
+                            }
+                        } else {
+                            window.notification.error(data.message || "Failed to cancel reservation", 4000);
+                        }
+                    } catch (error) {
+                        console.error('Error canceling reservation:', error);
+                        window.notification.error("Error canceling reservation. Please try again.", 4000);
+                    }
+                }
+                
+                resolve(confirmed);
+            };
+
+            noBtn.addEventListener('click', () => closeDialog(false));
+            yesBtn.addEventListener('click', () => closeDialog(true));
+
+            dialogOverlay.addEventListener('click', (e) => {
+                if (e.target === dialogOverlay) {
+                    closeDialog(false);
+                }
+            });
+
+            const escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    closeDialog(false);
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
+        });
+    };
+// 🟢 GLOBAL: Function to simulate admin approval (for testing)
+window.simulateAdminApproval = async function(reservationId) {
+    try {
+        console.log("Simulating admin approval for reservation:", reservationId);
+        
+        // This would be called by your admin system
+        const success = await window.updateReservationStatus(reservationId, 'approved');
+        
+        if (success) {
+            window.notification.success("Reservation approved successfully!", 4000);
+            
+            // Refresh the status section to show the change
+            await window.refreshStatusSection();
+        } else {
+            window.notification.error("Failed to approve reservation", 4000);
+        }
+    } catch (error) {
+        console.error('Error simulating approval:', error);
+        window.notification.error("Error approving reservation", 4000);
+    }
+};
+
 document.addEventListener("DOMContentLoaded", () => {
     const openCartBtn = document.getElementById("openCartBtn");
     const cartModal = document.getElementById("cartModal");
@@ -162,7 +546,7 @@ function attachCartScripts(container) {
     // IMMEDIATELY LOAD CART ITEMS WHEN CART OPENS
     loadCartItems(container);
     // Status Tabs - Load reservation counts and set up click events
-    initializeStatusTabs(container);
+    window.initializeStatusTabs(container);
 
     // FIXED: Load cart items function - SINGLE DEFINITION
     async function loadCartItems(container) {
@@ -212,245 +596,55 @@ function attachCartScripts(container) {
         }
     }
 
-    // UPDATED: Initialize status tabs with auto-loading
-    async function initializeStatusTabs(container) {
-        const tabs = container.querySelectorAll(".status-tab");
-        
-        // FIX: Ensure user ID is available before loading counts
-        let userId = getUserId();
-        if (!userId) {
-            userId = await fetchUserInfo();
-        }
-        
-        // Load reservation counts and auto-show pending tab
-        await loadReservationCounts(container);
-        
-        // AUTO-SHOW PENDING TAB IF THERE ARE PENDING RESERVATIONS
-        const pendingTab = container.querySelector('.status-tab[data-tab="pending"]');
-        const pendingCount = pendingTab ? parseInt(pendingTab.querySelector('.tab-count').textContent) || 0 : 0;
-        
-        if (pendingCount > 0) {
-            // Switch to pending tab automatically
-            tabs.forEach(t => t.classList.remove("active"));
-            pendingTab.classList.add("active");
-            await loadReservationsByStatus("pending", container);
-        }
-        
-        tabs.forEach((tab) => {
-            tab.addEventListener("click", async () => {
-                tabs.forEach((t) => t.classList.remove("active"));
-                tab.classList.add("active");
-                const tabName = tab.dataset.tab;
-                
-                if (tabName === "cart") {
-                    loadCartItems(container);
-                } else {
-                    await loadReservationsByStatus(tabName, container);
-                }
-            });
-        });
-    }
-
-    // NEW: Load reservation counts for all status tabs
-    async function loadReservationCounts(container) {
-        try {
-            const userId = getUserId();
-            if (!userId) {
-                console.error("User ID not found");
-                return;
-            }
-            
-            const res = await fetch("/reservations/user/" + userId);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-            const data = await res.json();
-            if (data.success) {
-                const reservations = data.reservations || [];
-                
-                // Count reservations by status
-                const counts = {
-                    pending: 0,
-                    approved: 0,
-                    completed: 0,
-                    rejected: 0
-                };
-                
-                reservations.forEach(reservation => {
-                    if (counts.hasOwnProperty(reservation.status)) {
-                        counts[reservation.status]++;
-                    }
-                });
-                
-                // Update tab counts
-                Object.keys(counts).forEach(status => {
-                    const badge = container.querySelector(`.status-tab[data-tab="${status}"] .tab-count`);
-                    if (badge) {
-                        badge.textContent = counts[status];
-                    }
-                });
-                
-                return counts; // Return counts for auto-display logic
-            }
-        } catch (err) {
-            console.error("❌ Error loading reservation counts:", err);
-            return { pending: 0, approved: 0, completed: 0, rejected: 0 };
-        }
-    }
-
-    async function loadReservationsByStatus(status, container) {
-        const dynamicContent = container.querySelector("#dynamicContent");
-        if (!dynamicContent) return;
-
-        try {
-            dynamicContent.innerHTML = `
-                <div style="text-align:center;padding:60px 20px;color:#666;">
-                    <div style="font-size:48px;margin-bottom:16px;">⏳</div>
-                    <p>Loading ${status} reservations...</p>
-                </div>
-            `;
-
-            const res = await fetch(`/reservations/status/${status}`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-            const data = await res.json();
-            
-            if (data.success) {
-                const reservations = data.reservations || [];
-                
-                if (reservations.length === 0) {
-                    dynamicContent.innerHTML = `
-                    <div class="empty-status">
-                        <img src="https://cdn-icons-png.flaticon.com/512/4076/4076505.png" alt="No ${status} reservations">
-                        <p>No ${status} reservations</p>
-                        <small>
-                            ${status === 'pending' ? 'Reservations waiting for approval will appear here' : 
-                                status === 'approved' ? 'Approved reservations ready for pickup/delivery' :
-                                status === 'completed' ? 'Completed reservations history' :
-                                'Rejected reservations with reasons'}
-                        </small>
-                    </div>`;
-                } else {
-                    dynamicContent.innerHTML = reservations.map(reservation => {
-                        // Clean up image path
-                        let imagePath = reservation.image_path;
-                        if (imagePath && imagePath.includes('static/uploads/static/uploads/')) {
-                            imagePath = imagePath.replace('static/uploads/static/uploads/', 'static/uploads/');
-                        }
-                        
-                        // FIXED: Using Intl.DateTimeFormat with Asia/Manila timezone
-                        const reservedDate = new Date(reservation.reserved_at);
-                        const formattedDate = new Intl.DateTimeFormat('en-US', {timeZone: 'Asia/Manila',year: 'numeric',month: 'short',day: 'numeric',hour: '2-digit', minute: '2-digit',hour12: true}).format(reservedDate);
-                        
-                        return `
-                        <div class="reservation-item">
-                            <img src="${imagePath}" alt="${reservation.product_name}" 
-                                onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/512/4076/4076505.png'">
-                            <div class="reservation-info">
-                                <div class="reservation-name">${reservation.product_name}</div>
-                                <div class="reservation-price">₱${reservation.price_per_stocks.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
-                                
-                                <div class="reservation-meta">
-                                    <div class="reservation-quantity">Quantity: ${reservation.quantity}</div>
-                                    <div class="reservation-date">Reserved: ${formattedDate}</div>
-                                </div>
-                                
-                                <div class="status-section">
-                                    <div class="status-badge status-${reservation.status}">
-                                        ${reservation.status.toUpperCase()}
-                                    </div>
-                                ${reservation.status === 'pending' ? `
-                                <div class="reservation-actions">
-                                    <button class="action-btn secondary" 
-                                            onclick="cancelReservation(${reservation.reservation_id}, '${reservation.product_name.replace(/'/g, "\\'")}')">
-                                        Cancel
-                                    </button>
-                                </div>
-                                ` : ''}
-                                </div>
-                                
-                                ${reservation.rejected_reason ? `
-                                <div class="rejection-reason">
-                                    ${reservation.rejected_reason}
-                                </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                        `;
-                    }).join("");
-                }
-            } else {
-                dynamicContent.innerHTML = `
-                    <div style="text-align:center;padding:60px 20px;color:#d32f2f;">
-                        <div style="font-size:48px;margin-bottom:16px;">❌</div>
-                        <p>${data.message || "Failed to load reservations."}</p>
-                    </div>`;
-            }
-        } catch (err) {
-            console.error(`❌ Error loading ${status} reservations:`, err);
-            dynamicContent.innerHTML = `
-                <div style="text-align:center;padding:60px 20px;color:#d32f2f;">
-                    <div style="font-size:48px;margin-bottom:16px;">⚠️</div>
-                    <p>Server error while loading ${status} reservations.</p>
-                </div>`;
-        }
-    }
-
+    //global refresh function
     window.refreshStatusSection = async function() {
         const container = document.querySelector('.cart-sidebar') || document.querySelector('#cartContent');
         if (!container) return;
         
-        // Reload counts and auto-show pending tab
-        const counts = await loadReservationCounts(container);
+        // Reload counts first
+        const counts = await window.loadReservationCounts(container);
         
-        if (counts && counts.pending > 0) {
-            // Switch to pending tab and show pending reservations
-            const tabs = container.querySelectorAll(".status-tab");
-            tabs.forEach(t => t.classList.remove("active"));
-            const pendingTab = container.querySelector('.status-tab[data-tab="pending"]');
-            if (pendingTab) {
-                pendingTab.classList.add("active");
-                await loadReservationsByStatus("pending", container);
-            }
-        }
+        // Get current active tab
+        const activeTab = container.querySelector('.status-tab.active');
+        const currentTab = activeTab ? activeTab.dataset.tab : 'pending';
+        
+        console.log("Refreshing status section, current tab:", currentTab);
+        
+        // Reload the current tab's content
+        await window.loadReservationsByStatus(currentTab, container);
     };
 
-    // IMPROVED: Helper function to get user ID from multiple sources
-    function getUserId() {
-        // Try sessionStorage first
-        let userId = sessionStorage.getItem('user_id');
-        
-        if (!userId) {
-            // Try to get from the page if available
-            const userDataElement = document.querySelector('[data-user-id]');
-            if (userDataElement) {
-                userId = userDataElement.getAttribute('data-user-id');
-                if (userId) {
-                    sessionStorage.setItem('user_id', userId);
-                }
-            }
-        }
-        
-        return userId || ''; // Return empty string if not found, don't fetch here
-    }
-
-    // NEW: Fetch user info from server
-    async function fetchUserInfo() {
+    // 🟢 GLOBAL: Enhanced reservation status update function
+    window.updateReservationStatus = async function(reservationId, newStatus) {
         try {
-            const res = await fetch("/login/status");
-            if (res.ok) {
-                const data = await res.json();
-                if (data.success && data.user_id) {
-                    sessionStorage.setItem("user_id", data.user_id);
-                    sessionStorage.setItem("username", data.username || "");
-                    console.log("User ID fetched from server:", data.user_id);
-                    return data.user_id;
+            const response = await fetch(`/reservations/update-status/${reservationId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                console.log(`Reservation ${reservationId} status updated to ${newStatus}`);
+                
+                // Refresh the status section to reflect changes
+                if (window.refreshStatusSection) {
+                    await window.refreshStatusSection();
                 }
+                
+                return true;
+            } else {
+                console.error('Failed to update reservation status:', data.message);
+                return false;
             }
-        } catch (err) {
-            console.error("Error fetching user info:", err);
+        } catch (error) {
+            console.error('Error updating reservation status:', error);
+            return false;
         }
-        return null;
-    }
+    };
 
     // Render cart items function with checkboxes - UPDATED WITH EVENT DELEGATION
     function renderCartItems(items, container) {
@@ -459,7 +653,37 @@ function attachCartScripts(container) {
         if (!cartItemsContainer) return;
 
         cartItemsContainer.innerHTML = items.map(item => {
-            const imgSrc = item.image_path;
+            // FIXED: Proper image path handling for cart items
+            let imgSrc = item.image_path;
+            
+            console.log("Cart item original image path:", imgSrc); // Debug log
+            
+            if (imgSrc) {
+                // Handle Windows absolute path: D:\documents\thesis_regine2\app\static\uploads\filename.jpg
+                // Extract just the filename from any path format
+                let filename;
+                
+                if (imgSrc.includes('\\')) {
+                    // Windows path with backslashes
+                    const parts = imgSrc.split('\\');
+                    filename = parts[parts.length - 1]; // Get last part (filename)
+                } else if (imgSrc.includes('/')) {
+                    // Unix path or URL with forward slashes
+                    const parts = imgSrc.split('/');
+                    filename = parts[parts.length - 1]; // Get last part (filename)
+                } else {
+                    // Just a filename
+                    filename = imgSrc;
+                }
+                
+                // Use the correct web path - relative to your Flask static folder
+                imgSrc = `/static/uploads/${filename}`;
+                console.log("Cart item converted image path:", imgSrc); // Debug log
+            } else {
+                // Fallback image
+                imgSrc = '/static/images/no-image.png';
+            }
+            
             const price = parseFloat(item.price_per_stocks || 0);
             const stockAmount = parseInt(item.stock_amount || 0);
             const currentQuantity = parseInt(item.quantity || 1);
@@ -805,15 +1029,37 @@ function attachCartScripts(container) {
         }
 
         try {
+            console.log("Reserving items:", selectedItems);
+            
             const reserveResponse = await fetch('/cart/reserve', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ cart_ids: selectedItems })
+                body: JSON.stringify({ 
+                    cart_ids: selectedItems,
+                    _debug: true // Add debug flag
+                })
             });
 
+            console.log("Reservation response status:", reserveResponse.status);
+            
+            if (!reserveResponse.ok) {
+                // Try to get more detailed error information
+                let errorMessage = `Server error: ${reserveResponse.status} ${reserveResponse.statusText}`;
+                try {
+                    const errorData = await reserveResponse.json();
+                    errorMessage = errorData.message || errorMessage;
+                    console.error("Reservation error details:", errorData);
+                } catch (e) {
+                    console.error("Could not parse error response:", e);
+                }
+                throw new Error(errorMessage);
+            }
+
             const reserveData = await reserveResponse.json();
+            console.log("Reservation response data:", reserveData);
+            
             if (reserveData.success) {
                 const productText = selectedItems.length === 1 ? 'product' : 'products';
                 window.notification.success(`${selectedItems.length} ${productText} reserved successfully!`, 4000);
@@ -829,104 +1075,13 @@ function attachCartScripts(container) {
                 }, 1000);
                 
             } else {
-                window.notification.error(reserveData.message || 'Failed to reserve products', 4000);
+                console.error("Reservation failed:", reserveData);
+                window.notification.error(reserveData.message || 'Failed to reserve products. Please try again.', 4000);
             }
         } catch (error) {
             console.error('Error reserving products:', error);
-            window.notification.error('Error reserving products. Please try again.', 4000);
+            window.notification.error(`Error: ${error.message}`, 5000);
         }
-    }
-
-    // Modern confirmation dialog for cancel reservation
-    window.cancelReservation = async function(reservationId, productName = 'this product') {
-        return new Promise((resolve) => {
-            const dialogOverlay = document.createElement('div');
-            dialogOverlay.className = 'confirm-dialog-overlay';
-            dialogOverlay.innerHTML = `
-                <div class="confirm-dialog">
-                    <div class="confirm-dialog-icon">⚠️</div>
-                    <div class="confirm-dialog-title">Cancel Reservation?</div>
-                    <div class="confirm-dialog-message">
-                        Are you sure you want to cancel the reservation for <strong>${productName}</strong>? 
-                        This item will be returned to your cart.
-                    </div>
-                    <div class="confirm-dialog-buttons">
-                        <button class="confirm-btn no">Keep Reserved</button>
-                        <button class="confirm-btn yes">Yes, Cancel</button>
-                    </div>
-                </div>
-            `;
-
-            document.body.appendChild(dialogOverlay);
-
-            setTimeout(() => {
-                dialogOverlay.classList.add('show');
-                dialogOverlay.querySelector('.confirm-dialog').classList.add('show');
-            }, 10);
-
-            // Handle button clicks
-            const noBtn = dialogOverlay.querySelector('.confirm-btn.no');
-            const yesBtn = dialogOverlay.querySelector('.confirm-btn.yes');
-
-            const closeDialog = async (confirmed) => {
-                dialogOverlay.classList.remove('show');
-                dialogOverlay.querySelector('.confirm-dialog').classList.remove('show');
-                
-                setTimeout(() => {
-                    if (dialogOverlay.parentElement) {
-                        dialogOverlay.remove();
-                    }
-                }, 300);
-
-                if (confirmed) {
-                    try {
-                        const response = await fetch(`/cart/cancel-reservation/${reservationId}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            }
-                        });
-
-                        const data = await response.json();
-                        
-                        if (data.success) {
-                            window.notification.success("Reservation canceled! Item returned to cart.", 4000);
-                            const container = document.querySelector('.cart-sidebar') || document.querySelector('#cartContent');
-                            if (container) {
-                                await loadReservationsByStatus("pending", container);
-                                await loadReservationCounts(container);
-                            }
-                        } else {
-                            window.notification.error(data.message || "Failed to cancel reservation", 4000);
-                        }
-                    } catch (error) {
-                        console.error('Error canceling reservation:', error);
-                        window.notification.error("Error canceling reservation. Please try again.", 4000);
-                    }
-                }
-                
-                resolve(confirmed);
-            };
-
-            noBtn.addEventListener('click', () => closeDialog(false));
-            yesBtn.addEventListener('click', () => closeDialog(true));
-
-            // Close on overlay click
-            dialogOverlay.addEventListener('click', (e) => {
-                if (e.target === dialogOverlay) {
-                    closeDialog(false);
-                }
-            });
-
-            // Close on ESC key
-            const escHandler = (e) => {
-                if (e.key === 'Escape') {
-                    closeDialog(false);
-                    document.removeEventListener('keydown', escHandler);
-                }
-            };
-            document.addEventListener('keydown', escHandler);
-        });
     }
 
     window.removeFromCart = async function(cartId) {
