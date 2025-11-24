@@ -148,7 +148,7 @@ class ProductPopularity(db.Model):
     __tablename__ = "product_popularity"
     
     popularity_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    product_id = db.Column(db.Integer, db.ForeignKey("incubatee_products.product_id"), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("incubatee_products.product_id"), nullable=False, unique=True)
     incubatee_id = db.Column(db.Integer, db.ForeignKey("incubatees.incubatee_id"), nullable=False)
     
     # Sales statistics

@@ -7,6 +7,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/agrilogo.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -81,48 +82,112 @@
       <div class="carousel-track">
         {% if featured_products %}
           {% for product in featured_products %}
-          <div class="carousel-slide" data-tag="{{ product.tag }}" data-period="{{ 'weekly' if product.tag == 'best_seller' else 'monthly' }}">
-            <div class="featured-product-card">
-              <!-- Product Image with Tag -->
-              <div class="product-image-container">
-                {% if product.image_path %}
-                  <img src="/{{ product.image_path }}" alt="{{ product.name }}" class="product-image">
-                {% else %}
-                  <div class="product-image-placeholder">
-                    <i class="fas fa-seedling"></i>
+            <!-- updated the featured-product-card section -->
+            <div class="carousel-slide" data-tag="{{ product.tag }}" data-period="{{ 'weekly' if product.tag == 'best_seller' else 'monthly' }}">
+              <div class="featured-product-card" onclick="flipCard(this)">
+                <div class="card-inner">
+                  <!-- Front of the card (original content) -->
+                  <div class="card-front">
+                    <!-- Product Image with Tag -->
+                    <div class="product-image-container">
+                      {% if product.image_path %}
+                        <img src="/{{ product.image_path }}" alt="{{ product.name }}" class="product-image">
+                      {% else %}
+                        <div class="product-image-placeholder">
+                          <i class="fas fa-seedling"></i>
+                        </div>
+                      {% endif %}
+                      
+                      <!-- Dynamic Tag -->
+                      <div class="product-tag {{ product.tag }}">
+                        {{ product.tag_text }}
+                      </div>
+                      
+                      <!-- Incubatee Badge -->
+                      <div class="incubatee-badge">
+                        <small>{{ product.incubatee_name }}</small>
+                      </div>
+                    </div>
+                    
+                    <!-- Product Info -->
+                    <div class="product-info">
+                      <h4 class="product-name">{{ product.name }}</h4>
+                      <p class="product-incubatee">Batch {{ product.incubatee_batch }}</p>
+                      <p class="product-price">₱{{ "%.2f"|format(product.price_per_stocks) }}</p>
+                      <p class="product-stats">{{ product.period_text }}</p>
+                      
+                      <!-- Action Buttons -->
+                      <div class="product-actions">
+                        <button class="btn-add-cart" onclick="event.stopPropagation(); addToCart({{ product.product_id }})">
+                          <i class="fas fa-cart-plus"></i> Add to Cart
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <!-- Flip indicator -->
+                    <div class="flip-indicator">
+                      <i class="fas fa-hand-point-up"></i>
+                      <span>Click for details</span>
+                    </div>
                   </div>
-                {% endif %}
-                
-                <!-- Dynamic Tag -->
-                <div class="product-tag {{ product.tag }}">
-                  {{ product.tag_text }}
-                </div>
-                
-                <!-- Incubatee Badge -->
-                <div class="incubatee-badge">
-                  <small>{{ product.incubatee_name }}</small>
-                </div>
-              </div>
-              
-              <!-- Product Info -->
-              <div class="product-info">
-                <h4 class="product-name">{{ product.name }}</h4>
-                <p class="product-incubatee">Batch {{ product.incubatee_batch }}</p>
-                <p class="product-price">₱{{ "%.2f"|format(product.price_per_stocks) }}</p>
-                <p class="product-stats">{{ product.period_text }}</p>
-                
-                <!-- Action Buttons -->
-                <div class="product-actions">
-                  <button class="btn-view-details" onclick="viewProductDetails({{ product.product_id }})">
-                    <i class="fas fa-eye"></i> View Details
-                  </button>
-                  <button class="btn-add-cart" onclick="addToCart({{ product.product_id }})">
-                    <i class="fas fa-cart-plus"></i> Add to Cart
-                  </button>
+                  
+                  <!-- Update the back side of the flip card in your index.html -->
+                  <div class="card-back">
+                    <div class="product-details">
+                      <div class="details-header">
+                        <h4 class="product-name">{{ product.name }}</h4>
+                        <button class="btn-close-details" onclick="event.stopPropagation(); unflipCard(this.closest('.featured-product-card'))">
+                          <i class="fas fa-times"></i>
+                        </button>
+                      </div>
+                      
+                      <div class="details-content">
+                        <div class="detail-section">
+                          <h5><i class="fas fa-box"></i> Product Information</h5>
+                          <div class="detail-item">
+                            <span class="detail-label">Product Type:</span>
+                            <span class="detail-value">{{ product.products or 'Not specified' }}</span>
+                          </div>
+                          <div class="detail-item">
+                            <span class="detail-label">Category:</span>
+                            <span class="detail-value">{{ product.category or 'General' }}</span>
+                          </div>
+                          <div class="detail-item">
+                            <span class="detail-label">Price:</span>
+                            <span class="detail-value">₱{{ "%.2f"|format(product.price_per_stocks) }}</span>
+                          </div>
+                        </div>
+                        
+                        <div class="detail-section">
+                          <h5><i class="fas fa-info-circle"></i> Description</h5>
+                          <div class="detail-description">
+                            {{ product.details or 'No description available.' }}
+                          </div>
+                        </div>
+                        
+                        <div class="detail-section">
+                          <h5><i class="fas fa-store"></i> Producer</h5>
+                          <div class="detail-item">
+                            <span class="detail-label">Company:</span>
+                            <span class="detail-value">{{ product.incubatee_name }}</span>
+                          </div>
+                          <div class="detail-item">
+                            <span class="detail-label">Batch:</span>
+                            <span class="detail-value">{{ product.incubatee_batch }}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div class="details-actions">
+                        <button class="btn-add-cart-full" onclick="event.stopPropagation(); addToCart({{ product.product_id }})">
+                          <i class="fas fa-cart-plus"></i> Add to Cart
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
           {% endfor %}
         {% else %}
           <div class="no-products-message">
@@ -309,5 +374,9 @@
   </script>
   <!-- Add after your existing scripts -->
   <script src="{{ url_for('static', filename='js/home.js') }}"></script>
+  <!-- Add this right after the carousel track in your index.html -->
+  <script>
+      console.log('Featured products data:', {{ featured_products | tojson | safe }});
+  </script>
 </body>
 </html>

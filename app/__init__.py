@@ -1,3 +1,4 @@
+# __init__.py
 from flask import Flask, session
 from .config import Config
 from .extension import db, migrate
@@ -34,5 +35,19 @@ def create_app(config_class=Config):
     
     @app.context_processor
     def inject_user_data():
-        return dict(user_logged_in=session.get('user_logged_in'),admin_logged_in=session.get('admin_logged_in'),username=session.get('username'),admin_username=session.get('admin_username'))
+        return dict(
+            user_logged_in=session.get('user_logged_in'),
+            admin_logged_in=session.get('admin_logged_in'),
+            username=session.get('username'),
+            admin_username=session.get('admin_username')
+        )
+    
+    # Initialize product popularity data on startup
+    with app.app_context():
+        try:
+            from app.services.popularity_service import ProductPopularityService
+            ProductPopularityService.initialize_on_startup()
+        except Exception as e:
+            print(f"⚠️ Could not initialize popularity data: {e}")
+    
     return app

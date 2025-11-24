@@ -37,7 +37,7 @@ class SupabaseConfig(BaseConfig):
         'pool_size': 10,
         
         # Allow up to 5 additional connections when pool is full
-        'max_overflow': 5,
+        'max_overflow': 20,
         
         # Connection arguments for PostgreSQL
         'connect_args': {

@@ -93,7 +93,7 @@ def process_product_reservations(product_id):
         db.session.rollback()
         current_app.logger.error(f"Error processing reservations for product {product_id}: {e}")
         return False
-    
+
 @reservation_bp.route("/create", methods=["POST"])
 def create_reservation():
     try:
@@ -251,6 +251,7 @@ def create_bulk_reservations():
         return jsonify({"error": "Server error"}), 500
 
 # UPDATE RESERVATION STATUS (Only for completion)
+# In your reservation_bp routes, update the completion endpoint
 @reservation_bp.route("/<int:reservation_id>/status", methods=["PUT"])
 def update_reservation_status(reservation_id):
     """Only allow updating to 'completed' status (when item is picked up)"""
@@ -279,7 +280,7 @@ def update_reservation_status(reservation_id):
         reservation.status = new_status
         reservation.completed_at = datetime.now(timezone.utc)
 
-        # Create sales report entry - REMOVE completed_at as it's not in SalesReport model
+        # Create sales report entry
         sales_report = SalesReport(
             reservation_id=reservation.reservation_id,
             product_id=reservation.product_id,
@@ -288,9 +289,19 @@ def update_reservation_status(reservation_id):
             quantity=reservation.quantity,
             unit_price=product.price_per_stocks,
             total_price=product.price_per_stocks * reservation.quantity,
-            sale_date=datetime.now(timezone.utc).date())  # Today's date
+            sale_date=datetime.now(timezone.utc).date()
+        )
         
         db.session.add(sales_report)
+        
+        # ✅ AUTO-UPDATE PRODUCT POPULARITY
+        try:
+            from app.services.popularity_service import ProductPopularityService
+            ProductPopularityService.update_from_reservation(reservation)
+            print(f"🎯 Auto-updated popularity for reservation {reservation_id}")
+        except Exception as e:
+            print(f"⚠️ Could not update popularity: {e}")
+        
         db.session.commit()
         
         return jsonify({"message": "Reservation marked as completed and sales record created","sales_id": sales_report.sales_id}), 200
@@ -299,6 +310,7 @@ def update_reservation_status(reservation_id):
         db.session.rollback()
         current_app.logger.error(f"Error updating reservation: {e}")
         return jsonify({"error": "Server error"}), 500
+    
 # GET ALL RESERVATIONS (ADMIN / STAFF)
 @reservation_bp.route("/", methods=["GET"])
 def get_all_reservations():

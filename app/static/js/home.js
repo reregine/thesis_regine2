@@ -13,32 +13,45 @@ class FeaturedProductsCarousel {
         this.currentIndex = 0;
         this.isAutoPlaying = true;
         this.autoPlayInterval = null;
-        this.slideWidth = 300 + 24; // slide width + gap
+        this.slideWidth = 320; // Fixed width including margin
         this.visibleSlides = this.calculateVisibleSlides();
         
         this.init();
     }
     
     init() {
+        console.log('Initializing carousel with', this.slides.length, 'slides');
         this.setupEventListeners();
+        this.updateCarousel();
         this.startAutoPlay();
         this.updateIndicators();
         this.setupResizeHandler();
     }
     
     calculateVisibleSlides() {
+        if (!this.carousel || !this.carousel.parentElement) return 3;
+        
         const containerWidth = this.carousel.parentElement.offsetWidth;
-        return Math.floor(containerWidth / this.slideWidth);
+        const calculatedSlides = Math.floor(containerWidth / this.slideWidth);
+        return Math.max(1, Math.min(calculatedSlides, 4)); // Between 1 and 4 slides visible
     }
     
     setupEventListeners() {
         // Navigation buttons
-        this.prevBtn.addEventListener('click', () => this.prevSlide());
-        this.nextBtn.addEventListener('click', () => this.nextSlide());
+        if (this.prevBtn) {
+            this.prevBtn.addEventListener('click', () => this.prevSlide());
+        }
+        if (this.nextBtn) {
+            this.nextBtn.addEventListener('click', () => this.nextSlide());
+        }
         
         // Auto-play controls
-        this.pauseBtn.addEventListener('click', () => this.pauseAutoPlay());
-        this.playBtn.addEventListener('click', () => this.startAutoPlay());
+        if (this.pauseBtn) {
+            this.pauseBtn.addEventListener('click', () => this.pauseAutoPlay());
+        }
+        if (this.playBtn) {
+            this.playBtn.addEventListener('click', () => this.startAutoPlay());
+        }
         
         // Indicators
         this.indicators.forEach((indicator, index) => {
@@ -55,14 +68,13 @@ class FeaturedProductsCarousel {
         
         // Keyboard navigation
         document.addEventListener('keydown', (e) => this.handleKeyboard(e));
-        
-        // Intersection Observer for auto-play when visible
-        this.setupIntersectionObserver();
     }
     
     setupTouchEvents() {
         let startX = 0;
         let isDragging = false;
+        
+        if (!this.carousel) return;
         
         this.carousel.addEventListener('touchstart', (e) => {
             startX = e.touches[0].clientX;
@@ -93,53 +105,6 @@ class FeaturedProductsCarousel {
             isDragging = false;
             setTimeout(() => this.startAutoPlay(), 3000);
         });
-        
-        // Mouse drag support
-        this.carousel.addEventListener('mousedown', (e) => {
-            startX = e.clientX;
-            isDragging = true;
-            this.pauseAutoPlay();
-        });
-        
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            e.preventDefault();
-        });
-        
-        document.addEventListener('mouseup', (e) => {
-            if (!isDragging) return;
-            
-            const endX = e.clientX;
-            const diff = startX - endX;
-            const minDragDistance = 50;
-            
-            if (Math.abs(diff) > minDragDistance) {
-                if (diff > 0) {
-                    this.nextSlide();
-                } else {
-                    this.prevSlide();
-                }
-            }
-            
-            isDragging = false;
-            setTimeout(() => this.startAutoPlay(), 3000);
-        });
-    }
-    
-    setupIntersectionObserver() {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    this.startAutoPlay();
-                } else {
-                    this.pauseAutoPlay();
-                }
-            });
-        }, { threshold: 0.5 });
-        
-        if (this.carousel) {
-            observer.observe(this.carousel);
-        }
     }
     
     setupResizeHandler() {
@@ -154,25 +119,21 @@ class FeaturedProductsCarousel {
     }
     
     handleKeyboard(e) {
-        if (!this.carousel.parentElement.contains(document.activeElement)) return;
-        
-        switch(e.key) {
-            case 'ArrowLeft':
-                e.preventDefault();
-                this.prevSlide();
-                break;
-            case 'ArrowRight':
-                e.preventDefault();
-                this.nextSlide();
-                break;
-            case ' ':
-                e.preventDefault();
-                this.toggleAutoPlay();
-                break;
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            this.prevSlide();
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            this.nextSlide();
+        } else if (e.key === ' ') {
+            e.preventDefault();
+            this.toggleAutoPlay();
         }
     }
     
     nextSlide() {
+        if (this.slides.length <= this.visibleSlides) return;
+        
         this.currentIndex = Math.min(this.currentIndex + 1, this.slides.length - this.visibleSlides);
         this.updateCarousel();
     }
@@ -188,11 +149,10 @@ class FeaturedProductsCarousel {
     }
     
     updateCarousel() {
+        if (!this.carousel || this.slides.length === 0) return;
+        
         const scrollPosition = this.currentIndex * this.slideWidth;
-        this.carousel.scrollTo({
-            left: scrollPosition,
-            behavior: 'smooth'
-        });
+        this.carousel.style.transform = `translateX(-${scrollPosition}px)`;
         this.updateIndicators();
         this.updateNavigationButtons();
     }
@@ -204,39 +164,75 @@ class FeaturedProductsCarousel {
     }
     
     updateNavigationButtons() {
-        this.prevBtn.disabled = this.currentIndex === 0;
-        this.nextBtn.disabled = this.currentIndex >= this.slides.length - this.visibleSlides;
+        if (this.prevBtn) {
+            this.prevBtn.disabled = this.currentIndex === 0;
+            this.prevBtn.style.opacity = this.currentIndex === 0 ? '0.5' : '1';
+        }
+        if (this.nextBtn) {
+            const maxIndex = Math.max(0, this.slides.length - this.visibleSlides);
+            this.nextBtn.disabled = this.currentIndex >= maxIndex;
+            this.nextBtn.style.opacity = this.currentIndex >= maxIndex ? '0.5' : '1';
+        }
     }
     
     filterByPeriod(period) {
+        console.log('Filtering by period:', period);
+        
         // Update active period badge
         this.periodBadges.forEach(badge => {
             badge.classList.toggle('active', badge.dataset.period === period);
         });
         
         // Show/hide slides based on period
+        let visibleCount = 0;
         this.slides.forEach(slide => {
-            const shouldShow = period === 'all' || slide.dataset.period === period;
+            const slidePeriod = slide.dataset.period;
+            let shouldShow = false;
+            
+            switch(period) {
+                case 'all':
+                    shouldShow = true;
+                    break;
+                case 'weekly':
+                    // Show best sellers (weekly)
+                    shouldShow = slidePeriod === 'weekly';
+                    break;
+                case 'monthly':
+                    // Show customer favorites (monthly)  
+                    shouldShow = slidePeriod === 'monthly';
+                    break;
+                default:
+                    shouldShow = true;
+            }
+            
             slide.style.display = shouldShow ? 'block' : 'none';
+            if (shouldShow) visibleCount++;
         });
         
-        // Reset to first slide
+        // Reset to first slide and update visible slides
         this.currentIndex = 0;
+        this.slides = document.querySelectorAll('.carousel-slide[style="display: block"], .carousel-slide:not([style])');
+        
+        // Update indicators visibility
+        this.updateIndicatorsVisibility(visibleCount);
         this.updateCarousel();
         
-        // Refresh carousel after filter
-        setTimeout(() => {
-            this.slides = document.querySelectorAll('.carousel-slide[style="display: block"], .carousel-slide:not([style])');
-            this.updateIndicators();
-        }, 300);
+        console.log(`Visible slides: ${visibleCount} for period: ${period}`);
+    }
+    
+    updateIndicatorsVisibility(visibleCount) {
+        const indicatorsContainer = document.querySelector('.carousel-indicators');
+        if (indicatorsContainer) {
+            indicatorsContainer.style.display = visibleCount > this.visibleSlides ? 'flex' : 'none';
+        }
     }
     
     startAutoPlay() {
-        if (this.autoPlayInterval) return;
+        if (this.autoPlayInterval || this.slides.length <= this.visibleSlides) return;
         
         this.isAutoPlaying = true;
-        this.pauseBtn.style.display = 'block';
-        this.playBtn.style.display = 'none';
+        if (this.pauseBtn) this.pauseBtn.style.display = 'block';
+        if (this.playBtn) this.playBtn.style.display = 'none';
         
         this.autoPlayInterval = setInterval(() => {
             if (this.currentIndex >= this.slides.length - this.visibleSlides) {
@@ -245,15 +241,15 @@ class FeaturedProductsCarousel {
                 this.currentIndex++;
             }
             this.updateCarousel();
-        }, 5000); // Change slide every 5 seconds
+        }, 5000);
     }
     
     pauseAutoPlay() {
         this.isAutoPlaying = false;
         clearInterval(this.autoPlayInterval);
         this.autoPlayInterval = null;
-        this.pauseBtn.style.display = 'none';
-        this.playBtn.style.display = 'block';
+        if (this.pauseBtn) this.pauseBtn.style.display = 'none';
+        if (this.playBtn) this.playBtn.style.display = 'block';
     }
     
     toggleAutoPlay() {
@@ -262,11 +258,6 @@ class FeaturedProductsCarousel {
         } else {
             this.startAutoPlay();
         }
-    }
-    
-    destroy() {
-        this.pauseAutoPlay();
-        // Remove event listeners if needed
     }
 }
 
@@ -545,6 +536,41 @@ function manageLoadingStates() {
     });
 }
 
+// Add to your home.js
+function flipCard(cardElement) {
+    // Close any other flipped cards first
+    document.querySelectorAll('.featured-product-card.flipped').forEach(flippedCard => {
+        if (flippedCard !== cardElement) {
+            flippedCard.classList.remove('flipped');
+        }
+    });
+    
+    // Flip the clicked card
+    cardElement.classList.toggle('flipped');
+}
+
+function unflipCard(cardElement) {
+    cardElement.classList.remove('flipped');
+}
+
+// Close card when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.featured-product-card')) {
+        document.querySelectorAll('.featured-product-card.flipped').forEach(card => {
+            card.classList.remove('flipped');
+        });
+    }
+});
+
+// Close card with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        document.querySelectorAll('.featured-product-card.flipped').forEach(card => {
+            card.classList.remove('flipped');
+        });
+    }
+});
+
 // Export for potential module usage
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
@@ -553,3 +579,26 @@ if (typeof module !== 'undefined' && module.exports) {
         FeaturedProductsManager
     };
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing carousel...');
+    
+    // Initialize carousel if on home page
+    const carouselElement = document.querySelector('.featured-products-carousel');
+    if (carouselElement) {
+        console.log('Carousel element found, initializing...');
+        window.featuredCarousel = new FeaturedProductsCarousel();
+        console.log('Carousel initialized successfully');
+    } else {
+        console.log('No carousel element found on this page');
+    }
+    
+    // Initialize product interactions
+    window.productInteractions = new ProductInteractions();
+    
+    // Initialize featured products manager
+    window.featuredProductsManager = new FeaturedProductsManager();
+    
+    // Add loading state management
+    manageLoadingStates();
+});

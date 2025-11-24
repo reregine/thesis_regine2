@@ -19,6 +19,13 @@ gina tapos- customer dashboard: user profile, make order, view list of view curr
 wala pa ni- in system messaging
 wala pa ni- securing of web pages (e.g. Session destroy, others) to prevent data leaks
 
+Weekly Sales Tracking: Counts quantity from completed reservations for the current week
+
+Monthly Customer Tracking: Counts unique customers from completed reservations for the current month
+
+Best Sellers: Top 5 products per incubatee based on weekly sales
+
+Known Products: Top 10 products per incubatee based on monthly customer reach
 
 Eva Britana - Nanay Patring's Recipe (2 products)
 Product 1: Special Banana Ketchup
