@@ -1276,3 +1276,43 @@ def update_product(product_id):
         db.session.rollback()
         current_app.logger.error(f"Error updating product {product_id}: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
+    
+@admin_bp.route("/debug-env")
+def debug_env():
+    """Debug environment variables"""
+    import os
+    
+    redis_url = os.environ.get('redis_url')
+    all_env_vars = dict(os.environ)
+    
+    # Hide sensitive values in output
+    safe_vars = {}
+    for key, value in all_env_vars.items():
+        if 'password' in key.lower() or 'secret' in key.lower() or 'key' in key.lower() or 'url' in key.lower():
+            safe_vars[key] = '***HIDDEN***'
+        else:
+            safe_vars[key] = value
+    
+    return jsonify({
+        "redis_url_exists": bool(redis_url),
+        "redis_url_length": len(redis_url) if redis_url else 0,
+        "redis_url_preview": redis_url[:20] + "..." if redis_url and len(redis_url) > 20 else redis_url if redis_url else None,
+        "all_env_vars": safe_vars
+    })
+@admin_bp.route("/test-redis")
+def test_redis():
+    """Test Redis connection"""
+    try:
+        redis_client = get_redis_client()
+        if redis_client:
+            redis_client.ping()
+            return jsonify({"success": True, "message": "✅ Redis is connected and working!"})
+        else:
+            # Check if environment variable exists
+            redis_url = os.environ.get('redis_url')
+            if not redis_url:
+                return jsonify({"success": False, "message": "❌ redis_url environment variable not found"})
+            else:
+                return jsonify({"success": False, "message": "❌ Redis connection failed - check your redis_url value"})
+    except Exception as e:
+        return jsonify({"success": False, "message": f"❌ Redis error: {str(e)}"})
