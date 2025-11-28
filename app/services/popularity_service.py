@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, and_, text
 from app.extension import db
 from app.models.admin import ProductPopularity
+from decimal import Decimal  # ADD THIS IMPORT
 
 class ProductPopularityService:
     @staticmethod
@@ -28,10 +29,14 @@ class ProductPopularityService:
                     product_id=product.product_id,
                     incubatee_id=product.incubatee_id,
                     weekly_sold=0,
+                    monthly_sold=0,
+                    total_sold=0,
+                    weekly_revenue=Decimal('0.00'),  # FIXED: Use Decimal
+                    monthly_revenue=Decimal('0.00'),  # FIXED: Use Decimal
+                    total_revenue=Decimal('0.00'),    # FIXED: Use Decimal
+                    weekly_customers=0,
                     monthly_customers=0,
-                    weekly_revenue=0.00,
-                    monthly_revenue=0.00,
-                    total_revenue=0.00,
+                    total_customers=0,
                     week_start_date=datetime.now().date(),
                     month_start_date=datetime.now().replace(day=1).date(),
                     last_updated=datetime.utcnow()
@@ -55,7 +60,7 @@ class ProductPopularityService:
 
     @staticmethod
     def update_from_reservation(reservation):
-        """Update popularity stats when a reservation is completed - SIMPLE & RELIABLE"""
+        """Update popularity stats when a reservation is completed - FIXED DECIMAL ISSUE"""
         try:
             from app.models.admin import ProductPopularity, IncubateeProduct, SalesReport
             
@@ -87,9 +92,9 @@ class ProductPopularityService:
                     weekly_sold=0,
                     monthly_sold=0,
                     total_sold=0,
-                    weekly_revenue=0.00,
-                    monthly_revenue=0.00,
-                    total_revenue=0.00,
+                    weekly_revenue=Decimal('0.00'),
+                    monthly_revenue=Decimal('0.00'),
+                    total_revenue=Decimal('0.00'),
                     weekly_customers=0,
                     monthly_customers=0,
                     total_customers=0,
@@ -98,26 +103,29 @@ class ProductPopularityService:
                     last_updated=datetime.utcnow()
                 )
                 db.session.add(popularity)
-                db.session.commit()  # Commit immediately for new record
+                db.session.commit()
             
             # Get current period dates
             current_date = datetime.now().date()
             current_week_start = current_date - timedelta(days=current_date.weekday())
             current_month_start = current_date.replace(day=1)
             
-            # Update stats - SIMPLE INCREMENTAL UPDATES
+            # Convert to Decimal to avoid type errors
+            total_price_decimal = Decimal(str(sales_report.total_price)) if sales_report.total_price else Decimal('0.00')
+            
+            # Update stats - FIXED: Using Decimal for revenue fields
             if sales_report.sale_date >= current_week_start:
                 popularity.weekly_sold += sales_report.quantity
-                popularity.weekly_revenue += float(sales_report.total_price)
+                popularity.weekly_revenue += total_price_decimal
             
             if sales_report.sale_date >= current_month_start:
                 popularity.monthly_sold += sales_report.quantity
-                popularity.monthly_revenue += float(sales_report.total_price)
+                popularity.monthly_revenue += total_price_decimal
             
             popularity.total_sold += sales_report.quantity
-            popularity.total_revenue += float(sales_report.total_price)
+            popularity.total_revenue += total_price_decimal
             
-            # Update customer counts (this is the only complex part)
+            # Update customer counts
             ProductPopularityService._update_customer_counts_simple(reservation.product_id)
             
             popularity.last_updated = datetime.utcnow()
@@ -135,9 +143,10 @@ class ProductPopularityService:
         except Exception as e:
             db.session.rollback()
             print(f"❌ Error updating popularity from reservation: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return False
 
-    # ADD THIS METHOD TO FIX THE ERROR
     @staticmethod
     def update_product_popularity(reservation):
         """Alias method for backward compatibility"""
