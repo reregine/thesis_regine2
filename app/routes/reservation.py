@@ -110,54 +110,63 @@ def init_scheduler(app):
         scheduler.start()
         
         # Add job to process reservations every 30 seconds for testing
-        # In production, you might want to use every 1 minute
+        # We pass the app instance to the job function
         scheduler.add_job(
             id='reservation_processor',
             func=process_reservation_queues_job,
+            args=[app],  # Pass the app instance
             trigger=IntervalTrigger(seconds=30),  # Run every 30 seconds
             max_instances=1,
             replace_existing=True
         )
         
-        current_app.logger.info("✅ APScheduler initialized - Auto-approval is ACTIVE")
-        current_app.logger.info("🕒 Will process pending reservations every 30 seconds")
+        app.logger.info("✅ APScheduler initialized - Auto-approval is ACTIVE")
+        app.logger.info("🕒 Will process pending reservations every 30 seconds")
         
         # Register shutdown handler
-        atexit.register(lambda: scheduler.shutdown())
+        atexit.register(lambda: scheduler.shutdown() if scheduler else None)
         
         return scheduler
         
     except Exception as e:
-        current_app.logger.error(f"❌ Failed to initialize scheduler: {e}")
+        if app:
+            app.logger.error(f"❌ Failed to initialize scheduler: {e}")
         return None
 
-def process_reservation_queues_job():
-    """Wrapper function for the scheduler job"""
+def process_reservation_queues_job(app):
+    """Wrapper function for the scheduler job - accepts app as parameter"""
     try:
-        with current_app.app_context():
+        # Use the passed app instance to create context
+        with app.app_context():
             current_time = datetime.now(timezone.utc)
-            current_app.logger.info(f"🔄 Auto-processing reservations at {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            app.logger.info(f"🔄 Auto-processing reservations at {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
             
             success = process_reservation_queues()
             
             if success:
-                current_app.logger.info("✅ Reservation auto-processing completed successfully")
+                app.logger.info("✅ Reservation auto-processing completed successfully")
             else:
-                current_app.logger.error("❌ Reservation auto-processing failed")
+                app.logger.error("❌ Reservation auto-processing failed")
                 
     except Exception as e:
-        current_app.logger.error(f"❌ Scheduler job error: {e}")
+        # Log using the app instance that was passed
+        if app:
+            app.logger.error(f"❌ Scheduler job error: {e}")
+        else:
+            print(f"❌ Scheduler job error (no app context): {e}")
 
 def get_scheduler_status():
     """Check if scheduler is running"""
     global scheduler
     if scheduler and scheduler.running:
         jobs = scheduler.get_jobs()
-        return {"running": True,
+        next_run = jobs[0].next_run_time if jobs else None
+        return {
+            "running": True,
             "jobs_count": len(jobs),
-            "next_run_time": jobs[0].next_run_time.isoformat() if jobs else None}
+            "next_run_time": next_run.isoformat() if next_run else None
+        }
     return {"running": False}
-
 def process_reservation_queues():
     """
     Process all pending reservations for all products using FCFS algorithm
@@ -1026,6 +1035,7 @@ def get_scheduler_status_route():
 def start_scheduler():
     """Manually start the scheduler"""
     try:
+        from flask import current_app
         scheduler = init_scheduler(current_app)
         if scheduler:
             return jsonify({
@@ -1056,17 +1066,22 @@ def stop_scheduler():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@reservation_bp.route("/scheduler/trigger-now", methods=["POST"])
-def trigger_processing_now():
-    """Manually trigger reservation processing immediately"""
+@reservation_bp.route("/scheduler/test-processing", methods=["POST"])
+def test_processing():
+    """Test the reservation processing manually"""
     try:
-        success = process_reservation_queues()
-        if success:
-            return jsonify({
-                "success": True, 
-                "message": "✅ Manual processing completed successfully"
-            })
-        else:
-            return jsonify({"success": False, "message": "Processing failed"}), 500
+        from flask import current_app
+        
+        with current_app.app_context():
+            success = process_reservation_queues()
+            
+            if success:
+                return jsonify({
+                    "success": True, 
+                    "message": "✅ Manual processing completed successfully"
+                })
+            else:
+                return jsonify({"success": False, "message": "Processing failed"}), 500
+                
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
