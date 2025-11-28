@@ -175,7 +175,7 @@ def sales_reports():
 def get_incubatee_logo(incubatee_id):
     """Get incubatee logo via API- with caching"""
     cache_key_str = cache_key("incubatee_logo", incubatee_id)
-    cached_data, found = get_cached_data(cache_key, expire_seconds=86400)# 24 hours cache
+    cached_data, found = get_cached_data(cache_key_str, expire_seconds=86400)  # 24 hours cache
     if found:
         return jsonify(cached_data)
     try:
@@ -333,11 +333,7 @@ def search_pricing_units():
         else:
             pricing_units = PricingUnit.query.filter(
                 PricingUnit.is_active == True,
-                db.or_(
-                    PricingUnit.unit_name.ilike(f'%{query}%'),
-                    PricingUnit.unit_description.ilike(f'%{query}%')
-                )
-            ).all()
+                db.or_(PricingUnit.unit_name.ilike(f'%{query}%'),PricingUnit.unit_description.ilike(f'%{query}%'))).all()
         
         response_data = {"success": True,"pricing_units": [{"unit_id": unit.unit_id,"unit_name": unit.unit_name,"unit_description": unit.unit_description} for unit in pricing_units]}
         
@@ -501,6 +497,38 @@ def get_products():
         current_app.logger.error(f"Error fetching products: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
+@admin_bp.route("/get-pricing-units", methods=["GET"])
+def get_pricing_units():
+    """Get all pricing units - WITH CACHING"""
+    if not session.get('admin_logged_in'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    cache_key_str = "pricing_units:all"
+    
+    # Try cache first
+    cached_data, found = get_cached_data(cache_key_str, expire_seconds=1800)  # 30 minutes cache
+    if found:
+        return jsonify(cached_data)
+    
+    try:
+        pricing_units = PricingUnit.query.filter_by(is_active=True).all()
+        
+        response_data = {
+            "success": True,
+            "pricing_units": [
+                {
+                    "unit_id": unit.unit_id,
+                    "unit_name": unit.unit_name,
+                    "unit_description": unit.unit_description
+                } for unit in pricing_units
+            ]
+        }
+        
+        set_cached_data(cache_key_str, response_data, 1800)  # Cache for 30 minutes
+        return jsonify(response_data)
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @admin_bp.route("/add-incubatee", methods=["POST"])
 def add_incubatee():

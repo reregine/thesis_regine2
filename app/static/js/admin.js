@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadPricingUnits();
     initializeEditProductModal();
     initializeOrdersModal();
+    initializeIncubateeSearch();
     // REMOVED: initializeSalesReportModal(); - No longer used
     initializeConfirmationModal(); // This will now check if elements exist
     
