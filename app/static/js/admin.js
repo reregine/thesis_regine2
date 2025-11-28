@@ -2,6 +2,7 @@
 // Global variables
 let allProducts = [];
 let ordersRefreshInterval;
+let ordersModalInitialized = false;
 let currentOrdersData = [];
 let currentReservationId = null;
 let currentButton = null;
@@ -587,19 +588,23 @@ function showToast(message, type = "info") {
 }
 
 function startOrdersAutoRefresh() {
-    // Refresh orders every 10 seconds when modal is open (increased from 5s for better UX)
+    // Stop any existing interval first
+    stopOrdersAutoRefresh();
+    
+    // Refresh orders every 30 seconds when modal is open (increased from 10s)
     ordersRefreshInterval = setInterval(async () => {
         const ordersModal = document.getElementById("ordersModal");
         if (ordersModal && ordersModal.classList.contains("active")) {
             const currentFilter = document.getElementById("orderStatusFilter").value;
             await loadAllOrdersSmooth(currentFilter);
         }
-    }, 10000); // 10 seconds
+    }, 30000); // 30 seconds instead of 10 seconds
 }
 
 function stopOrdersAutoRefresh() {
     if (ordersRefreshInterval) {
         clearInterval(ordersRefreshInterval);
+        ordersRefreshInterval = null;
     }
 }
 
@@ -1014,6 +1019,12 @@ function updateCompletedRow(reservationId) {
 
 // Fixed Orders Modal Initialization
 function initializeOrdersModal() {
+    // Prevent multiple initialization
+    if (ordersModalInitialized) {
+        console.log('Orders modal already initialized, skipping...');
+        return;
+    }
+
     const ordersModal = document.getElementById("ordersModal");
     const openOrdersModal = document.getElementById("openOrdersModal");
     const closeOrdersModalTop = document.getElementById("closeOrdersModalTop");
@@ -1025,15 +1036,29 @@ function initializeOrdersModal() {
         console.log('ℹ️ Orders modal elements not found (might be on different page)');
         return;
     }
+    // Mark as initialized
+    ordersModalInitialized = true;
 
     // Open modal
+    let openingInProgress = false;
     openOrdersModal.addEventListener("click", (e) => {
         e.preventDefault();
+                // Prevent multiple rapid clicks
+        if (openingInProgress) {
+            console.log('Modal opening already in progress...');
+            return;
+        }
+        
+        openingInProgress = true;
         console.log('🎯 Opening orders modal');
         ordersModal.classList.add("active");
         document.body.style.overflow = 'hidden';
         loadAllOrdersSmooth(); // Use smooth loading
         startOrdersAutoRefresh();
+        // Reset flag after a short delay
+        setTimeout(() => {
+            openingInProgress = false;
+        }, 1000);
     });
 
     // Close modal from both buttons
@@ -1060,12 +1085,22 @@ function initializeOrdersModal() {
         }
     });
 
-    // Order status filter
+
+    // Order status filter - WITH DEBOUNCE
     const orderStatusFilter = document.getElementById("orderStatusFilter");
     if (orderStatusFilter) {
+        let filterTimeout;
         orderStatusFilter.addEventListener("change", function() {
-            console.log('🔍 Filtering orders by:', this.value);
-            loadAllOrdersSmooth(this.value); // Use smooth loading
+            // Clear previous timeout
+            if (filterTimeout) {
+                clearTimeout(filterTimeout);
+            }
+            
+            // Set new timeout with debounce
+            filterTimeout = setTimeout(() => {
+                console.log('🔍 Filtering orders by:', this.value);
+                loadAllOrdersSmooth(this.value);
+            }, 500); // 500ms debounce
         });
     }
 
