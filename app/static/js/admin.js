@@ -227,7 +227,7 @@ async function initializeIncubateeSearch() {
         }
 
         const filtered = incubatees.filter(i =>
-            `${i.first_name} ${i.last_name} ${i.company_name || ""}`
+            `${i.full_name} ${i.company_name || ""}`
                 .toLowerCase()
                 .includes(query)
         );
@@ -238,7 +238,7 @@ async function initializeIncubateeSearch() {
             filtered.forEach(i => {
                 const item = document.createElement("div");
                 item.classList.add("dropdown-item");
-                item.textContent = `${i.first_name} ${i.last_name} (${i.company_name || "No Company"})`;
+                item.textContent = `${i.full_name} (${i.company_name || "No Company"})`;
                 item.dataset.id = i.incubatee_id;
                 item.addEventListener("click", () => {
                     searchInput.value = item.textContent;

@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from ..models.user import User
 from ..models.reservation import Reservation
 from sqlalchemy import func, desc
+import redis, json
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -21,6 +22,66 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 LOGO_UPLOAD_FOLDER = "static/incubatee_logo"  # Changed to relative path
 LOGO_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'svg'}
 
+redis_client = None
+def get_redis_client():
+    """Get redis client with lazy inizialization"""
+    global redis_client
+    if redis_client is None:
+        try:
+            redis_url = os.environ.get('redis_url')
+            if redis_url:
+                redis_client = redis.from_url(redis_url)
+            else:
+                #Fallback to local redis if no environment variable
+                redis_client = redis.Redis(host='localhost', port=6379, db=0,decode_responses=True)
+        except Exception as e:
+            current_app.logger.error(f"Redis Connection failed: {str(e)}")
+            redis_client = None
+    return redis_client
+
+def cache_key(prefix, *args):
+    """Generate cache key with prefix and arguments"""
+    key_parts = [prefix] + [str(arg) for arg in args]
+    return ":".join(key_parts)
+
+def get_cached_data(key, expire_seconds=3600):
+    """Get data from cache, return (data, found) tuple"""
+    redis_client = get_redis_client()
+    if not redis_client:
+        return None, False
+    
+    try:
+        cached = redis_client.get(key)
+        if cached:
+            return json.loads(cached), True
+        return None, False
+    except Exception as e:
+        current_app.logger.warning(f"Cache get error for key {key}: {str(e)}")
+        return None, False
+    
+def set_cached_data(key, data, expire_seconds=3600):
+    """Set data in cache with expiration"""
+    redis_client = get_redis_client()
+    if not redis_client:
+        return
+    
+    try:
+        redis_client.setex(key, expire_seconds, json.dumps(data, default=str))
+    except Exception as e:
+        current_app.logger.warning(f"Cache set error for key {key}: {str(e)}")
+def invalidate_cache(pattern):
+    """Invalidate cache keys matching pattern"""
+    redis_client = get_redis_client()
+    if not redis_client:
+        return
+    
+    try:
+        keys = redis_client.keys(pattern)
+        if keys:
+            redis_client.delete(*keys)
+    except Exception as e:
+        current_app.logger.warning(f"Cache invalidation error for pattern {pattern}: {str(e)}")
+        
 def allowed_logo_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in LOGO_ALLOWED_EXTENSIONS
@@ -56,6 +117,9 @@ def admin_login_post():
             session['admin_logged_in'] = True
             session['admin_username'] = username
             
+            #Invalidate any cached admin data on login
+            invalidate_cache("admin:*")
+            
             if request.is_json:
                 return jsonify({'success': True,'message': '✅ Login successful! Welcome Admin!','redirect_url': url_for('admin.admin_dashboard')})
             else:
@@ -78,6 +142,7 @@ def admin_logout():
     """Admin logout"""
     session.pop('admin_logged_in', None)
     session.pop('admin_username', None)
+    invalidate_cache("admin:*")
     return redirect(url_for('admin.admin_login'))
 
 @admin_bp.route("/users")
@@ -108,22 +173,37 @@ def sales_reports():
 
 @admin_bp.route("/get-incubatee-logo/<int:incubatee_id>")
 def get_incubatee_logo(incubatee_id):
-    """Get incubatee logo via API"""
+    """Get incubatee logo via API- with caching"""
+    cache_key_str = cache_key("incubatee_logo", incubatee_id)
+    cached_data, found = get_cached_data(cache_key, expire_seconds=86400)# 24 hours cache
+    if found:
+        return jsonify(cached_data)
     try:
         incubatee = Incubatee.query.get_or_404(incubatee_id)
         
         if not incubatee.logo_path:
-            return jsonify({"success": False, "error": "No logo available"}), 404
-        
+            response_data = {"success": False, "error": "No logo available"}
+            set_cached_data(cache_key_str, response_data, 3600) #cache negative result for 1 hour
+            return jsonify(response_data), 404
+            
         # Return the logo URL using the model's property
-        return jsonify({"success": True, "logo_url": incubatee.logo_url,"company_name": incubatee.company_name})
+        response_data = {"success": True, "logo_url": incubatee.logo_url,"company_name": incubatee.company_name}
+        set_cached_data(cache_key_str, response_data, 86400)  # Cache for 24 hours
+        return jsonify(response_data)
         
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
     
 @admin_bp.route("/get-incubatee-details/<int:incubatee_id>")
 def get_incubatee_details(incubatee_id):
-    """Get complete incubatee details including logo URL"""
+    """Get complete incubatee details including logo URL - WITH CACHING"""
+    cache_key_str = cache_key("incubatee_details", incubatee_id)
+    
+    # Try cache first
+    cached_data, found = get_cached_data(cache_key_str, expire_seconds=1800)  # 30 minutes cache
+    if found:
+        return jsonify(cached_data)
+    
     try:
         incubatee = Incubatee.query.get_or_404(incubatee_id)
         
@@ -132,15 +212,9 @@ def get_incubatee_details(incubatee_id):
         products_list = []
         
         for product in products:
-            product_data = {
-                "product_id": product.product_id,
-                "name": product.name,
-                "category": product.category,
-                "description": product.details,
-                "price": float(product.price_per_stocks),
-                "stock": product.stock_amount,
-                "image_path": product.image_path
-            }
+            product_data = {"product_id": product.product_id,"name": product.name,
+                "category": product.category,"description": product.details,"price": float(product.price_per_stocks),
+                "stock": product.stock_amount,"image_path": product.image_path}
             # Add image URL if exists
             if product.image_path:
                 product_data["image_url"] = url_for('static', filename=product.image_path)
@@ -149,34 +223,35 @@ def get_incubatee_details(incubatee_id):
         # Build response with proper URLs
         response_data = {
             "success": True,
-            "incubatee": {
-                "id": incubatee.incubatee_id,
-                "company_name": incubatee.company_name,
+            "incubatee": {"id": incubatee.incubatee_id,"company_name": incubatee.company_name,
                 "full_name": f"{incubatee.first_name} {incubatee.last_name}",
-                "email": incubatee.email,
-                "phone": incubatee.phone_number,
-                "website": incubatee.website,
-                "contact_info": incubatee.contact_info,
-                "batch": incubatee.batch,
+                "email": incubatee.email,"phone": incubatee.phone_number,"website": incubatee.website,
+                "contact_info": incubatee.contact_info,"batch": incubatee.batch,
                 "year_joined": incubatee.created_at.year if incubatee.created_at else None,
                 "description": incubatee.contact_info or "No description available",
                 "logo_url": url_for('static', filename=f'incubatee_logo/{incubatee.logo_path}') if incubatee.logo_path else None,
                 "logo_path": incubatee.logo_path,  # Keep for reference
                 "products": products_list,
-                "product_count": len(products_list)
-            }
-        }
+                "product_count": len(products_list)}}
         
+        set_cached_data(cache_key_str, response_data, 1800)  # Cache for 30 minutes
         return jsonify(response_data)
         
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-
+    
 @admin_bp.route("/get-incubatee-products/<int:incubatee_id>")
 def get_incubatee_products(incubatee_id):
-    """Get products for a specific incubatee"""
+    """Get products for a specific incubatee - WITH CACHING"""
     if not session.get('admin_logged_in'):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    cache_key_str = cache_key("incubatee_products", incubatee_id)
+    
+    # Try cache first
+    cached_data, found = get_cached_data(cache_key_str, expire_seconds=1800)  # 30 minutes cache
+    if found:
+        return jsonify(cached_data)
     
     try:
         products = IncubateeProduct.query.filter_by(incubatee_id=incubatee_id).all()
@@ -191,32 +266,22 @@ def get_incubatee_products(incubatee_id):
                 "price_per_stocks": float(product.price_per_stocks),
                 "image_path": product.image_path})
         
-        return jsonify({"success": True, "products": products_list})
+        response_data = {"success": True, "products": products_list}
+        set_cached_data(cache_key_str, response_data, 1800)  # Cache for 30 minutes
+        return jsonify(response_data)
         
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-    
+
 # Optional: API endpoint for checking login status
 @admin_bp.route("/check-auth")
 def check_auth():
     """Check if admin is authenticated (for AJAX calls)"""
     return jsonify({'authenticated': session.get('admin_logged_in', False),'username': session.get('admin_username', None)})
     
-@admin_bp.route("/get-pricing-units", methods=["GET"])
-def get_pricing_units():
-    """Get all available pricing units"""
-    try:
-        pricing_units = PricingUnit.query.filter_by(is_active=True).all()
-        return jsonify({
-            "success": True,
-            "pricing_units": [{"unit_id": unit.unit_id,"unit_name": unit.unit_name,"unit_description": unit.unit_description
-                } for unit in pricing_units]})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
 @admin_bp.route("/add-pricing-unit", methods=["POST"])
 def add_pricing_unit():
-    """Add a new pricing unit"""
+    """Add a new pricing unit - INVALIDATES CACHE"""
     try:
         data = request.get_json()
         unit_name = data.get("unit_name", "").strip()
@@ -238,6 +303,9 @@ def add_pricing_unit():
         db.session.add(pricing_unit)
         db.session.commit()
         
+        # Invalidate pricing units cache
+        invalidate_cache("pricing_units:*")
+        
         return jsonify({"success": True, "message": "Pricing unit added successfully!","unit_id": pricing_unit.unit_id,"existing": False})
         
     except Exception as e:
@@ -247,13 +315,19 @@ def add_pricing_unit():
         
 @admin_bp.route("/search-pricing-units", methods=["GET"])
 def search_pricing_units():
-    """Search pricing units by name or description"""
+    """Search pricing units by name or description - WITH CACHING"""
     if not session.get('admin_logged_in'):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
     
+    query = request.args.get('q', '').strip().lower()
+    cache_key_str = cache_key("pricing_units:search", query)
+    
+    # Try cache first
+    cached_data, found = get_cached_data(cache_key_str, expire_seconds=1800)  # 30 minutes cache
+    if found:
+        return jsonify(cached_data)
+    
     try:
-        query = request.args.get('q', '').strip().lower()
-        
         if not query:
             pricing_units = PricingUnit.query.filter_by(is_active=True).all()
         else:
@@ -265,14 +339,18 @@ def search_pricing_units():
                 )
             ).all()
         
-        return jsonify({"success": True,"pricing_units": [{"unit_id": unit.unit_id,"unit_name": unit.unit_name,"unit_description": unit.unit_description} for unit in pricing_units]})
+        response_data = {"success": True,"pricing_units": [{"unit_id": unit.unit_id,"unit_name": unit.unit_name,"unit_description": unit.unit_description} for unit in pricing_units]}
+        
+        set_cached_data(cache_key_str, response_data, 1800)  # Cache for 30 minutes
+        return jsonify(response_data)
         
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-    
+
 # Update the add_product route to include pricing_unit_id
 @admin_bp.route("/add-product", methods=["POST"])
 def add_product():
+    """Add product - INVALIDATES CACHE"""
     try:
         incubatee_id = request.form.get("incubatee_id")
         name = request.form.get("name")
@@ -330,6 +408,11 @@ def add_product():
         db.session.add(product)
         db.session.commit()
 
+        # Invalidate relevant caches
+        invalidate_cache(f"incubatee_products:{incubatee_id}")
+        invalidate_cache("products:all")
+        invalidate_cache(f"incubatee_details:{incubatee_id}")
+
         return jsonify({"success": True, "message": "✅ Product saved successfully!"}), 201
 
     except Exception as e:
@@ -339,8 +422,10 @@ def add_product():
 
 @admin_bp.route("/delete-product/<int:product_id>", methods=["DELETE"])
 def delete_product(product_id):
+    """Delete product - INVALIDATES CACHE"""
     try:
         product = IncubateeProduct.query.get_or_404(product_id)
+        incubatee_id = product.incubatee_id
 
         # Delete image if exists
         if product.image_path:
@@ -354,6 +439,12 @@ def delete_product(product_id):
         db.session.delete(product)
         db.session.commit()
 
+        # Invalidate relevant caches
+        invalidate_cache(f"incubatee_products:{incubatee_id}")
+        invalidate_cache("products:all")
+        invalidate_cache(f"incubatee_details:{incubatee_id}")
+        invalidate_cache(f"product:{product_id}")
+
         return jsonify({"success": True, "message": "🗑️ Product deleted successfully"})
 
     except Exception as e:
@@ -363,9 +454,16 @@ def delete_product(product_id):
 
 @admin_bp.route("/get-products", methods=["GET"])
 def get_products():
-    """Get all products for display in admin panel"""
+    """Get all products for display in admin panel - WITH CACHING"""
     if not session.get('admin_logged_in'):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    cache_key_str = "products:all"
+    
+    # Try cache first
+    cached_data, found = get_cached_data(cache_key_str, expire_seconds=1800)  # 30 minutes cache
+    if found:
+        return jsonify(cached_data)
     
     try:
         # Get all products with incubatee information
@@ -395,7 +493,9 @@ def get_products():
                 "incubatee_name": f"{product.incubatee.first_name} {product.incubatee.last_name}" if product.incubatee else "Unknown"
             })
         
-        return jsonify({"success": True, "products": products_list})
+        response_data = {"success": True, "products": products_list}
+        set_cached_data(cache_key_str, response_data, 1800)  # Cache for 30 minutes
+        return jsonify(response_data)
         
     except Exception as e:
         current_app.logger.error(f"Error fetching products: {str(e)}")
@@ -404,7 +504,7 @@ def get_products():
 
 @admin_bp.route("/add-incubatee", methods=["POST"])
 def add_incubatee():
-    """Add a new incubatee (person/company)"""
+    """Add a new incubatee (person/company) - INVALIDATES CACHE"""
     try:
         # Check if it's form data (with file) or JSON
         if request.content_type and 'multipart/form-data' in request.content_type:
@@ -464,9 +564,7 @@ def add_incubatee():
                 return jsonify({"success": False, "error": "Batch must be a valid number"}), 400
 
         # Create incubatee - Set empty strings to None for database
-        incubatee = Incubatee(
-            last_name=last_name,
-            first_name=first_name,
+        incubatee = Incubatee(last_name=last_name,first_name=first_name,
             middle_name=middle_name if middle_name else None,
             contact_info=contact_info if contact_info else None,
             batch=batch_int,
@@ -480,6 +578,10 @@ def add_incubatee():
         db.session.add(incubatee)
         db.session.commit()
 
+        # Invalidate incubatees cache
+        invalidate_cache("incubatees:*")
+        invalidate_cache("incubatees_list:all")
+
         return jsonify({"success": True, "message": "Incubatee added successfully!","incubatee_id": incubatee.incubatee_id})
 
     except Exception as e:
@@ -489,13 +591,19 @@ def add_incubatee():
     
 @admin_bp.route("/get-incubatees", methods=["GET"])
 def get_incubatees():
-    """Return incubatees for dropdown selection"""
+    """Return incubatees for dropdown selection - WITH CACHING"""
+    cache_key_str = "incubatees:all"
+    
+    # Try cache first
+    cached_data, found = get_cached_data(cache_key_str, expire_seconds=3600)  # 1 hour cache
+    if found:
+        return jsonify(cached_data)
+    
     try:
         incubatees = Incubatee.query.order_by(Incubatee.last_name.asc()).all()
-        return jsonify({
+        response_data = {
             "success": True,
-            "incubatees": [
-                {
+            "incubatees": [{
                     "incubatee_id": i.incubatee_id,
                     "first_name": i.first_name or "",
                     "last_name": i.last_name or "",
@@ -507,9 +615,10 @@ def get_incubatees():
                     "phone_number": i.phone_number or "",
                     "batch": i.batch or "",
                     "full_name": i.full_name  # Include full name for display
-                } for i in incubatees
-            ]
-        })
+                } for i in incubatees]}
+        
+        set_cached_data(cache_key_str, response_data, 3600)  # Cache for 1 hour
+        return jsonify(response_data)
     except Exception as e:
         current_app.logger.error(f"Error fetching incubatees: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
@@ -527,7 +636,7 @@ def admin_profile():
 
 @admin_bp.route("/update-profile", methods=["POST"])
 def update_admin_profile():
-    """Update admin profile"""
+    """Update admin profile - INVALIDATES CACHE"""
     if not session.get('admin_logged_in'):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
     
@@ -538,12 +647,7 @@ def update_admin_profile():
         admin_profile = AdminProfile.query.filter_by(username=username).first()
         if not admin_profile:
             # Create new profile if doesn't exist
-            admin_profile = AdminProfile(
-                username=username,
-                full_name=data.get('full_name'),
-                email=data.get('email'),
-                phone=data.get('phone')
-            )
+            admin_profile = AdminProfile(username=username,full_name=data.get('full_name'),email=data.get('email'),phone=data.get('phone'))
             db.session.add(admin_profile)
         else:
             admin_profile.full_name = data.get('full_name')
@@ -551,17 +655,28 @@ def update_admin_profile():
             admin_profile.phone = data.get('phone')
         
         db.session.commit()
+        
+        # Invalidate admin profile cache if you cache it
+        invalidate_cache(f"admin_profile:{username}")
+        
         return jsonify({"success": True, "message": "Profile updated successfully!"})
         
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
-
+    
 @admin_bp.route("/get-users")
 def get_users():
-    """Get all users with their status"""
+    """Get all users with their status - WITH CACHING"""
     if not session.get('admin_logged_in'):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    cache_key_str = "users:all"
+    
+    # Try cache first
+    cached_data, found = get_cached_data(cache_key_str, expire_seconds=900)  # 15 minutes cache
+    if found:
+        return jsonify(cached_data)
     
     try:
         users = User.query.all()
@@ -579,16 +694,25 @@ def get_users():
                 "pending_reservations": pending_reservations,
                 "approved_reservations": approved_reservations,"completed_reservations": completed_reservations})
         
-        return jsonify({"success": True, "users": users_list})
+        response_data = {"success": True, "users": users_list}
+        set_cached_data(cache_key_str, response_data, 900)  # Cache for 15 minutes
+        return jsonify(response_data)
         
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
 @admin_bp.route("/get-incubatees-list")
 def get_incubatees_list():
-    """Get all incubatees for management"""
+    """Get all incubatees for management - WITH CACHING"""
     if not session.get('admin_logged_in'):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    cache_key_str = "incubatees_list:all"
+    
+    # Try cache first
+    cached_data, found = get_cached_data(cache_key_str, expire_seconds=1800)  # 30 minutes cache
+    if found:
+        return jsonify(cached_data)
     
     try:
         incubatees = Incubatee.query.all()
@@ -602,30 +726,25 @@ def get_incubatees_list():
             total_sales_result = db.session.query(func.coalesce(func.sum(SalesReport.total_price), 0)).filter(SalesReport.incubatee_id == incubatee.incubatee_id).scalar()
             total_sales = float(total_sales_result) if total_sales_result else 0.0
             
-            incubatees_list.append({
-                "incubatee_id": incubatee.incubatee_id,
+            incubatees_list.append({"incubatee_id": incubatee.incubatee_id,
                 "full_name": f"{incubatee.first_name} {incubatee.last_name}",
                 "company_name": incubatee.company_name or "No Company",
-                "website": incubatee.website,
-                "logo_url": incubatee.logo_url,
-                "email": incubatee.email or "No email",
-                "phone": incubatee.phone_number or "No phone",
-                "batch": incubatee.batch,
-                "product_count": product_count,
-                "total_sales": total_sales,
+                "website": incubatee.website,"logo_url": incubatee.logo_url,"email": incubatee.email or "No email","phone": incubatee.phone_number or "No phone",
+                "batch": incubatee.batch,"product_count": product_count,"total_sales": total_sales,
                 "is_approved": incubatee.is_approved if hasattr(incubatee, 'is_approved') else False,
-                "created_at": incubatee.created_at.strftime("%Y-%m-%d") if incubatee.created_at else "Unknown"
-            })
+                "created_at": incubatee.created_at.strftime("%Y-%m-%d") if incubatee.created_at else "Unknown"})
         
-        return jsonify({"success": True, "incubatees": incubatees_list})
+        response_data = {"success": True, "incubatees": incubatees_list}
+        set_cached_data(cache_key_str, response_data, 1800)  # Cache for 30 minutes
+        return jsonify(response_data)
         
     except Exception as e:
         current_app.logger.error(f"Error in get_incubatees_list: {str(e)}")
         return jsonify({"success": False, "error": f"Failed to load incubatees: {str(e)}"}), 500
-
+    
 @admin_bp.route("/toggle-incubatee-approval/<int:incubatee_id>", methods=["POST"])
 def toggle_incubatee_approval(incubatee_id):
-    """Approve or disapprove an incubatee"""
+    """Approve or disapprove an incubatee - INVALIDATES CACHE"""
     if not session.get('admin_logged_in'):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
     
@@ -634,13 +753,18 @@ def toggle_incubatee_approval(incubatee_id):
         incubatee.is_approved = not incubatee.is_approved
         db.session.commit()
         
+        # Invalidate incubatee caches
+        invalidate_cache(f"incubatee_details:{incubatee_id}")
+        invalidate_cache("incubatees_list:all")
+        invalidate_cache("incubatees:all")
+        
         action = "approved" if incubatee.is_approved else "disapproved"
         return jsonify({"success": True, "message": f"Incubatee {action} successfully!"})
         
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
-
+    
 @admin_bp.route("/sales-summary")
 def sales_summary():
     """Get sales summary for reports - FIXED for User model without names"""
@@ -653,6 +777,14 @@ def sales_summary():
         end_date = request.args.get('end_date')
         report_type = request.args.get('type', 'overview')
         
+        # Create cache key based on parameters
+        cache_key_str = cache_key("sales_summary", start_date, end_date, report_type)
+        
+        # Try cache first (shorter cache for reports - 5 minutes)
+        cached_data, found = get_cached_data(cache_key_str, expire_seconds=300)
+        if found:
+            return jsonify(cached_data)
+        
         # Base query for sales data
         sales_query = SalesReport.query
         
@@ -663,19 +795,13 @@ def sales_summary():
             try:
                 start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
                 end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
-                sales_query = sales_query.filter(
-                    SalesReport.sale_date >= start_date_obj,
-                    SalesReport.sale_date <= end_date_obj
-                )
+                sales_query = sales_query.filter(SalesReport.sale_date >= start_date_obj,SalesReport.sale_date <= end_date_obj)
             except ValueError:
                 return jsonify({"success": False, "error": "Invalid date format"}), 400
         
         # Get sales data with related information
-        sales_data = sales_query.options(
-            db.joinedload(SalesReport.incubatee),
-            db.joinedload(SalesReport.product),
-            db.joinedload(SalesReport.user)
-        ).all()
+        sales_data = sales_query.options(db.joinedload(SalesReport.incubatee),
+            db.joinedload(SalesReport.product),db.joinedload(SalesReport.user)).all()
         
         # Process sales data
         sales_list = []
@@ -695,9 +821,7 @@ def sales_summary():
             sales_list.append({
                 "sale_date": sale.sale_date.isoformat() if sale.sale_date else None,
                 "reservation_id": sale.reservation_id,
-                "incubatee_name": incubatee_name,
-                "product_name": sale.product_name,
-                "customer_name": customer_name,
+                "incubatee_name": incubatee_name,"product_name": sale.product_name,"customer_name": customer_name,
                 "quantity": sale.quantity,
                 "unit_price": float(sale.unit_price) if sale.unit_price else 0,
                 "total_price": float(sale.total_price) if sale.total_price else 0,
@@ -740,11 +864,7 @@ def sales_summary():
                 incubatee_sales[incubatee_id] = {
                     'name': incubatee_name,
                     'revenue': 0,
-                    'order_count': 0,
-                    'product_count': 0,
-                    'completed_orders': 0,
-                    'products': set()
-                }
+                    'order_count': 0,'product_count': 0,'completed_orders': 0,'products': set()}
             
             incubatee_sales[incubatee_id]['revenue'] += float(sale.total_price) if sale.total_price else 0
             incubatee_sales[incubatee_id]['order_count'] += 1
@@ -851,7 +971,8 @@ def sales_summary():
                 }
             }
         }
-        
+        #set cache for the response
+        set_cached_data(cache_key_str, response_data, 300) # cache for 5 minutes
         return jsonify(response_data)
         
     except Exception as e:
@@ -990,9 +1111,16 @@ def admin_reports():
 
 @admin_bp.route("/get-product/<int:product_id>")
 def get_product(product_id):
-    """Get product data for editing"""
+    """Get product data for editing - WITH CACHING"""
     if not session.get('admin_logged_in'):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    cache_key_str = cache_key("product", product_id)
+    
+    # Try cache first
+    cached_data, found = get_cached_data(cache_key_str, expire_seconds=1800)  # 30 minutes cache
+    if found:
+        return jsonify(cached_data)
     
     try:
         product = IncubateeProduct.query.options(
@@ -1016,15 +1144,16 @@ def get_product(product_id):
             "incubatee_name": f"{product.incubatee.first_name} {product.incubatee.last_name}" if product.incubatee else "Unknown"
         }
         
+        set_cached_data(cache_key_str, product_data, 1800)  # Cache for 30 minutes
         return jsonify({"success": True, "product": product_data})
         
     except Exception as e:
         current_app.logger.error(f"Error fetching product {product_id}: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
-
+    
 @admin_bp.route("/update-product/<int:product_id>", methods=["POST"])
 def update_product(product_id):
-    """Update product information"""
+    """Update product information - Invalidates cache"""
     if not session.get('admin_logged_in'):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
     
@@ -1132,17 +1261,16 @@ def update_product(product_id):
         if updated_fields:
             product.updated_at = datetime.utcnow()
             db.session.commit()
-            return jsonify({
-                "success": True,
-                "message": f"Product updated successfully! Updated fields: {', '.join(updated_fields)}",
-                "updated_fields": updated_fields
-            })
+            
+            # Invalidate relevant caches
+            invalidate_cache(f"product:{product_id}")
+            invalidate_cache(f"incubatee_products:{product.incubatee_id}")
+            invalidate_cache("products:all")
+            invalidate_cache(f"incubatee_details:{product.incubatee_id}")
+            
+            return jsonify({"success": True,"message": f"Product updated successfully! Updated fields: {', '.join(updated_fields)}","updated_fields": updated_fields})
         else:
-            return jsonify({
-                "success": True,
-                "message": "No changes detected - product information is up to date",
-                "updated_fields": []
-            })
+            return jsonify({"success": True,"message": "No changes detected - product information is up to date","updated_fields": []})
         
     except Exception as e:
         db.session.rollback()

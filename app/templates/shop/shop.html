@@ -99,6 +99,33 @@
         <div id="cartContent"></div> <!-- cart.html will load here -->
     </div>
     </div>
+    
+    <!-- 🔔 RESERVATION QUANTITY MODAL -->
+    <div id="reservationModal" class="reservation-modal">
+        <div class="reservation-modal-content">
+            <div class="reservation-header">
+                <h3>Reserve Product</h3>
+                <span class="close-reservation-modal">&times;</span>
+            </div>
+            <div class="reservation-body">
+                <p id="reservationProductName"></p>
+                <div class="quantity-selector">
+                    <label for="reservationQuantity">Quantity:</label>
+                    <div class="quantity-controls">
+                        <button type="button" id="decreaseQuantity">-</button>
+                        <input type="number" id="reservationQuantity" value="1" min="1" max="100">
+                        <button type="button" id="increaseQuantity">+</button>
+                    </div>
+                    <span class="available-stock" id="availableStock"></span>
+                </div>
+            </div>
+            <div class="reservation-footer">
+                <button type="button" class="btn-cancel" id="cancelReservation">Cancel</button>
+                <button type="button" class="btn-confirm" id="confirmReservation">Confirm Reservation</button>
+            </div>
+        </div>
+    </div>
+
     <div id="dashboardModal" class="dashboard-modal">
         <!-- Dashboard content will be loaded here dynamically -->
     </div>
@@ -111,8 +138,197 @@
             <p>&copy; 2025 ATBI - Agri-Aqua Business Incubator. All rights reserved.</p>
         </div>
     </footer>
+    
+    <style>
+        /* Reservation Modal Styles */
+        .reservation-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .reservation-modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 0;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .reservation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .reservation-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .close-reservation-modal {
+            font-size: 1.5rem;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .close-reservation-modal:hover {
+            color: #fbbf24;
+        }
+
+        .reservation-body {
+            padding: 1.5rem;
+        }
+
+        .reservation-body p {
+            margin: 0 0 1rem 0;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .quantity-selector {
+            margin-bottom: 1rem;
+        }
+
+        .quantity-selector label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .quantity-controls button {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #d1d5db;
+            background: white;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quantity-controls button:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+
+        .quantity-controls button:active {
+            background: #e5e7eb;
+        }
+
+        #reservationQuantity {
+            width: 80px;
+            height: 40px;
+            text-align: center;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        #reservationQuantity:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .available-stock {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .reservation-footer {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel, .btn-confirm {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .btn-cancel {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-cancel:hover {
+            background: #e5e7eb;
+        }
+
+        .btn-confirm {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+
+        .btn-confirm:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+    </style>
+
     <!-- JavaScript for product actions -->
     <script>
+    // Global variables for reservation
+    let currentReservationProductId = null;
+    let currentReservationMaxStock = 0;
+
     // 🛒 Cart Functions
     async function updateCartCountFromBackend() {
         try {
@@ -194,68 +410,175 @@
             showNotification('Server error. Try again later.', 'error');
         }
     }
-        // Update reservation function to handle stock validation
-        async function reserveProduct(productId) {
-            if (!(await requireLogin('reserve products'))) return;
 
-            // Check stock availability before proceeding
-            try {
-                const stockRes = await fetch(`/shop/product/${productId}/stock`);
-                const stockData = await stockRes.json();
-                
-                if (!stockData.success) {
-                    showNotification('Error checking product availability', 'error');
-                    return;
-                }
-                
-                if (stockData.product.current_stock <= 0) {
-                    showNotification('This product is out of stock', 'error');
-                    updateProductStockDisplay(); // Refresh display
-                    return;
-                }
-                
-                if (stockData.product.current_stock <= 5) {
-                    showNotification('⚠️ Low stock! Only ' + stockData.product.current_stock + ' items left', 'info');
-                }
+    // 🔔 Reservation Modal Functions
+    function openReservationModal(productId, productName, currentStock) {
+        currentReservationProductId = productId;
+        currentReservationMaxStock = currentStock;
 
-            } catch (err) {
-                console.error('Error checking stock:', err);
-            }
+        const modal = document.getElementById('reservationModal');
+        const productNameElement = document.getElementById('reservationProductName');
+        const availableStockElement = document.getElementById('availableStock');
+        const quantityInput = document.getElementById('reservationQuantity');
 
-            const quantity = 1;
-            const userId = sessionStorage.getItem('user_id');
+        // Set modal content
+        productNameElement.textContent = `Product: ${productName}`;
+        availableStockElement.textContent = `Available stock: ${currentStock}`;
+        quantityInput.value = 1;
+        quantityInput.max = currentStock;
 
-            try {
-                const res = await fetch('/reservations/create', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ product_id: productId, quantity, user_id: userId })
-                });
+        // Update confirm button state
+        updateConfirmButtonState();
 
-                const contentType = res.headers.get("content-type") || "";
-                if (!contentType.includes("application/json")) {
-                    showNotification('Session expired. Please log in again.', 'error');
-                    window.location.href = '/login';
-                    return;
-                }
+        // Show modal
+        modal.style.display = 'block';
+    }
 
-                const data = await res.json();
-                if (data.success) {
-                    showNotification(`Product reserved! Status: ${data.status}`, 'success');
-                    updateReserveButton(productId, data.status);
-                    
-                    // Refresh stock display after successful reservation
-                    setTimeout(() => {
-                        refreshProductStocks();
-                    }, 1000);
-                } else {
-                    showNotification(data.message || 'Reservation failed', 'error');
-                }
-            } catch (err) {
-                console.error('❌ Reservation error:', err);
-                showNotification('Server error. Try again later.', 'error');
+    function closeReservationModal() {
+        const modal = document.getElementById('reservationModal');
+        modal.style.display = 'none';
+        currentReservationProductId = null;
+        currentReservationMaxStock = 0;
+    }
+
+    function updateConfirmButtonState() {
+        const quantityInput = document.getElementById('reservationQuantity');
+        const confirmButton = document.getElementById('confirmReservation');
+        const quantity = parseInt(quantityInput.value) || 0;
+
+        confirmButton.disabled = quantity <= 0 || quantity > currentReservationMaxStock;
+    }
+
+    // Initialize reservation modal event listeners
+    function initReservationModal() {
+        const modal = document.getElementById('reservationModal');
+        const closeBtn = document.querySelector('.close-reservation-modal');
+        const cancelBtn = document.getElementById('cancelReservation');
+        const confirmBtn = document.getElementById('confirmReservation');
+        const decreaseBtn = document.getElementById('decreaseQuantity');
+        const increaseBtn = document.getElementById('increaseQuantity');
+        const quantityInput = document.getElementById('reservationQuantity');
+
+        // Close modal events
+        closeBtn.onclick = closeReservationModal;
+        cancelBtn.onclick = closeReservationModal;
+        window.onclick = function(event) {
+            if (event.target === modal) {
+                closeReservationModal();
             }
         }
+
+        // Quantity control events
+        decreaseBtn.onclick = function() {
+            const currentValue = parseInt(quantityInput.value) || 1;
+            if (currentValue > 1) {
+                quantityInput.value = currentValue - 1;
+                updateConfirmButtonState();
+            }
+        }
+
+        increaseBtn.onclick = function() {
+            const currentValue = parseInt(quantityInput.value) || 1;
+            if (currentValue < currentReservationMaxStock) {
+                quantityInput.value = currentValue + 1;
+                updateConfirmButtonState();
+            }
+        }
+
+        quantityInput.addEventListener('input', updateConfirmButtonState);
+        quantityInput.addEventListener('change', function() {
+            let value = parseInt(this.value) || 1;
+            if (value < 1) value = 1;
+            if (value > currentReservationMaxStock) value = currentReservationMaxStock;
+            this.value = value;
+            updateConfirmButtonState();
+        });
+
+        // Confirm reservation
+        confirmBtn.onclick = function() {
+            const quantity = parseInt(quantityInput.value) || 1;
+            if (quantity > 0 && quantity <= currentReservationMaxStock) {
+                processReservation(currentReservationProductId, quantity);
+                closeReservationModal();
+            }
+        }
+    }
+
+    // Updated reserve product function to show modal
+    async function reserveProduct(productId) {
+        if (!(await requireLogin('reserve products'))) return;
+
+        // Get product details for the modal
+        try {
+            const stockRes = await fetch(`/shop/product/${productId}/stock`);
+            const stockData = await stockRes.json();
+            
+            if (!stockData.success) {
+                showNotification('Error checking product availability', 'error');
+                return;
+            }
+            
+            const product = stockData.product;
+            
+            if (product.current_stock <= 0) {
+                showNotification('This product is out of stock', 'error');
+                updateProductStockDisplay(); // Refresh display
+                return;
+            }
+
+            // Get product name for display
+            const productsResponse = await fetch("/shop/get-products");
+            const productsData = await productsResponse.json();
+            if (productsData.success) {
+                const productInfo = productsData.products.find(p => p.product_id == productId);
+                const productName = productInfo ? productInfo.name : 'Product';
+                
+                // Open reservation modal
+                openReservationModal(productId, productName, product.current_stock);
+            }
+            
+        } catch (err) {
+            console.error('Error preparing reservation:', err);
+            showNotification('Error preparing reservation', 'error');
+        }
+    }
+
+    // Process reservation with quantity
+    async function processReservation(productId, quantity) {
+        const userId = sessionStorage.getItem('user_id');
+
+        try {
+            const res = await fetch('/reservations/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ product_id: productId, quantity, user_id: userId })
+            });
+
+            const contentType = res.headers.get("content-type") || "";
+            if (!contentType.includes("application/json")) {
+                showNotification('Session expired. Please log in again.', 'error');
+                window.location.href = '/login';
+                return;
+            }
+
+            const data = await res.json();
+            if (data.success) {
+                showNotification(`Product reserved (${quantity} items)! Status: ${data.status}`, 'success');
+                updateReserveButton(productId, data.status);
+                
+                // Refresh stock display after successful reservation
+                setTimeout(() => {
+                    refreshProductStocks();
+                }, 1000);
+            } else {
+                showNotification(data.message || 'Reservation failed', 'error');
+            }
+        } catch (err) {
+            console.error('❌ Reservation error:', err);
+            showNotification('Server error. Try again later.', 'error');
+        }
+    }
+
     //  Update reserve button based on backend status
     function updateReserveButton(productId, status) {
         const button = document.querySelector(`[data-id="${productId}"] .reserve-btn`);
@@ -272,6 +595,7 @@
         button.style.background = colors[status] || colors.pending;
         button.disabled = status !== 'pending';
     }
+
     // 🔄 Load user reservations (on page load)
     async function loadUserReservations() {
         const userId = sessionStorage.getItem('user_id');
@@ -287,6 +611,7 @@
             console.error('Error loading reservations:', err);
         }
     }
+
     // 🔔 Notification pop-up
     function showNotification(message, type = 'info') {
         const notification = document.createElement('div');
@@ -323,147 +648,12 @@
         }, 3000);
     }
 
-    // ❤️ Enhanced Wishlist Functionality with Undo
-    let lastWishlistAction = null;
-
-    function addToWishlist(productId) {
-        if (!requireLogin('add items to wishlist')) return;
-
-        const card = document.querySelector(`[data-id="${productId}"]`);
-        const productName = card.querySelector('.product-title').textContent;
-        const productPrice = parseFloat(card.querySelector('.product-price').textContent.replace('₱', ''));
-        const button = card.querySelector('.wishlist-btn');
-
-        let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-        const existingIndex = wishlist.findIndex(item => item.id === productId);
-
-        if (existingIndex === -1) {
-            // Add to wishlist
-            const wishlistItem = { 
-                id: productId, 
-                name: productName, 
-                price: productPrice, 
-                addedAt: new Date().toISOString() 
-            };
-            wishlist.push(wishlistItem);
-            localStorage.setItem('wishlist', JSON.stringify(wishlist));
-            
-            // Animate addition
-            animateWishlistAdd(button);
-            updateWishlistButton(productId, true);
-            
-            // Store last action for undo
-            lastWishlistAction = {
-                type: 'add',
-                productId: productId,
-                productName: productName,
-                timestamp: Date.now()
-            };
-            
-            // Show undo notification
-            showUndoNotification(`❤️ "${productName}" added to wishlist!`);
-            
-        } else {
-            // Remove from wishlist
-            const removedItem = wishlist[existingIndex];
-            wishlist.splice(existingIndex, 1);
-            localStorage.setItem('wishlist', JSON.stringify(wishlist));
-            
-            // Animate removal
-            animateWishlistRemove(button);
-            updateWishlistButton(productId, false);
-            
-            // Store last action for undo
-            lastWishlistAction = {
-                type: 'remove',
-                productId: productId,
-                productName: productName,
-                timestamp: Date.now()
-            };
-            
-            // Show undo notification
-            showUndoNotification(`💔 "${productName}" removed from wishlist!`);
-        }
-    }
-
-    // Undo last wishlist action
-    function undoLastWishlistAction() {
-        if (!lastWishlistAction) return;
-        
-        const { type, productId, productName } = lastWishlistAction;
-        const card = document.querySelector(`[data-id="${productId}"]`);
-        const button = card?.querySelector('.wishlist-btn');
-        
-        let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-        
-        if (type === 'add') {
-            // Undo add = remove
-            const index = wishlist.findIndex(item => item.id === productId);
-            if (index !== -1) {
-                wishlist.splice(index, 1);
-                localStorage.setItem('wishlist', JSON.stringify(wishlist));
-                if (button) {
-                    animateWishlistRemove(button);
-                    updateWishlistButton(productId, false);
-                }
-                showNotification(`❌ Undo: "${productName}" removed from wishlist`, 'info');
-            }
-        } else if (type === 'remove') {
-            // Undo remove = add back
-            const productPrice = parseFloat(card?.querySelector('.product-price')?.textContent.replace('₱', '') || 0);
-            wishlist.push({ 
-                id: productId, 
-                name: productName, 
-                price: productPrice, 
-                addedAt: new Date().toISOString() 
-            });
-            localStorage.setItem('wishlist', JSON.stringify(wishlist));
-            if (button) {
-                animateWishlistAdd(button);
-                updateWishlistButton(productId, true);
-            }
-            showNotification(`❤️ Undo: "${productName}" added back to wishlist`, 'success');
-        }
-        
-        lastWishlistAction = null;
-    }
-
-    // Animation functions
-    function animateWishlistAdd(button) {
-        button.classList.remove('removing', 'favorited');
-        button.classList.add('adding');
-        
-        // Add ripple effect
-        const ripple = document.createElement('span');
-        ripple.className = 'ripple';
-        button.appendChild(ripple);
-        
-        setTimeout(() => {
-            button.classList.remove('adding');
-            button.classList.add('favorited', 'pulse');
-            setTimeout(() => {
-                button.classList.remove('pulse');
-                ripple.remove();
-            }, 600);
-        }, 600);
-    }
-
-    function animateWishlistRemove(button) {
-        button.classList.remove('adding', 'favorited', 'pulse');
-        button.classList.add('removing');
-        
-        setTimeout(() => {
-            button.classList.remove('removing');
-        }, 600);
-    }
-
     // Enhanced undo notification
     function showUndoNotification(message) {
         const notification = document.createElement('div');
         notification.className = 'notification notification-info undo-notification';
         notification.innerHTML = `
             <span>${message}</span>
-            <button class="undo-btn" onclick="undoLastWishlistAction()">Undo</button>
         `;
         
         notification.style.cssText = `
@@ -504,17 +694,6 @@
         });
     }
 
-    // ❤️ Update wishlist button state
-    function updateWishlistButton(productId, isInWishlist) {
-        const button = document.querySelector(`[data-id="${productId}"] .wishlist-btn`);
-        if (button) {
-            if (isInWishlist) {
-                button.classList.add('favorited');
-            } else {
-                button.classList.remove('favorited');
-            }
-        }
-    }
     // 🛒 Update cart totals (for cart modal)
     async function updateCartTotals() {
         try {
@@ -594,15 +773,13 @@
             showNotification('Server error. Try again later.', 'error');
         }
     }
+
     // 🚀 On page load
     document.addEventListener('DOMContentLoaded', async () => {
         await updateCartCountFromBackend();
         await loadUserReservations();
         startCartCountInterval();
-
-        // Initialize wishlist buttons
-        const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-        wishlist.forEach(w => updateWishlistButton(w.id, true));
+        initReservationModal(); // Initialize reservation modal
     });
     </script>
     <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
@@ -811,6 +988,7 @@
                     .catch(err => console.error('Error updating stock display:', err));
             });
         }
+
         // Update the renderProducts function to use stock_amount
         function renderProducts(products) {
             if (!products.length) {
@@ -853,9 +1031,6 @@
                             <div class="image-overlay">
                                 ${stockStatus.text !== 'In Stock' ? 
                                     `<div class="stock-indicator ${stockStatus.class}">${stockStatus.text}</div>` : ''}
-                                <button class="wishlist-btn" onclick="addToWishlist(${p.product_id})">
-                                    <span class="heart-icon">❤️</span>
-                                </button>
                             </div>
                         </div>
 
@@ -898,7 +1073,7 @@
                                     <span class="btn-icon">🛒</span>
                                     ${isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
                                 </button>
-                                <button class="btn-secondary ${isOutOfStock ? 'disabled' : ''}" 
+                                <button class="btn-secondary reserve-btn ${isOutOfStock ? 'disabled' : ''}" 
                                         onclick="reserveProduct(${p.product_id})" 
                                         ${isOutOfStock ? 'disabled' : ''}>
                                     <span class="btn-icon">📋</span>

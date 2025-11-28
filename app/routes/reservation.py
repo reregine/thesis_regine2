@@ -1,3 +1,4 @@
+
 from flask import Blueprint, request, jsonify, session, current_app, url_for, Response
 from ..extension import db
 from ..models.reservation import Reservation
@@ -103,14 +104,14 @@ def create_reservation():
         quantity = data.get("quantity")
 
         if not all([user_id, product_id, quantity]):
-            return jsonify({"error": "Missing required fields"}), 400
+            return jsonify({"success": False, "error": "Missing required fields"}), 400
 
         if quantity <= 0:
-            return jsonify({"error": "Quantity must be greater than 0"}), 400
+            return jsonify({"success": False, "error": "Quantity must be greater than 0"}), 400
 
         product = IncubateeProduct.query.get(product_id)
         if not product:
-            return jsonify({"error": "Product not found"}), 404
+            return jsonify({"success": False, "error": "Product not found"}), 404
 
         # Check if product has any stock at all
         current_stock = product.stock_amount or 0
@@ -129,6 +130,7 @@ def create_reservation():
             db.session.commit()
             
             return jsonify({
+                "success": True,
                 "message": "Reservation created but rejected - product out of stock",
                 "reservation_id": reservation.reservation_id,
                 "status": "rejected",
@@ -157,6 +159,7 @@ def create_reservation():
         time_until_approval = "2 minutes" if reservation.status == "pending" else "immediately"
         
         return jsonify({
+            "success": True,
             "message": f"Reservation created successfully. Status will be updated in {time_until_approval}",
             "reservation_id": reservation.reservation_id,
             "status": reservation.status,
@@ -167,7 +170,7 @@ def create_reservation():
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error creating reservation: {e}")
-        return jsonify({"error": "Server error"}), 500
+        return jsonify({"success": False, "error": "Server error"}), 500
 
 @reservation_bp.route("/process-delayed", methods=["POST"])
 def process_delayed_reservations():
@@ -196,7 +199,7 @@ def create_bulk_reservations():
         items = data.get("items", [])  # List of {product_id, quantity}
 
         if not user_id or not items:
-            return jsonify({"error": "Missing required fields"}), 400
+            return jsonify({"success": False, "error": "Missing required fields"}), 400
 
         results = []
         processed_products = set()
@@ -243,15 +246,14 @@ def create_bulk_reservations():
                     if reservation.status == "rejected":
                         result["reason"] = reservation.rejected_reason
 
-        return jsonify({"message": "Reservations processed successfully","results": results}), 201
+        return jsonify({"success": True, "message": "Reservations processed successfully","results": results}), 201
 
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error creating bulk reservations: {e}")
-        return jsonify({"error": "Server error"}), 500
+        return jsonify({"success": False, "error": "Server error"}), 500
 
 # UPDATE RESERVATION STATUS (Only for completion)
-# In your reservation_bp routes, update the completion endpoint
 @reservation_bp.route("/<int:reservation_id>/status", methods=["PUT"])
 def update_reservation_status(reservation_id):
     """Only allow updating to 'completed' status (when item is picked up)"""
@@ -261,20 +263,20 @@ def update_reservation_status(reservation_id):
 
         reservation = Reservation.query.get(reservation_id)
         if not reservation:
-            return jsonify({"error": "Reservation not found"}), 404
+            return jsonify({"success": False, "error": "Reservation not found"}), 404
 
         # Only allow changing to 'completed' status
         if new_status != "completed":
-            return jsonify({"error": "Only status change to 'completed' is allowed"}), 400
+            return jsonify({"success": False, "error": "Only status change to 'completed' is allowed"}), 400
 
         # Only allow completing approved reservations
         if reservation.status != "approved":
-            return jsonify({"error": "Only approved reservations can be completed"}), 400
+            return jsonify({"success": False, "error": "Only approved reservations can be completed"}), 400
 
         # Get product details
         product = IncubateeProduct.query.get(reservation.product_id)
         if not product:
-            return jsonify({"error": "Product not found"}), 404
+            return jsonify({"success": False, "error": "Product not found"}), 404
 
         # Update reservation status
         reservation.status = new_status
@@ -304,12 +306,12 @@ def update_reservation_status(reservation_id):
         
         db.session.commit()
         
-        return jsonify({"message": "Reservation marked as completed and sales record created","sales_id": sales_report.sales_id}), 200
+        return jsonify({"success": True, "message": "Reservation marked as completed and sales record created","sales_id": sales_report.sales_id}), 200
 
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error updating reservation: {e}")
-        return jsonify({"error": "Server error"}), 500
+        return jsonify({"success": False, "error": "Server error"}), 500
     
 # GET ALL RESERVATIONS (ADMIN / STAFF)
 @reservation_bp.route("/", methods=["GET"])
@@ -338,7 +340,6 @@ def get_all_reservations():
                 "rejected_reason": reservation.rejected_reason
             })
 
-        # CONSISTENT JSON RESPONSE FORMAT
         return jsonify({"success": True,"reservations": result,"count": len(result),"message": "Reservations retrieved successfully"}), 200
         
     except Exception as e:
@@ -481,16 +482,16 @@ def delete_reservation(reservation_id):
     try:
         reservation = Reservation.query.get(reservation_id)
         if not reservation:
-            return jsonify({"error": "Reservation not found"}), 404
+            return jsonify({"success": False, "error": "Reservation not found"}), 404
 
         db.session.delete(reservation)
         db.session.commit()
-        return jsonify({"message": "Reservation deleted successfully"}), 200
+        return jsonify({"success": True, "message": "Reservation deleted successfully"}), 200
 
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error deleting reservation: {e}")
-        return jsonify({"error": "Server error"}), 500
+        return jsonify({"success": False, "error": "Server error"}), 500
 
 @reservation_bp.route("/<int:reservation_id>/approve", methods=["POST"])
 def approve_reservation(reservation_id):
@@ -710,4 +711,3 @@ def check_overdue_reservations():
         db.session.rollback()
         current_app.logger.error(f"Error in auto-rejection: {e}")
         return jsonify({"success": False,"error": "Failed to process auto-rejection"}), 500
-    
