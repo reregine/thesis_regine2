@@ -1,4 +1,3 @@
-
 from flask import Blueprint, request, jsonify, session, current_app, url_for, Response
 from ..extension import db
 from ..models.reservation import Reservation
@@ -6,8 +5,95 @@ from ..models.admin import IncubateeProduct, SalesReport
 from datetime import datetime, timezone, timedelta
 import csv
 from io import StringIO
+import redis
+import json
+import os
 
 reservation_bp = Blueprint("reservation_bp", __name__, url_prefix="/reservations")
+
+# Redis client setup
+redis_client = None
+
+def get_redis_client():
+    """Get redis client with lazy initialization"""
+    global redis_client
+    if redis_client is None:
+        try:
+            redis_url = os.environ.get('redis_url')
+            if redis_url:
+                redis_client = redis.from_url(redis_url)
+            else:
+                # Fallback to local redis if no environment variable
+                redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+        except Exception as e:
+            current_app.logger.error(f"Redis Connection failed: {str(e)}")
+            redis_client = None
+    return redis_client
+
+def cache_key(prefix, *args):
+    """Generate cache key with prefix and arguments"""
+    key_parts = [prefix] + [str(arg) for arg in args]
+    return ":".join(key_parts)
+
+def get_cached_data(key, expire_seconds=3600):
+    """Get data from cache, return (data, found) tuple"""
+    redis_client = get_redis_client()
+    if not redis_client:
+        return None, False
+    
+    try:
+        cached = redis_client.get(key)
+        if cached:
+            return json.loads(cached), True
+        return None, False
+    except Exception as e:
+        current_app.logger.warning(f"Cache get error for key {key}: {str(e)}")
+        return None, False
+    
+def set_cached_data(key, data, expire_seconds=3600):
+    """Set data in cache with expiration"""
+    redis_client = get_redis_client()
+    if not redis_client:
+        return
+    
+    try:
+        redis_client.setex(key, expire_seconds, json.dumps(data, default=str))
+    except Exception as e:
+        current_app.logger.warning(f"Cache set error for key {key}: {str(e)}")
+
+def invalidate_cache(pattern):
+    """Invalidate cache keys matching pattern"""
+    redis_client = get_redis_client()
+    if not redis_client:
+        return
+    
+    try:
+        keys = redis_client.keys(pattern)
+        if keys:
+            redis_client.delete(*keys)
+    except Exception as e:
+        current_app.logger.warning(f"Cache invalidation error for pattern {pattern}: {str(e)}")
+
+def invalidate_reservation_caches(user_id=None, product_id=None):
+    """Invalidate reservation-related caches"""
+    patterns = [
+        "reservations:*",
+        "reservations_user:*",
+        "reservations_status:*",
+        "product_queue:*",
+        "sales:*"
+    ]
+    
+    if user_id:
+        patterns.append(f"reservations_user:{user_id}*")
+        patterns.append(f"reservations_status:*:{user_id}")
+    
+    if product_id:
+        patterns.append(f"product_queue:{product_id}")
+        patterns.append(f"reservations_product:{product_id}*")
+    
+    for pattern in patterns:
+        invalidate_cache(pattern)
 
 def process_reservation_queues():
     """
@@ -24,6 +110,11 @@ def process_reservation_queues():
             process_product_reservations(product.product_id)
             
         db.session.commit()
+        
+        # Invalidate relevant caches after processing
+        invalidate_reservation_caches()
+        invalidate_cache("products:*")  # Invalidate product stock caches
+        
         return True
     except Exception as e:
         db.session.rollback()
@@ -88,6 +179,12 @@ def process_product_reservations(product_id):
                 )
         
         db.session.commit()
+        
+        # Invalidate caches for this product
+        invalidate_reservation_caches(product_id=product_id)
+        invalidate_cache(f"product:{product_id}")
+        invalidate_cache(f"incubatee_products:{product.incubatee_id}")
+        
         return True
         
     except Exception as e:
@@ -129,6 +226,9 @@ def create_reservation():
             db.session.add(reservation)
             db.session.commit()
             
+            # Invalidate caches
+            invalidate_reservation_caches(user_id=user_id, product_id=product_id)
+            
             return jsonify({
                 "success": True,
                 "message": "Reservation created but rejected - product out of stock",
@@ -157,6 +257,9 @@ def create_reservation():
 
         # Calculate time until potential approval
         time_until_approval = "2 minutes" if reservation.status == "pending" else "immediately"
+        
+        # Invalidate caches
+        invalidate_reservation_caches(user_id=user_id, product_id=product_id)
         
         return jsonify({
             "success": True,
@@ -246,6 +349,11 @@ def create_bulk_reservations():
                     if reservation.status == "rejected":
                         result["reason"] = reservation.rejected_reason
 
+        # Invalidate caches
+        invalidate_reservation_caches(user_id=user_id)
+        for product_id in processed_products:
+            invalidate_reservation_caches(product_id=product_id)
+        
         return jsonify({"success": True, "message": "Reservations processed successfully","results": results}), 201
 
     except Exception as e:
@@ -306,6 +414,11 @@ def update_reservation_status(reservation_id):
         
         db.session.commit()
         
+        # Invalidate caches
+        invalidate_reservation_caches(user_id=reservation.user_id, product_id=reservation.product_id)
+        invalidate_cache("sales:*")
+        invalidate_cache("sales_summary:*")
+        
         return jsonify({"success": True, "message": "Reservation marked as completed and sales record created","sales_id": sales_report.sales_id}), 200
 
     except Exception as e:
@@ -317,6 +430,13 @@ def update_reservation_status(reservation_id):
 @reservation_bp.route("/", methods=["GET"])
 def get_all_reservations():
     try:
+        cache_key_str = "reservations:all"
+        
+        # Try cache first (5 minutes cache for admin view)
+        cached_data, found = get_cached_data(cache_key_str, expire_seconds=300)
+        if found:
+            return jsonify(cached_data)
+        
         reservations = (
             db.session.query(Reservation, IncubateeProduct)
             .join(IncubateeProduct, Reservation.product_id == IncubateeProduct.product_id)
@@ -340,7 +460,15 @@ def get_all_reservations():
                 "rejected_reason": reservation.rejected_reason
             })
 
-        return jsonify({"success": True,"reservations": result,"count": len(result),"message": "Reservations retrieved successfully"}), 200
+        response_data = {
+            "success": True,
+            "reservations": result,
+            "count": len(result),
+            "message": "Reservations retrieved successfully"
+        }
+        
+        set_cached_data(cache_key_str, response_data, 300)
+        return jsonify(response_data), 200
         
     except Exception as e:
         current_app.logger.error(f"Error fetching all reservations: {e}")
@@ -367,6 +495,13 @@ def process_pending_reservations():
 def get_product_reservation_queue(product_id):
     """Get the current reservation queue for a product"""
     try:
+        cache_key_str = cache_key("product_queue", product_id)
+        
+        # Try cache first (2 minutes cache for queue data)
+        cached_data, found = get_cached_data(cache_key_str, expire_seconds=120)
+        if found:
+            return jsonify(cached_data)
+        
         product = IncubateeProduct.query.get(product_id)
         if not product:
             return jsonify({"success": False, "error": "Product not found"}), 404
@@ -381,7 +516,16 @@ def get_product_reservation_queue(product_id):
                 "reserved_at": reservation.reserved_at.strftime("%Y-%m-%d %H:%M:%S"),
                 "position_in_queue": len([r for r in reservations if r.reserved_at <= reservation.reserved_at])})
 
-        return jsonify({"success": True,"product_id": product_id,"product_name": product.name,"current_stock": product.stock_amount or 0,"reservation_queue": queue_data})
+        response_data = {
+            "success": True,
+            "product_id": product_id,
+            "product_name": product.name,
+            "current_stock": product.stock_amount or 0,
+            "reservation_queue": queue_data
+        }
+        
+        set_cached_data(cache_key_str, response_data, 120)
+        return jsonify(response_data)
 
     except Exception as e:
         current_app.logger.error(f"Error fetching product queue: {e}")
@@ -391,6 +535,13 @@ def get_product_reservation_queue(product_id):
 @reservation_bp.route("/user/<int:user_id>", methods=["GET"])
 def get_user_reservations(user_id):
     try:
+        cache_key_str = cache_key("reservations_user", user_id)
+        
+        # Try cache first (2 minutes cache for user reservations)
+        cached_data, found = get_cached_data(cache_key_str, expire_seconds=120)
+        if found:
+            return jsonify(cached_data)
+        
         reservations = (
             db.session.query(Reservation, IncubateeProduct)
             .join(IncubateeProduct, Reservation.product_id == IncubateeProduct.product_id)
@@ -414,7 +565,9 @@ def get_user_reservations(user_id):
                 "rejected_at": reservation.rejected_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.rejected_at else None,
                 "rejected_reason": reservation.rejected_reason  })
 
-        return jsonify({"success": True, "reservations": reservations_list}), 200
+        response_data = {"success": True, "reservations": reservations_list}
+        set_cached_data(cache_key_str, response_data, 120)
+        return jsonify(response_data), 200
 
     except Exception as e:
         current_app.logger.error(f"Error fetching user reservations: {e}")
@@ -429,6 +582,13 @@ def get_reservations_by_status(status):
 
         if status not in ["pending", "approved", "completed", "rejected"]:
             return jsonify({"success": False, "message": "Invalid status"}), 400
+
+        cache_key_str = cache_key("reservations_status", status, user_id)
+        
+        # Try cache first (1 minute cache for status-based queries - more frequent updates)
+        cached_data, found = get_cached_data(cache_key_str, expire_seconds=60)
+        if found:
+            return jsonify(cached_data)
 
         reservations = (
             db.session.query(Reservation, IncubateeProduct)
@@ -470,7 +630,9 @@ def get_reservations_by_status(status):
                 "pending_info": pending_info  # Only for pending reservations
             })
 
-        return jsonify({"success": True, "reservations": reservations_list}), 200
+        response_data = {"success": True, "reservations": reservations_list}
+        set_cached_data(cache_key_str, response_data, 60)
+        return jsonify(response_data), 200
 
     except Exception as e:
         current_app.logger.error(f"Error fetching {status} reservations: {e}")
@@ -484,8 +646,15 @@ def delete_reservation(reservation_id):
         if not reservation:
             return jsonify({"success": False, "error": "Reservation not found"}), 404
 
+        user_id = reservation.user_id
+        product_id = reservation.product_id
+        
         db.session.delete(reservation)
         db.session.commit()
+        
+        # Invalidate relevant caches
+        invalidate_reservation_caches(user_id=user_id, product_id=product_id)
+        
         return jsonify({"success": True, "message": "Reservation deleted successfully"}), 200
 
     except Exception as e:
@@ -515,6 +684,10 @@ def approve_reservation(reservation_id):
         
         db.session.commit()
         
+        # Invalidate caches
+        invalidate_reservation_caches(user_id=reservation.user_id, product_id=reservation.product_id)
+        invalidate_cache(f"product:{reservation.product_id}")
+        
         return jsonify({"success": True, "message": "Reservation approved and stock updated"})
         
     except Exception as e:
@@ -528,6 +701,13 @@ def get_sales_report():
         date_str = request.args.get("date")
         if not date_str:
             return jsonify({"success": False, "error": "Date parameter is required"}), 400
+        
+        cache_key_str = cache_key("sales_report", date_str)
+        
+        # Try cache first (5 minutes cache for sales reports)
+        cached_data, found = get_cached_data(cache_key_str, expire_seconds=300)
+        if found:
+            return jsonify(cached_data)
         
         target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
         
@@ -558,7 +738,9 @@ def get_sales_report():
             "completed_orders": total_orders,  # All sales reports are completed orders
             "total_products": total_products}
         
-        return jsonify({"success": True,"report": report_data,"summary": summary}), 200
+        response_data = {"success": True,"report": report_data,"summary": summary}
+        set_cached_data(cache_key_str, response_data, 300)
+        return jsonify(response_data), 200
         
     except Exception as e:
         current_app.logger.error(f"Error generating sales report: {e}")
@@ -609,6 +791,13 @@ def export_sales_report():
 def get_sales_summary():
     """Get overall sales summary for dashboard"""
     try:
+        cache_key_str = "sales_summary:daily"
+        
+        # Try cache first (2 minutes cache for sales summary)
+        cached_data, found = get_cached_data(cache_key_str, expire_seconds=120)
+        if found:
+            return jsonify(cached_data)
+        
         # Today's sales
         today = datetime.now(timezone.utc).date()
         today_sales = db.session.query(db.func.sum(SalesReport.total_price)).filter(SalesReport.sale_date == today).scalar() or 0
@@ -623,9 +812,18 @@ def get_sales_summary():
         # Total products sold today
         today_products = db.session.query(db.func.sum(SalesReport.quantity)).filter(SalesReport.sale_date == today).scalar() or 0
         
-        return jsonify({
+        response_data = {
             "success": True,
-            "summary": {"today_sales": float(today_sales),"month_sales": float(month_sales),"today_orders": today_orders,"today_products": today_products}}), 200
+            "summary": {
+                "today_sales": float(today_sales),
+                "month_sales": float(month_sales),
+                "today_orders": today_orders,
+                "today_products": today_products
+            }
+        }
+        
+        set_cached_data(cache_key_str, response_data, 120)
+        return jsonify(response_data), 200
         
     except Exception as e:
         current_app.logger.error(f"Error getting sales summary: {e}")
@@ -642,6 +840,13 @@ def get_sales_by_date_range():
         if not start_date_str or not end_date_str:
             return jsonify({"success": False, "error": "Start and end date parameters are required"}), 400
         
+        cache_key_str = cache_key("sales_range", start_date_str, end_date_str)
+        
+        # Try cache first (5 minutes cache for date range queries)
+        cached_data, found = get_cached_data(cache_key_str, expire_seconds=300)
+        if found:
+            return jsonify(cached_data)
+        
         start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
         end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
         
@@ -657,7 +862,15 @@ def get_sales_by_date_range():
             sales_data.append({"date": day.sale_date.strftime("%Y-%m-%d"),"total_sales": float(day.daily_total or 0),
                 "order_count": day.order_count,"product_count": day.product_count or 0})
         
-        return jsonify({"success": True,"sales_data": sales_data,"start_date": start_date_str,"end_date": end_date_str}), 200
+        response_data = {
+            "success": True,
+            "sales_data": sales_data,
+            "start_date": start_date_str,
+            "end_date": end_date_str
+        }
+        
+        set_cached_data(cache_key_str, response_data, 300)
+        return jsonify(response_data), 200
         
     except Exception as e:
         current_app.logger.error(f"Error getting sales by date range: {e}")
@@ -681,6 +894,8 @@ def check_overdue_reservations():
         overdue_reservations = Reservation.query.filter(Reservation.status == "approved",Reservation.reserved_at < cutoff_time).all()
         
         rejected_count = 0
+        affected_users = set()
+        affected_products = set()
         
         # Reject each overdue reservation
         for reservation in overdue_reservations:
@@ -690,12 +905,14 @@ def check_overdue_reservations():
                 if product:
                     # Restore stock
                     product.stock_amount = (product.stock_amount or 0) + reservation.quantity
+                    affected_products.add(reservation.product_id)
                 
                 # Update reservation status to rejected instead of deleting
                 reservation.status = "rejected"
                 reservation.rejected_at = datetime.now()
                 reservation.rejected_reason = "Not picked up on time"
                 
+                affected_users.add(reservation.user_id)
                 rejected_count += 1
                 current_app.logger.info(f"Auto-rejected reservation {reservation.reservation_id}, restored {reservation.quantity} units to product {product.product_id}")
                 
@@ -704,6 +921,12 @@ def check_overdue_reservations():
                 continue
         
         db.session.commit()
+        
+        # Invalidate caches for affected users and products
+        for user_id in affected_users:
+            invalidate_reservation_caches(user_id=user_id)
+        for product_id in affected_products:
+            invalidate_reservation_caches(product_id=product_id)
         
         return jsonify({"success": True,"rejected_count": rejected_count,"message": f"Auto-rejected {rejected_count} overdue reservations","cutoff_time": cutoff_time.strftime("%Y-%m-%d %H:%M:%S"),"timeout_minutes": timeout_ms / (60 * 1000)}), 200
         
