@@ -5,14 +5,16 @@ from ..models.admin import IncubateeProduct, SalesReport
 from datetime import datetime, timezone, timedelta
 import csv
 from io import StringIO
-import redis
-import json
-import os
+import redis, json, os
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+import atexit, time
 
 reservation_bp = Blueprint("reservation_bp", __name__, url_prefix="/reservations")
 
 # Redis client setup
 redis_client = None
+scheduler = None
 
 def get_redis_client():
     """Get redis client with lazy initialization"""
@@ -95,6 +97,67 @@ def invalidate_reservation_caches(user_id=None, product_id=None):
     for pattern in patterns:
         invalidate_cache(pattern)
 
+def init_scheduler(app):
+    """Initialize the APScheduler for automatic reservation processing"""
+    global scheduler
+    
+    if scheduler is not None:
+        current_app.logger.info("Scheduler already initialized")
+        return scheduler
+    
+    try:
+        scheduler = BackgroundScheduler()
+        scheduler.start()
+        
+        # Add job to process reservations every 30 seconds for testing
+        # In production, you might want to use every 1 minute
+        scheduler.add_job(
+            id='reservation_processor',
+            func=process_reservation_queues_job,
+            trigger=IntervalTrigger(seconds=30),  # Run every 30 seconds
+            max_instances=1,
+            replace_existing=True
+        )
+        
+        current_app.logger.info("✅ APScheduler initialized - Auto-approval is ACTIVE")
+        current_app.logger.info("🕒 Will process pending reservations every 30 seconds")
+        
+        # Register shutdown handler
+        atexit.register(lambda: scheduler.shutdown())
+        
+        return scheduler
+        
+    except Exception as e:
+        current_app.logger.error(f"❌ Failed to initialize scheduler: {e}")
+        return None
+
+def process_reservation_queues_job():
+    """Wrapper function for the scheduler job"""
+    try:
+        with current_app.app_context():
+            current_time = datetime.now(timezone.utc)
+            current_app.logger.info(f"🔄 Auto-processing reservations at {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            
+            success = process_reservation_queues()
+            
+            if success:
+                current_app.logger.info("✅ Reservation auto-processing completed successfully")
+            else:
+                current_app.logger.error("❌ Reservation auto-processing failed")
+                
+    except Exception as e:
+        current_app.logger.error(f"❌ Scheduler job error: {e}")
+
+def get_scheduler_status():
+    """Check if scheduler is running"""
+    global scheduler
+    if scheduler and scheduler.running:
+        jobs = scheduler.get_jobs()
+        return {"running": True,
+            "jobs_count": len(jobs),
+            "next_run_time": jobs[0].next_run_time.isoformat() if jobs else None}
+    return {"running": False}
+
 def process_reservation_queues():
     """
     Process all pending reservations for all products using FCFS algorithm
@@ -130,16 +193,24 @@ def process_product_reservations(product_id):
     try:
         product = IncubateeProduct.query.get(product_id)
         if not product:
+            current_app.logger.warning(f"❌ Product {product_id} not found for processing")
             return False
 
         # Get all pending reservations for this product, ordered by reservation time (FCFS)
-        pending_reservations = Reservation.query.filter_by(
-            product_id=product_id, 
-            status="pending"
-        ).order_by(Reservation.reserved_at.asc()).all()
+        pending_reservations = Reservation.query.filter_by(product_id=product_id, status="pending").order_by(Reservation.reserved_at.asc()).all()
+
+        if not pending_reservations:
+            return True  # No pending reservations to process
 
         available_stock = product.stock_amount or 0
         current_time = datetime.now(timezone.utc)
+        
+        current_app.logger.info(f"🔍 Processing {len(pending_reservations)} pending reservations for product '{product.name}' (ID: {product_id})")
+        current_app.logger.info(f"📦 Available stock: {available_stock}")
+        
+        approved_count = 0
+        rejected_count = 0
+        still_pending_count = 0
         
         for reservation in pending_reservations:
             # Calculate how long the reservation has been pending
@@ -155,8 +226,9 @@ def process_product_reservations(product_id):
                     available_stock -= reservation.quantity
                     product.stock_amount = available_stock
                     
+                    approved_count += 1
                     current_app.logger.info(
-                        f"Reservation {reservation.reservation_id} auto-approved after {time_pending_minutes:.1f} minutes. "
+                        f"✅ Reservation {reservation.reservation_id} AUTO-APPROVED after {time_pending_minutes:.1f} minutes. "
                         f"Stock deducted: {reservation.quantity}, Remaining: {available_stock}"
                     )
                 else:
@@ -165,20 +237,29 @@ def process_product_reservations(product_id):
                     reservation.rejected_at = current_time
                     reservation.rejected_reason = "Insufficient stock - product out of stock"
                     
+                    rejected_count += 1
                     current_app.logger.info(
-                        f"Reservation {reservation.reservation_id} auto-rejected after {time_pending_minutes:.1f} minutes. "
+                        f"❌ Reservation {reservation.reservation_id} AUTO-REJECTED after {time_pending_minutes:.1f} minutes. "
                         f"Requested: {reservation.quantity}, Available: {available_stock}"
                     )
             else:
                 # Reservation is still within the 2-minute waiting period
                 minutes_remaining = 2 - time_pending_minutes
-                current_app.logger.info(
-                    f"Reservation {reservation.reservation_id} still pending. "
+                still_pending_count += 1
+                current_app.logger.debug(
+                    f"⏳ Reservation {reservation.reservation_id} still pending. "
                     f"Time elapsed: {time_pending_minutes:.1f} minutes, "
                     f"Time remaining: {minutes_remaining:.1f} minutes"
                 )
         
         db.session.commit()
+        
+        # Log summary
+        if approved_count > 0 or rejected_count > 0:
+            current_app.logger.info(
+                f"📊 Processing complete for product {product_id}: "
+                f"{approved_count} approved, {rejected_count} rejected, {still_pending_count} still pending"
+            )
         
         # Invalidate caches for this product
         invalidate_reservation_caches(product_id=product_id)
@@ -189,9 +270,9 @@ def process_product_reservations(product_id):
         
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error processing reservations for product {product_id}: {e}")
+        current_app.logger.error(f"❌ Error processing reservations for product {product_id}: {e}")
         return False
-
+    
 @reservation_bp.route("/create", methods=["POST"])
 def create_reservation():
     try:
@@ -934,3 +1015,58 @@ def check_overdue_reservations():
         db.session.rollback()
         current_app.logger.error(f"Error in auto-rejection: {e}")
         return jsonify({"success": False,"error": "Failed to process auto-rejection"}), 500
+    
+@reservation_bp.route("/scheduler/status", methods=["GET"])
+def get_scheduler_status_route():
+    """Get scheduler status"""
+    status = get_scheduler_status()
+    return jsonify({"success": True, "scheduler": status})
+
+@reservation_bp.route("/scheduler/start", methods=["POST"])
+def start_scheduler():
+    """Manually start the scheduler"""
+    try:
+        scheduler = init_scheduler(current_app)
+        if scheduler:
+            return jsonify({
+                "success": True, 
+                "message": "✅ Scheduler started successfully",
+                "status": get_scheduler_status()
+            })
+        else:
+            return jsonify({"success": False, "error": "Failed to start scheduler"}), 500
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@reservation_bp.route("/scheduler/stop", methods=["POST"])
+def stop_scheduler():
+    """Stop the scheduler"""
+    global scheduler
+    try:
+        if scheduler and scheduler.running:
+            scheduler.shutdown()
+            scheduler = None
+            return jsonify({
+                "success": True, 
+                "message": "✅ Scheduler stopped successfully",
+                "status": get_scheduler_status()
+            })
+        else:
+            return jsonify({"success": True, "message": "Scheduler was not running"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@reservation_bp.route("/scheduler/trigger-now", methods=["POST"])
+def trigger_processing_now():
+    """Manually trigger reservation processing immediately"""
+    try:
+        success = process_reservation_queues()
+        if success:
+            return jsonify({
+                "success": True, 
+                "message": "✅ Manual processing completed successfully"
+            })
+        else:
+            return jsonify({"success": False, "message": "Processing failed"}), 500
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500

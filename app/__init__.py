@@ -2,11 +2,12 @@
 from flask import Flask, session
 from .config import Config
 from .extension import db, migrate
-from .routes.reservation import reservation_bp
+from .routes.reservation import reservation_bp, init_scheduler
 from .routes.cart import cart_bp
 from .routes.favorites import favorites_bp
 from .routes.dashboard import dashboard_bp
 from .routes import home, incubatee_showroom, layouts, shop, notification, showroom, login, admin, contact, about, user
+
 
 def create_app(config_class=Config):
     app = Flask(__name__, template_folder="templates", static_folder="static")
@@ -49,5 +50,7 @@ def create_app(config_class=Config):
             ProductPopularityService.initialize_on_startup()
         except Exception as e:
             print(f"⚠️ Could not initialize popularity data: {e}")
-    
+            
+    with app.app_context():
+        init_scheduler(app)
     return app
