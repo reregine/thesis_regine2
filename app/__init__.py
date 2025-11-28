@@ -51,6 +51,5 @@ def create_app(config_class=Config):
         except Exception as e:
             print(f"⚠️ Could not initialize popularity data: {e}")
             
-    with app.app_context():
-        init_scheduler(app)
+    init_scheduler(app)
     return app

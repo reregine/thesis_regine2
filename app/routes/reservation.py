@@ -102,20 +102,18 @@ def init_scheduler(app):
     global scheduler
     
     if scheduler is not None:
-        current_app.logger.info("Scheduler already initialized")
+        app.logger.info("Scheduler already initialized")
         return scheduler
     
     try:
         scheduler = BackgroundScheduler()
         scheduler.start()
         
-        # Add job to process reservations every 30 seconds for testing
-        # We pass the app instance to the job function
+        # Add job to process reservations every 30 seconds
         scheduler.add_job(
             id='reservation_processor',
-            func=process_reservation_queues_job,
-            args=[app],  # Pass the app instance
-            trigger=IntervalTrigger(seconds=30),  # Run every 30 seconds
+            func=lambda: process_reservation_queues_job(app),
+            trigger=IntervalTrigger(seconds=30),
             max_instances=1,
             replace_existing=True
         )
@@ -129,12 +127,11 @@ def init_scheduler(app):
         return scheduler
         
     except Exception as e:
-        if app:
-            app.logger.error(f"❌ Failed to initialize scheduler: {e}")
+        app.logger.error(f"❌ Failed to initialize scheduler: {e}")
         return None
 
 def process_reservation_queues_job(app):
-    """Wrapper function for the scheduler job - accepts app as parameter"""
+    """Wrapper function for the scheduler job"""
     try:
         # Use the passed app instance to create context
         with app.app_context():
@@ -149,11 +146,8 @@ def process_reservation_queues_job(app):
                 app.logger.error("❌ Reservation auto-processing failed")
                 
     except Exception as e:
-        # Log using the app instance that was passed
-        if app:
-            app.logger.error(f"❌ Scheduler job error: {e}")
-        else:
-            print(f"❌ Scheduler job error (no app context): {e}")
+        # Use the passed app instance for logging
+        app.logger.error(f"❌ Scheduler job error: {e}")
 
 def get_scheduler_status():
     """Check if scheduler is running"""
