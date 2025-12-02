@@ -36,12 +36,7 @@ def create_app(config_class=Config):
     
     @app.context_processor
     def inject_user_data():
-        return dict(
-            user_logged_in=session.get('user_logged_in'),
-            admin_logged_in=session.get('admin_logged_in'),
-            username=session.get('username'),
-            admin_username=session.get('admin_username')
-        )
+        return dict(user_logged_in=session.get('user_logged_in'),admin_logged_in=session.get('admin_logged_in'),username=session.get('username'),admin_username=session.get('admin_username'))
     
     # Initialize product popularity data on startup
     with app.app_context():

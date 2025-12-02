@@ -10,5 +10,4 @@ __all__ = [
     "Notification",
     "User",
     "Incubatee",
-    "IncubateeProduct"
-]
+    "IncubateeProduct"]
