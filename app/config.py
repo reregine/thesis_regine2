@@ -12,12 +12,64 @@ class BaseConfig:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
 
 class LocalConfig(BaseConfig):
-    """Local development configuration"""
-    SQLALCHEMY_DATABASE_URI = "postgresql://postgres:cyla0917@localhost:5432/atbi_db"
+    """🟢 LOCAL DEVELOPMENT - Now uses Supabase too!"""
+    
+    # 🟢 Use Supabase for local development too
+    database_url = os.environ.get("DATABASE_URL")
+    
+    if database_url:
+        # Fix postgres:// to postgresql:// if needed
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        SQLALCHEMY_DATABASE_URI = database_url
+        print("✅ Local: Using DATABASE_URL from environment")
+    else:
+        # Fallback to Supabase
+        SQLALCHEMY_DATABASE_URI = "postgresql://postgres.knawfwgerjfutwurrbfx:Atbi_reg1neThesis@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres"
+        print("🔄 Local: Using Supabase (no local PostgreSQL)")
+    
+    DEBUG = True  # Debug mode ON for local development
+    
+    # 🟢 Optimized for local development with Supabase
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 90,         # 1.5 minutes
+        'pool_size': 2,             # Small pool
+        'max_overflow': 1,
+        'pool_timeout': 30,
+        
+        'connect_args': {
+            'connect_timeout': 20,
+            'keepalives': 1,
+            'keepalives_idle': 30,
+            'keepalives_interval': 10,
+            'keepalives_count': 3,
+            'sslmode': 'require',
+            'application_name': 'atbi_app_local',
+        }
+    }
 
 class TeammateConfig(BaseConfig):
-    """Teammate's local development configuration"""
-    SQLALCHEMY_DATABASE_URI = "postgresql://postgres:thesisregine@localhost:5432/atbi_db"
+    """Teammate's development - Also uses Supabase"""
+    
+    # 🟢 Teammate also uses Supabase
+    SQLALCHEMY_DATABASE_URI = "postgresql://postgres.knawfwgerjfutwurrbfx:Atbi_reg1neThesis@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres"
+    
+    DEBUG = True
+    
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 90,
+        'pool_size': 2,
+        'max_overflow': 1,
+        'pool_timeout': 30,
+        
+        'connect_args': {
+            'connect_timeout': 20,
+            'sslmode': 'require',
+            'application_name': 'atbi_app_teammate',
+        }
+    }
 
 class SupabaseConfig(BaseConfig):
     """🟢 PRODUCTION CONFIG - Session Pooler for Render"""

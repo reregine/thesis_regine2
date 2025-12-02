@@ -265,7 +265,10 @@
   /* UPDATED: Your original known product color */
   background: linear-gradient(135deg, #8b5cf6, #7c3aed);
 }
-
+/* Monthly performer gets the same style as best seller */
+.product-tag.monthly_performer {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
 .product-tag.regular {
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
 }

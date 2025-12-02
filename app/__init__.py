@@ -6,7 +6,7 @@ from .routes.reservation import reservation_bp, init_scheduler
 from .routes.cart import cart_bp
 from .routes.favorites import favorites_bp
 from .routes.dashboard import dashboard_bp
-from .routes import home, incubatee_showroom, layouts, shop, notification, showroom, login, admin, contact, about, user
+from .routes import home, incubatee_showroom, layouts, shop, notification, login, admin, contact, about, user
 
 
 def create_app(config_class=Config):
@@ -26,7 +26,6 @@ def create_app(config_class=Config):
     app.register_blueprint(notification.notif_bp)
     app.register_blueprint(reservation_bp)
     app.register_blueprint(shop.shop_bp)  
-    app.register_blueprint(showroom.showroom_bp)
     app.register_blueprint(admin.admin_bp)
     app.register_blueprint(contact.contact_bp) 
     app.register_blueprint(cart_bp) 

@@ -8,12 +8,16 @@ from app.services.popularity_service import ProductPopularityService
 home_bp = Blueprint("home", __name__, url_prefix="/")
 
 def get_featured_products():
-    """Get products for the featured carousel - ROBUST VERSION"""
+    """Get products for the featured carousel - SIMPLIFIED VERSION"""
     try:
-        print("🎯 Fetching featured products (robust version)...")
+        print("🎯 Fetching featured products...")
         
-        # Use a single query with eager loading to avoid connection issues
-        featured_query = db.session.query(
+        # Get products from TWO categories:
+        # 1. Weekly Best Sellers (top 5)
+        # 2. Monthly Known Products (top 10)
+        
+        # 1. Get WEEKLY best sellers (top 5)
+        weekly_best_sellers = db.session.query(
             IncubateeProduct,
             ProductPopularity,
             Incubatee
@@ -24,101 +28,124 @@ def get_featured_products():
             Incubatee,
             IncubateeProduct.incubatee_id == Incubatee.incubatee_id
         ).filter(
+            ProductPopularity.is_best_seller == True,
+            ProductPopularity.weekly_rank < 999,  # Exclude monthly fillers
             Incubatee.is_approved == True
-        ).options(
-            db.joinedload(IncubateeProduct.incubatee),
-            db.joinedload(ProductPopularity.product)
-        )
+        ).order_by(
+            ProductPopularity.weekly_rank.asc()
+        ).limit(5).all()
         
-        # Get all approved products with popularity data
-        all_products = featured_query.all()
+        # 2. Get MONTHLY known products (top 10)
+        monthly_known_products = db.session.query(
+            IncubateeProduct,
+            ProductPopularity,
+            Incubatee
+        ).join(
+            ProductPopularity, 
+            IncubateeProduct.product_id == ProductPopularity.product_id
+        ).join(
+            Incubatee,
+            IncubateeProduct.incubatee_id == Incubatee.incubatee_id
+        ).filter(
+            ProductPopularity.is_known_product == True,
+            Incubatee.is_approved == True,
+            ~ProductPopularity.product_id.in_([p[0].product_id for p in weekly_best_sellers])  # Avoid duplicates
+        ).order_by(
+            ProductPopularity.monthly_customers.desc()
+        ).limit(10).all()
         
-        print(f"📊 Found {len(all_products)} products with popularity data")
-        
-        featured_products = []
-        
-        # Process best sellers first
-        best_sellers = [p for p in all_products if p[1].is_best_seller]
-        print(f"🔥 Best sellers: {len(best_sellers)}")
-        
-        for product, popularity, incubatee in best_sellers[:5]:  # Limit to 5
-            featured_products.append({
+        # Format WEEKLY best sellers
+        weekly_data = []
+        for product, popularity, incubatee in weekly_best_sellers:
+            weekly_data.append({
                 'product_id': product.product_id,
                 'name': product.name,
-                'products': product.products or 'Product',
-                'details': product.details or 'No description available.',
-                'category': product.category or 'General',
+                'products': product.products,
+                'details': product.details,
+                'category': product.category,
                 'image_path': product.image_path,
                 'price_per_stocks': float(product.price_per_stocks),
                 'incubatee_name': incubatee.company_name or f"{incubatee.first_name} {incubatee.last_name}",
                 'incubatee_batch': incubatee.batch,
                 'weekly_sold': popularity.weekly_sold,
-                'weekly_rank': popularity.weekly_rank or 1,
+                'weekly_rank': popularity.weekly_rank,
                 'tag': 'best_seller',
-                'tag_text': f'🔥 #{popularity.weekly_rank or 1} Best Seller',
-                'period_text': f'{popularity.weekly_sold} sold this week',
-                'period': 'weekly'
+                'tag_text': f'🔥 #{popularity.weekly_rank} Best Seller',
+                'period_text': f'{popularity.weekly_sold} sold this week'
             })
         
-        # Process known products (avoid duplicates)
-        known_products = [p for p in all_products if p[1].is_known_product and p[0].product_id not in [fp['product_id'] for fp in featured_products]]
-        print(f"⭐ Known products: {len(known_products)}")
-        
-        for product, popularity, incubatee in known_products[:10]:  # Limit to 10
-            featured_products.append({
+        # Format MONTHLY known products
+        monthly_data = []
+        for product, popularity, incubatee in monthly_known_products:
+            monthly_data.append({
                 'product_id': product.product_id,
                 'name': product.name,
-                'products': product.products or 'Product',
-                'details': product.details or 'No description available.',
-                'category': product.category or 'General',
+                'products': product.products,
+                'details': product.details,
+                'category': product.category,
                 'image_path': product.image_path,
                 'price_per_stocks': float(product.price_per_stocks),
                 'incubatee_name': incubatee.company_name or f"{incubatee.first_name} {incubatee.last_name}",
                 'incubatee_batch': incubatee.batch,
                 'monthly_customers': popularity.monthly_customers,
                 'tag': 'known_product',
-                'tag_text': f'⭐ Customer Favorite',
-                'period_text': f'{popularity.monthly_customers} customers this month',
-                'period': 'monthly'
+                'tag_text': f'👥 Popular Choice',
+                'period_text': f'{popularity.monthly_customers} customers this month'
             })
         
-        # If still no products, use fallback - ANY approved products
-        if len(featured_products) == 0:
-            print("🔄 No featured products found, using fallback...")
-            fallback_products = db.session.query(
+        # Combine products - WEEKLY first, then MONTHLY
+        featured_products = []
+        featured_products.extend(weekly_data)  # Add weekly best sellers first
+        
+        # Add monthly known products (avoiding duplicates)
+        weekly_ids = {p['product_id'] for p in featured_products}
+        for monthly_product in monthly_data:
+            if monthly_product['product_id'] not in weekly_ids:
+                featured_products.append(monthly_product)
+        
+        # If we still don't have enough products, add MONTHLY FILLERS (products marked as best_seller with rank 999)
+        if len(featured_products) < 8:
+            monthly_fillers = db.session.query(
                 IncubateeProduct,
+                ProductPopularity,
                 Incubatee
+            ).join(
+                ProductPopularity, 
+                IncubateeProduct.product_id == ProductPopularity.product_id
             ).join(
                 Incubatee,
                 IncubateeProduct.incubatee_id == Incubatee.incubatee_id
             ).filter(
-                Incubatee.is_approved == True
-            ).limit(8).all()
+                ProductPopularity.is_best_seller == True,
+                ProductPopularity.weekly_rank == 999,  # Monthly fillers
+                Incubatee.is_approved == True,
+                ~ProductPopularity.product_id.in_([p['product_id'] for p in featured_products])
+            ).order_by(
+                ProductPopularity.monthly_sold.desc()
+            ).limit(8 - len(featured_products)).all()
             
-            for product, incubatee in fallback_products:
+            for product, popularity, incubatee in monthly_fillers:
                 featured_products.append({
                     'product_id': product.product_id,
                     'name': product.name,
-                    'products': product.products or 'Product',
-                    'details': product.details or 'No description available.',
-                    'category': product.category or 'General',
+                    'products': product.products,
+                    'details': product.details,
+                    'category': product.category,
                     'image_path': product.image_path,
                     'price_per_stocks': float(product.price_per_stocks),
                     'incubatee_name': incubatee.company_name or f"{incubatee.first_name} {incubatee.last_name}",
                     'incubatee_batch': incubatee.batch,
-                    'tag': 'regular',
-                    'tag_text': '🌟 Featured',
-                    'period_text': 'Just added',
-                    'period': 'all'
+                    'monthly_sold': popularity.monthly_sold,
+                    'tag': 'best_seller',
+                    'tag_text': f'⭐ Monthly Performer',
+                    'period_text': f'{popularity.monthly_sold} sold this month'
                 })
         
-        print(f"✅ Returning {len(featured_products)} featured products")
+        print(f"✅ Found {len(featured_products)} featured products: "
+              f"{len(weekly_data)} weekly best sellers, "
+              f"{len(monthly_data)} monthly known products")
         
-        # Debug output
-        for product in featured_products:
-            print(f"  - {product['name']} (Tag: {product['tag']}, Period: {product.get('period', 'all')})")
-        
-        return featured_products
+        return featured_products[:15]  # Limit to 15 products max
         
     except Exception as e:
         print(f"❌ Error in get_featured_products: {str(e)}")

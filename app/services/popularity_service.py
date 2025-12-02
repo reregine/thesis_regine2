@@ -191,9 +191,10 @@ class ProductPopularityService:
         popularity.monthly_customers = monthly_customers
         popularity.total_customers = total_customers
 
+    # services/popularity_service.py - Update the update_product_rankings method
     @staticmethod
     def update_product_rankings():
-        """Update product rankings - FIXED VERSION"""
+        """Update product rankings - SIMPLIFIED VERSION"""
         try:
             from app.models.admin import ProductPopularity
             
@@ -215,22 +216,44 @@ class ProductPopularityService:
             
             print("📊 Finding best sellers and known products...")
             
-            # Update best sellers (top 5 by weekly sales across ALL incubatees)
-            best_sellers = ProductPopularity.query.filter(
+            # 1. BEST SELLERS: Top products by WEEKLY sales (current week only)
+            # Get products with sales in the current week
+            weekly_best_sellers = ProductPopularity.query.filter(
                 ProductPopularity.weekly_sold > 0,
                 ProductPopularity.week_start_date >= current_week_start
             ).order_by(
                 ProductPopularity.weekly_sold.desc(),
                 ProductPopularity.weekly_revenue.desc()
-            ).limit(5).all()
+            ).limit(8).all()  # Get up to 8 for carousel
             
-            print(f"🎯 Found {len(best_sellers)} best sellers")
-            for rank, product in enumerate(best_sellers, 1):
+            print(f"🔥 Found {len(weekly_best_sellers)} weekly best sellers")
+            for rank, product in enumerate(weekly_best_sellers, 1):
                 product.is_best_seller = True
                 product.weekly_rank = rank
-                print(f"   - Best Seller #{rank}: Product {product.product_id} ({product.weekly_sold} sold)")
+                print(f"   - Weekly Best Seller #{rank}: Product {product.product_id} ({product.weekly_sold} sold this week)")
             
-            # Update known products (top 10 by monthly customers across ALL incubatees)
+            # 2. KNOWN PRODUCTS: Top products by MONTHLY customers (current month only)
+            # If we don't have enough weekly best sellers, fill with monthly performers
+            if len(weekly_best_sellers) < 5:
+                print("📅 Not enough weekly best sellers, adding monthly performers...")
+                
+                # Get products with sales in the current month (but not already marked as best sellers)
+                monthly_performers = ProductPopularity.query.filter(
+                    ProductPopularity.monthly_sold > 0,
+                    ProductPopularity.month_start_date >= current_month_start,
+                    ProductPopularity.is_best_seller == False
+                ).order_by(
+                    ProductPopularity.monthly_sold.desc(),
+                    ProductPopularity.monthly_revenue.desc()
+                ).limit(5 - len(weekly_best_sellers)).all()
+                
+                for product in monthly_performers:
+                    product.is_best_seller = True
+                    product.weekly_rank = 999  # Special rank for monthly fillers
+                    print(f"   - Monthly Filler: Product {product.product_id} ({product.monthly_sold} sold this month)")
+            
+            # 3. KNOWN PRODUCTS: Based on MONTHLY customer reach
+            # Get products with customers in the current month
             known_products = ProductPopularity.query.filter(
                 ProductPopularity.monthly_customers > 0,
                 ProductPopularity.month_start_date >= current_month_start
@@ -239,15 +262,15 @@ class ProductPopularityService:
                 ProductPopularity.monthly_sold.desc()
             ).limit(10).all()
             
-            print(f"🎯 Found {len(known_products)} known products")
+            print(f"👥 Found {len(known_products)} known products")
             for product in known_products:
                 product.is_known_product = True
-                print(f"   - Known Product: Product {product.product_id} ({product.monthly_customers} customers)")
+                print(f"   - Known Product: Product {product.product_id} ({product.monthly_customers} customers this month)")
             
             db.session.commit()
             print("✅ Rankings updated successfully!")
             
-            # Debug: Check what was updated
+            # Debug info
             best_count = ProductPopularity.query.filter_by(is_best_seller=True).count()
             known_count = ProductPopularity.query.filter_by(is_known_product=True).count()
             print(f"📈 Final counts - Best Sellers: {best_count}, Known Products: {known_count}")
@@ -255,9 +278,7 @@ class ProductPopularityService:
         except Exception as e:
             db.session.rollback()
             print(f"❌ Error updating rankings: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            
+        
     @staticmethod
     def force_update_flags():
         """Force update flags based on current data - USE FOR TESTING"""
