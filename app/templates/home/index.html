@@ -118,7 +118,7 @@
                       
                       <!-- Action Buttons -->
                       <div class="product-actions">
-                        <button class="btn-add-cart" onclick="event.stopPropagation(); addToCart({{ product.product_id }})">
+                        <button class="btn-add-cart-full" data-product-id="{{ product.product_id }}">
                           <i class="fas fa-cart-plus"></i> Add to Cart
                         </button>
                       </div>
@@ -211,16 +211,6 @@
       {% endfor %}
     </div>
     {% endif %}
-    
-    <!-- Auto-rotation Controls -->
-    <div class="carousel-controls">
-      <button class="control-btn" id="pauseCarousel">
-        <i class="fas fa-pause"></i> Pause
-      </button>
-      <button class="control-btn" id="playCarousel" style="display: none;">
-        <i class="fas fa-play"></i> Play
-      </button>
-    </div>
   </section>
 
   <!-- ================= CALL FOR INCUBATEES ================= -->
