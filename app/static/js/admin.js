@@ -2419,21 +2419,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Form:', document.getElementById('pricingUnitForm'));
 });
 
-// Add this temporary debug function
-function debugModal() {
-    const modal = document.getElementById("editProductModal");
-    if (modal) {
-        console.log('Modal element exists:', modal);
-        console.log('Modal classes:', modal.classList);
-        console.log('Modal display style:', window.getComputedStyle(modal).display);
-        console.log('Modal position:', window.getComputedStyle(modal).position);
-        console.log('Modal z-index:', window.getComputedStyle(modal).zIndex);
-        console.log('Modal opacity:', window.getComputedStyle(modal).opacity);
-    } else {
-        console.error('Modal element not found!');
-    }
-}
-
 // Call this in your initialize function
 document.addEventListener('DOMContentLoaded', function() {
     initializeEditProductModal();

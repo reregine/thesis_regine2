@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Profile - ATBI</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/agrilogo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +15,6 @@
         <h1>👤 Admin Profile</h1>
         <div class="header-actions">
             <a href="{{ url_for('admin.admin_dashboard') }}" class="btn-back">← Back to Dashboard</a>
-            <button class="logout-btn" onclick="logout()">🚪 Logout</button>
         </div>
     </div>
 
@@ -47,67 +47,88 @@
 
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
     <script>
-        document.getElementById('profileForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const submitBtn = this.querySelector('.btn');
-            const btnText = submitBtn.querySelector('.btn-text');
-            const originalText = btnText.textContent;
-            
-            // Add loading state
-            submitBtn.classList.add('loading');
-            btnText.textContent = 'Updating...';
-            
-            const formData = {
-                full_name: document.getElementById('full_name').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value
-            };
-            
-            try {
-                const response = await fetch('/admin/update-profile', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listener to logout button
+            const logoutBtn = document.getElementById('profileLogoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    // Call the logout function from admin.js
+                    if (typeof logout === 'function') {
+                        logout();
+                    } else {
+                        // Fallback if function not available
+                        document.getElementById('logout-modal').classList.remove('hidden');
+                    }
                 });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Show success state
-                    submitBtn.style.background = 'linear-gradient(135deg, var(--secondary), #059669)';
-                    btnText.textContent = '✅ Updated!';
-                    
-                    setTimeout(() => {
-                        submitBtn.style.background = '';
-                        btnText.textContent = originalText;
-                        submitBtn.classList.remove('loading');
-                    }, 2000);
-                } else {
-                    throw new Error(data.error);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                // Show error state
-                submitBtn.style.background = 'linear-gradient(135deg, var(--danger), #dc2626)';
-                btnText.textContent = '❌ Failed!';
-                
-                setTimeout(() => {
-                    submitBtn.style.background = '';
-                    btnText.textContent = originalText;
-                    submitBtn.classList.remove('loading');
-                }, 2000);
-            }
-        });
-
-        // Add floating label functionality
-        document.querySelectorAll('.form-group input').forEach(input => {
-            if (input.value) {
-                input.parentElement.classList.add('filled');
             }
             
-            input.addEventListener('input', function() {
-                this.parentElement.classList.toggle('filled', this.value !== '');
+            // Profile form submission
+            const profileForm = document.getElementById('profileForm');
+            if (profileForm) {
+                profileForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const submitBtn = this.querySelector('.btn');
+                    const btnText = submitBtn.querySelector('.btn-text');
+                    const originalText = btnText.textContent;
+                    
+                    // Add loading state
+                    submitBtn.classList.add('loading');
+                    btnText.textContent = 'Updating...';
+                    
+                    const formData = {
+                        full_name: document.getElementById('full_name').value,
+                        email: document.getElementById('email').value,
+                        phone: document.getElementById('phone').value
+                    };
+                    
+                    try {
+                        const response = await fetch('/admin/update-profile', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(formData)
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            // Show success state
+                            submitBtn.style.background = 'linear-gradient(135deg, var(--secondary), #059669)';
+                            btnText.textContent = '✅ Updated!';
+                            
+                            setTimeout(() => {
+                                submitBtn.style.background = '';
+                                btnText.textContent = originalText;
+                                submitBtn.classList.remove('loading');
+                            }, 2000);
+                        } else {
+                            throw new Error(data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        // Show error state
+                        submitBtn.style.background = 'linear-gradient(135deg, var(--danger), #dc2626)';
+                        btnText.textContent = '❌ Failed!';
+                        
+                        setTimeout(() => {
+                            submitBtn.style.background = '';
+                            btnText.textContent = originalText;
+                            submitBtn.classList.remove('loading');
+                        }, 2000);
+                    }
+                });
+            }
+
+            // Add floating label functionality
+            document.querySelectorAll('.form-group input').forEach(input => {
+                if (input.value) {
+                    input.parentElement.classList.add('filled');
+                }
+                
+                input.addEventListener('input', function() {
+                    this.parentElement.classList.toggle('filled', this.value !== '');
+                });
             });
         });
     </script>
