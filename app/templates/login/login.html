@@ -33,9 +33,7 @@
         <span class="loading" id="loadingSpinner">⏳</span>
       </button>
       
-      <div id="loginError" class="error-message" style="text-align: center; margin-top: 10px;">
-        Invalid username or password
-      </div>
+      <div id="loginError" class="error-message" style="text-align: center; margin-top: 10px;">Invalid credentials!</div>
       
       <a href="#" class="forgot-link">Forgot Password?</a>
       <p class="switch-link">
@@ -63,10 +61,6 @@
     const loginError = document.getElementById("loginError");
     const usernameError = document.getElementById("usernameError");
     const passwordError = document.getElementById("passwordError");
-
-    // Admin credentials
-    const ADMIN_USERNAME = "admin";
-    const ADMIN_PASSWORD = "Admin2025_atbi";
 
     // Clear error messages when user starts typing
     usernameInput.addEventListener("input", function() {
