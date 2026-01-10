@@ -384,20 +384,27 @@ def add_product():
         added_on_str = request.form.get("added_on")
         added_on = datetime.strptime(added_on_str, "%Y-%m-%d").date() if added_on_str else datetime.utcnow().date()
 
-        # Handle image upload
-        image = request.files.get("product_image")
-        filename = None
-        if image and allowed_file(image.filename):
-            filename = secure_filename(image.filename)
-            save_path = os.path.join(current_app.root_path, UPLOAD_FOLDER, filename)
-            os.makedirs(os.path.dirname(save_path), exist_ok=True)
-            image.save(save_path)
+        # Handle multiple image uploads
+        image_paths = []
+        image_files = request.files.getlist("product_images")
+        for idx, image in enumerate(image_files):
+            if image and allowed_file(image.filename):
+                # Generate unique filename
+                file_extension = image.filename.rsplit('.', 1)[1].lower()
+                timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+                filename = f"product_{timestamp}_{idx}.{file_extension}"
+                filename = secure_filename(filename)
+                
+                save_path = os.path.join(current_app.root_path, UPLOAD_FOLDER, filename)
+                os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                image.save(save_path)
+                image_paths.append(f"{UPLOAD_FOLDER}/{filename}")
 
         # Create product entry
         product = IncubateeProduct(incubatee_id=incubatee_id,name=name,stock_no=stock_no,products=products,
             stock_amount=stock_amount,price_per_stocks=price_per_stocks,pricing_unit_id=pricing_unit_id, 
             details=details,category=category,expiration_date=expiration_date,warranty=warranty,added_on=added_on,
-            image_path=f"{UPLOAD_FOLDER}/{filename}" if filename else None,
+            image_path=','.join(image_paths) if image_paths else None,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow())
 
@@ -485,7 +492,8 @@ def get_products():
                 "expiration_date": product.expiration_date.strftime("%Y-%m-%d") if product.expiration_date else "N/A",
                 "warranty": product.warranty,
                 "added_on": product.added_on.strftime("%Y-%m-%d") if product.added_on else "N/A",
-                "image_path": product.image_path,
+                "image_path": product.image_path,  # Keep for backward compatibility
+                "image_paths": product.image_path.split(',') if product.image_path else [],  # New array field
                 "incubatee_name": f"{product.incubatee.first_name} {product.incubatee.last_name}" if product.incubatee else "Unknown"
             })
         

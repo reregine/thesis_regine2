@@ -6,6 +6,9 @@ let ordersModalInitialized = false;
 let currentOrdersData = [];
 let currentReservationId = null;
 let currentButton = null;
+let currentSlide = 0;
+let totalSlides = 0;
+let slidesPerView = 3; // Number of thumbnails visible at once
 const today = new Date();
 const formattedDate = today.toISOString().split('T')[0]; 
 // Auto-cancellation timeout in milliseconds (1 minute for testing)
@@ -92,12 +95,14 @@ function initializeEventListeners() {
         });
     }
 
-    // Preview uploaded image
+    // Multiple image upload
     const productImageInput = document.getElementById("product_image");
     if (productImageInput) {
         productImageInput.addEventListener("change", handleImagePreview);
+        
+        // Initialize scroll arrows on load
+        setTimeout(500);
     }
-
     // Handle form submission
     const incubateeForm = document.getElementById("incubateeForm");
     if (incubateeForm) {
@@ -309,10 +314,9 @@ function displayProducts(products) {
             <td>₱${product.price_per_stocks.toFixed(2)}</td>
             <td>${product.pricing_unit || 'N/A'}</td>
             <td>
-                ${product.image_path ? 
-                `<img src="/${product.image_path}" class="product-image" alt="${escapeHtml(product.name)}" style="max-width: 50px; max-height: 50px; border-radius: 4px;">` : 
-                '<span class="no-image">No Image</span>'
-                }
+                <div class="product-image-container" data-product-id="${product.product_id}">
+                    ${getProductImageDisplay(product)}
+                </div>
             </td>
             <td>${product.expiration_date && product.expiration_date !== 'N/A' ? product.expiration_date : '—'}</td>
             <td>${product.warranty && product.warranty !== 'N/A' ? product.warranty : '—'}</td>
@@ -331,6 +335,232 @@ function displayProducts(products) {
     `).join('');
 }
 
+// Function to get product image display HTML
+function getProductImageDisplay(product) {
+    if (!product.image_path) {
+        return '<span class="no-image">No Image</span>';
+    }
+    
+    // Check if there are multiple images (comma-separated)
+    const imagePaths = product.image_path ? product.image_path.split(',').map(path => path.trim()) : [];
+    
+    if (imagePaths.length === 0) {
+        return '<span class="no-image">No Image</span>';
+    }
+    
+    if (imagePaths.length === 1) {
+        // Single image
+        return `
+            <img src="/${imagePaths[0]}" 
+                 class="product-image" 
+                 alt="${escapeHtml(product.name)}"
+                 style="max-width: 50px; max-height: 50px; border-radius: 4px; cursor: pointer;"
+                 onclick="showImageCarousel(${product.product_id})"
+                 title="Click to view images">
+        `;
+    } else {
+        // Multiple images - show first image with navigation
+        return `
+            <div class="product-image-slider" style="position: relative;">
+                <img src="/${imagePaths[0]}" 
+                     class="product-image active" 
+                     alt="${escapeHtml(product.name)} - Image 1 of ${imagePaths.length}"
+                     style="max-width: 50px; max-height: 50px; border-radius: 4px; cursor: pointer;"
+                     onclick="showImageCarousel(${product.product_id})"
+                     title="Click to view all images (${imagePaths.length} total)">
+                
+                <div class="image-nav-dots" style="position: absolute; bottom: -15px; left: 0; right: 0; text-align: center;">
+                    ${imagePaths.map((_, index) => 
+                        `<span class="nav-dot ${index === 0 ? 'active' : ''}" 
+                               data-product-id="${product.product_id}" 
+                               data-index="${index}"
+                               style="display: inline-block; width: 6px; height: 6px; margin: 0 2px; border-radius: 50%; background: ${index === 0 ? '#4CAF50' : '#ccc'}; cursor: pointer;"
+                               onclick="event.stopPropagation(); switchProductImage(${product.product_id}, ${index})"
+                               title="Image ${index + 1}"></span>`
+                    ).join('')}
+                </div>
+                
+                <div class="image-count-badge" style="position: absolute; top: -8px; right: -8px; background: #4CAF50; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                    ${imagePaths.length}
+                </div>
+            </div>
+        `;
+    }
+}
+// Switch between product images on click
+function switchProductImage(productId, imageIndex) {
+    // Find all images for this product
+    const productRow = document.querySelector(`tr[data-product-id="${productId}"]`);
+    if (!productRow) return;
+    
+    const productImageContainer = productRow.querySelector('.product-image-container');
+    if (!productImageContainer) return;
+    
+    // Get product data
+    const product = allProducts.find(p => p.product_id == productId);
+    if (!product || !product.image_path) return;
+    
+    const imagePaths = product.image_path.split(',').map(path => path.trim());
+    if (imageIndex >= imagePaths.length) return;
+    
+    // Update the displayed image
+    const imgElement = productImageContainer.querySelector('.product-image');
+    if (imgElement) {
+        imgElement.src = `/${imagePaths[imageIndex]}`;
+        imgElement.alt = `${escapeHtml(product.name)} - Image ${imageIndex + 1} of ${imagePaths.length}`;
+        imgElement.title = `Click to view all images (${imagePaths.length} total)`;
+    }
+    
+    // Update navigation dots
+    const dots = productImageContainer.querySelectorAll('.nav-dot');
+    dots.forEach((dot, index) => {
+        if (index === imageIndex) {
+            dot.style.background = '#4CAF50';
+            dot.classList.add('active');
+        } else {
+            dot.style.background = '#ccc';
+            dot.classList.remove('active');
+        }
+    });
+}
+// Show image carousel modal
+function showImageCarousel(productId) {
+    const product = allProducts.find(p => p.product_id == productId);
+    if (!product || !product.image_path) return;
+    
+    const imagePaths = product.image_path.split(',').map(path => path.trim());
+    
+    // Create or get carousel modal
+    let carouselModal = document.getElementById('imageCarouselModal');
+    if (!carouselModal) {
+        carouselModal = document.createElement('div');
+        carouselModal.id = 'imageCarouselModal';
+        carouselModal.className = 'image-carousel-modal';
+        carouselModal.innerHTML = `
+            <div class="carousel-modal-content">
+                <div class="carousel-header">
+                    <h3>${escapeHtml(product.name)} - Images</h3>
+                    <button class="close-carousel-btn" onclick="closeImageCarousel()">&times;</button>
+                </div>
+                <div class="carousel-body">
+                    <div class="carousel-main-image">
+                        <img id="carouselCurrentImage" src="" alt="">
+                    </div>
+                    <div class="carousel-thumbnails" id="carouselThumbnails"></div>
+                </div>
+                <div class="carousel-footer">
+                    <button class="carousel-nav-btn prev-btn" onclick="prevCarouselImage()">❮ Previous</button>
+                    <span id="carouselCounter">1 / ${imagePaths.length}</span>
+                    <button class="carousel-nav-btn next-btn" onclick="nextCarouselImage()">Next ❯</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(carouselModal);
+    }
+    
+    // Update carousel content
+    carouselModal.querySelector('h3').textContent = `${product.name} - Images`;
+    
+    const currentImage = document.getElementById('carouselCurrentImage');
+    const thumbnailsContainer = document.getElementById('carouselThumbnails');
+    const counter = document.getElementById('carouselCounter');
+    
+    if (currentImage && thumbnailsContainer && counter) {
+        // Set current image
+        currentImage.src = `/${imagePaths[0]}`;
+        currentImage.alt = `${product.name} - Image 1`;
+        
+        // Create thumbnails
+        thumbnailsContainer.innerHTML = imagePaths.map((path, index) => `
+            <div class="thumbnail-item ${index === 0 ? 'active' : ''}" onclick="showCarouselImage(${index})">
+                <img src="/${path}" alt="Image ${index + 1}">
+            </div>
+        `).join('');
+        
+        // Update counter
+        counter.textContent = `1 / ${imagePaths.length}`;
+        
+        // Store carousel data
+        carouselModal.dataset.productId = productId;
+        carouselModal.dataset.currentIndex = '0';
+        carouselModal.dataset.imagePaths = JSON.stringify(imagePaths);
+        
+        // Show modal
+        carouselModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Close carousel modal
+function closeImageCarousel() {
+    const carouselModal = document.getElementById('imageCarouselModal');
+    if (carouselModal) {
+        carouselModal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+// Navigate carousel
+let currentCarouselIndex = 0;
+let currentCarouselImages = [];
+
+function showCarouselImage(index) {
+    const carouselModal = document.getElementById('imageCarouselModal');
+    if (!carouselModal) return;
+    
+    const imagePaths = JSON.parse(carouselModal.dataset.imagePaths || '[]');
+    if (index < 0 || index >= imagePaths.length) return;
+    
+    const currentImage = document.getElementById('carouselCurrentImage');
+    const thumbnails = document.querySelectorAll('.thumbnail-item');
+    const counter = document.getElementById('carouselCounter');
+    
+    if (currentImage && thumbnails && counter) {
+        currentImage.src = `/${imagePaths[index]}`;
+        currentImage.alt = `Image ${index + 1}`;
+        
+        // Update thumbnails
+        thumbnails.forEach((thumb, i) => {
+            if (i === index) {
+                thumb.classList.add('active');
+            } else {
+                thumb.classList.remove('active');
+            }
+        });
+        
+        // Update counter
+        counter.textContent = `${index + 1} / ${imagePaths.length}`;
+        
+        // Store current index
+        currentCarouselIndex = index;
+        carouselModal.dataset.currentIndex = index.toString();
+    }
+}
+
+function prevCarouselImage() {
+    const carouselModal = document.getElementById('imageCarouselModal');
+    if (!carouselModal) return;
+    
+    const imagePaths = JSON.parse(carouselModal.dataset.imagePaths || '[]');
+    const newIndex = (currentCarouselIndex - 1 + imagePaths.length) % imagePaths.length;
+    showCarouselImage(newIndex);
+}
+
+function nextCarouselImage() {
+    const carouselModal = document.getElementById('imageCarouselModal');
+    if (!carouselModal) return;
+    
+    const imagePaths = JSON.parse(carouselModal.dataset.imagePaths || '[]');
+    const newIndex = (currentCarouselIndex + 1) % imagePaths.length;
+    showCarouselImage(newIndex);
+}
+
+// Close modal on ESC key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeImageCarousel();
+    }
+});
 // Function to show empty state
 function showEmptyState() {
     const tableBody = document.getElementById("product-list");
@@ -343,17 +573,138 @@ function showEmptyState() {
     `;
 }
 
+// Handle multiple image preview
 function handleImagePreview(event) {
-    const file = event.target.files[0];
-    if (file) {
+    const files = event.target.files;
+    const gallery = document.getElementById('imageGallery');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    // Clear existing images
+    gallery.innerHTML = '';
+    
+    if (!files || files.length === 0) {
+        gallery.innerHTML = `
+            <div class="empty-gallery">
+                <div class="empty-icon">🖼️</div>
+                No images selected
+            </div>
+        `;
+        if (selectedCount) selectedCount.textContent = '0 selected';
+        return;
+    }
+    
+    // Validate file count
+    if (files.length > 10) {
+        showNotification('⚠️ Maximum 10 images allowed. Only first 10 will be used.', 'error');
+        // Trim to 10 files
+        const fileList = new DataTransfer();
+        for (let i = 0; i < 10; i++) {
+            fileList.items.add(files[i]);
+        }
+        event.target.files = fileList.files;
+        return handleImagePreview(event);
+    }
+    
+    // Update selected count
+    if (selectedCount) {
+        selectedCount.textContent = `${files.length} selected`;
+    }
+    
+    // Create thumbnails for each file
+    Array.from(files).forEach((file, index) => {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            showNotification(`⚠️ File "${file.name}" is not an image and will be skipped.`, 'error');
+            return;
+        }
+        
         const reader = new FileReader();
         reader.onload = function(e) {
-            const preview = document.getElementById("preview-img");
-            preview.src = e.target.result;
-            preview.style.display = "block";
+            const thumbnail = document.createElement('div');
+            thumbnail.className = 'image-thumbnail';
+            thumbnail.innerHTML = `
+                <img src="${e.target.result}" alt="Preview ${index + 1}">
+                <span class="image-counter">${index + 1}</span>
+                <button type="button" class="remove-image-btn" data-index="${index}">
+                    ×
+                </button>
+            `;
+            
+            // Add click event for remove button
+            const removeBtn = thumbnail.querySelector('.remove-image-btn');
+            removeBtn.addEventListener('click', function() {
+                removeImage(index);
+            });
+            
+            gallery.appendChild(thumbnail);
+            
+            // Update scroll arrows after adding images
+            setTimeout(100);
         };
         reader.readAsDataURL(file);
+    });
+}
+
+// Remove image from preview
+function removeImage(index) {
+    const input = document.getElementById('product_image');
+    if (!input || !input.files) return;
+    
+    const dt = new DataTransfer();
+    const files = Array.from(input.files);
+    
+    // Remove file at index
+    files.splice(index, 1);
+    
+    // Update the files in the input
+    files.forEach(file => dt.items.add(file));
+    input.files = dt.files;
+    
+    // Re-render preview
+    const event = new Event('change', { bubbles: true });
+    input.dispatchEvent(event);
+}
+
+// Scroll the gallery horizontally
+function scrollGallery(direction) {
+    const gallery = document.getElementById('imageGallery');
+    if (gallery) {
+        gallery.scrollBy({
+            left: direction,
+            behavior: 'smooth'
+        });
+        
+        // Update arrows after scrolling
+        setTimeout(300);
     }
+}
+
+// Initialize gallery functionality
+function initializeImageGallery() {
+    const imageInput = document.getElementById('product_image');
+    
+    if (imageInput) {
+        imageInput.addEventListener('change', handleImagePreview);
+    }
+    
+    if (leftBtn) {
+        leftBtn.addEventListener('click', function() {
+            if (!this.classList.contains('disabled')) {
+                scrollGallery(-200);
+            }
+        });
+    }
+    
+    if (rightBtn) {
+        rightBtn.addEventListener('click', function() {
+            if (!this.classList.contains('disabled')) {
+                scrollGallery(200);
+            }
+        });
+    }
+    
+    // Initial update
+    setTimeout(500);
 }
 
 function handleProductFormSubmit(event) {
@@ -389,10 +740,10 @@ function handleProductFormSubmit(event) {
     formData.append("expiration_date", document.getElementById("expiration_date").value);
     formData.append("added_on", formattedDate);
 
-    // Append the image file
-    const imageFile = document.getElementById("product_image").files[0];
-    if (imageFile) {
-        formData.append("product_image", imageFile);
+    // Append multiple image files
+    const imageFiles = document.getElementById("product_image").files;
+    for (let i = 0; i < imageFiles.length; i++) {
+        formData.append("product_images", imageFiles[i]);
     }
 
     // Send to backend (rest of your existing code...)
@@ -2307,12 +2658,15 @@ function populateEditForm(product) {
     const currentImageDiv = document.getElementById('edit_current_image');
     const previewImg = document.getElementById('edit_preview_img');
     
-    if (product.image_path) {
+    if (product.image_paths && product.image_paths.length > 0) {
         currentImageDiv.innerHTML = `
-            <small>Current Image:</small><br>
-            <img src="/${product.image_path}" style="max-width: 100px; border-radius: 4px; margin-top: 5px;">
+            <small>Current Images:</small><br>
+            <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">
+                ${product.image_paths.map(path => 
+                    `<img src="/${path}" style="max-width: 80px; height: 80px; object-fit: cover; border-radius: 4px;">`
+                ).join('')}
+            </div>
         `;
-        previewImg.style.display = 'none';
     } else {
         currentImageDiv.innerHTML = '<small>No current image</small>';
         previewImg.style.display = 'none';
@@ -2360,7 +2714,16 @@ function handleEditImagePreview(event) {
         reader.readAsDataURL(file);
     }
 }
-
+// Scroll the gallery horizontally
+function scrollGallery(direction) {
+    const gallery = document.getElementById('imageGallery');
+    if (gallery) {
+        gallery.scrollBy({
+            left: direction,
+            behavior: 'smooth'
+        });
+    }
+}
 // Handle edit form submission
 async function handleEditProductSubmit(event) {
     event.preventDefault();
@@ -2422,5 +2785,4 @@ document.addEventListener('DOMContentLoaded', function() {
 // Call this in your initialize function
 document.addEventListener('DOMContentLoaded', function() {
     initializeEditProductModal();
-    debugModal(); // Temporary debug
 });

@@ -206,14 +206,41 @@
           <label for="details">Product Description <span class="required-star">*</span></label>
           <textarea id="details" name="details" rows="3" placeholder="Enter product details" required></textarea>
         </div>
-                <!-- New Image Upload -->
+        <!-- New Image Upload -->
         <div class="form-group">
-          <label for="product_image">Product Image <span class="required-star">*</span></label>
-          <input type="file"  id="product_image"  name="product_image"  accept="image/*" required>
-          <!-- Preview -->
-          <div id="image-preview" style="margin-top:10px;">
-            <img id="preview-img" src="" alt="Preview" style="max-width:150px; display:none; border:1px solid #ccc; padding:5px; border-radius:6px;">
-          </div>
+            <label for="product_image">
+                Product Images 
+                <span class="required-star">*</span>
+                <span class="selected-count" id="selectedCount">0 selected</span>
+            </label>
+            
+            <div class="file-input-wrapper">
+                <label for="product_image" class="image-upload-btn" tabindex="0">
+                    📁 Choose Images
+                </label>
+                <input type="file" 
+                      id="product_image" 
+                      name="product_images" 
+                      accept="image/*" 
+                      multiple 
+                      required
+                      style="display: none;">
+            </div>
+            
+            <small style="display: block; margin-top: 5px; color: #666;">
+                You can select multiple images. Max 10 images.
+            </small>
+            
+            <!-- Image Preview Gallery (Always visible but with fixed height) -->
+            <div class="image-preview-container">
+                <div class="image-gallery" id="imageGallery">
+                    <!-- Images will be inserted here by JavaScript -->
+                    <div class="empty-gallery">
+                        <div class="empty-icon">🖼️</div>
+                        No images selected
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="form-group">
           <label for="expiration_date">Expiration Date <span class="required-star">Optional</span></label>
@@ -332,10 +359,11 @@
         </div>
 
         <div class="form-group">
-          <label for="edit_product_image">Product Image</label>
-          <input type="file" id="edit_product_image" name="product_image" accept="image/*">
+          <label for="edit_product_image">Product Images</label>
+          <input type="file" id="edit_product_image" name="product_images" accept="image/*" multiple>
+          <small style="display: block; margin-top: 5px; color: #666;">Select new images to replace existing ones</small>
           <div id="edit_image_preview" style="margin-top:10px;">
-            <img id="edit_preview_img" src="" alt="Preview" style="max-width:150px; display:none; border:1px solid #ccc; padding:5px; border-radius:6px;">
+            <div id="edit_preview_container" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;"></div>
             <div id="edit_current_image" style="margin-top: 5px;"></div>
           </div>
         </div>

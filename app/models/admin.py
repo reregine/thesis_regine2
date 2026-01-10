@@ -85,7 +85,13 @@ class IncubateeProduct(db.Model):
     
     def __repr__(self):
         return f"<IncubateeProduct {self.name}>"
-
+    @property
+    def image_urls(self):
+        """Return list of image URLs."""
+        if self.image_path:
+            return [f"/{path.strip()}" for path in self.image_path.split(',')]
+        return []
+    
 class PricingUnit(db.Model):
     """Represents different pricing units (per item, per kilo, per package, etc.)"""
     __tablename__ = "pricing_units"
