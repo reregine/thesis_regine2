@@ -1220,6 +1220,7 @@ def update_product(product_id):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
     
     try:
+        # First, get the product
         product = IncubateeProduct.query.get_or_404(product_id)
         updated_fields = []
         
@@ -1310,18 +1311,71 @@ def update_product(product_id):
                 # Delete old image if exists
                 if product.image_path:
                     try:
-                        old_image_path = os.path.join(current_app.root_path, product.image_path)
-                        if os.path.exists(old_image_path):
-                            os.remove(old_image_path)
+                        # Handle multiple images
+                        old_image_paths = product.image_path.split(',')
+                        for old_path in old_image_paths:
+                            old_path = old_path.strip()
+                            if old_path:
+                                old_full_path = os.path.join(current_app.root_path, old_path)
+                                if os.path.exists(old_full_path):
+                                    os.remove(old_full_path)
                     except Exception as e:
                         current_app.logger.warning(f"Failed to delete old product image: {str(e)}")
                 
                 product.image_path = f"{UPLOAD_FOLDER}/{filename}"
                 updated_fields.append('image_path')
         
+        # Handle multiple image uploads
+        if 'product_images' in request.files:
+            image_files = request.files.getlist('product_images')
+            new_image_paths = []
+            
+            for idx, image_file in enumerate(image_files):
+                if image_file and image_file.filename and allowed_file(image_file.filename):
+                    # Generate secure filename
+                    file_extension = image_file.filename.rsplit('.', 1)[1].lower()
+                    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+                    filename = f"product_{product_id}_{timestamp}_{idx}.{file_extension}"
+                    filename = secure_filename(filename)
+                    
+                    # Save the new image
+                    save_path = os.path.join(current_app.root_path, UPLOAD_FOLDER, filename)
+                    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                    image_file.save(save_path)
+                    new_image_paths.append(f"{UPLOAD_FOLDER}/{filename}")
+            
+            if new_image_paths:
+                # Delete old images if exist
+                if product.image_path:
+                    try:
+                        old_image_paths = product.image_path.split(',')
+                        for old_path in old_image_paths:
+                            old_path = old_path.strip()
+                            if old_path:
+                                old_full_path = os.path.join(current_app.root_path, old_path)
+                                if os.path.exists(old_full_path):
+                                    os.remove(old_full_path)
+                    except Exception as e:
+                        current_app.logger.warning(f"Failed to delete old product images: {str(e)}")
+                
+                product.image_path = ','.join(new_image_paths)
+                updated_fields.append('image_path')
+        
         # Only update timestamp and commit if there are actual changes
         if updated_fields:
             product.updated_at = datetime.utcnow()
+            
+            # **CRITICAL: Update the related product_popularity record if it exists**
+            try:
+                popularity_record = ProductPopularity.query.filter_by(product_id=product_id).first()
+                if popularity_record:
+                    # Update the popularity record with new product data if needed
+                    popularity_record.product_name = product.name  # Add this field if it doesn't exist
+                    popularity_record.incubatee_id = product.incubatee_id
+                    popularity_record.last_updated = datetime.utcnow()
+            except Exception as e:
+                current_app.logger.warning(f"Could not update product_popularity: {str(e)}")
+            
             db.session.commit()
             
             # Invalidate relevant caches
@@ -1329,10 +1383,19 @@ def update_product(product_id):
             invalidate_cache(f"incubatee_products:{product.incubatee_id}")
             invalidate_cache("products:all")
             invalidate_cache(f"incubatee_details:{product.incubatee_id}")
+            invalidate_cache(f"popularity:{product_id}")  # Invalidate popularity cache too
             
-            return jsonify({"success": True,"message": f"Product updated successfully! Updated fields: {', '.join(updated_fields)}","updated_fields": updated_fields})
+            return jsonify({
+                "success": True,
+                "message": f"Product updated successfully! Updated fields: {', '.join(updated_fields)}",
+                "updated_fields": updated_fields
+            })
         else:
-            return jsonify({"success": True,"message": "No changes detected - product information is up to date","updated_fields": []})
+            return jsonify({
+                "success": True,
+                "message": "No changes detected - product information is up to date",
+                "updated_fields": []
+            })
         
     except Exception as e:
         db.session.rollback()
