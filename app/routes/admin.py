@@ -472,13 +472,13 @@ def delete_product(product_id):
         current_app.logger.error(f"Error deleting product: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
     
-@admin_bp.route("/get-product/<int:product_id>")
-def get_product(product_id):
-    """Get product data for editing - WITH CACHING"""
+@admin_bp.route("/get-products", methods=["GET"])
+def get_products():
+    """Get all products for display in admin panel - WITH CACHING"""
     if not session.get('admin_logged_in'):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
     
-    cache_key_str = cache_key("product", product_id)
+    cache_key_str = "products:all"
     
     # Try cache first
     cached_data, found = get_cached_data(cache_key_str, expire_seconds=1800)  # 30 minutes cache
@@ -486,41 +486,40 @@ def get_product(product_id):
         return jsonify(cached_data)
     
     try:
-        product = IncubateeProduct.query.options(
+        # Get all products with incubatee information
+        products = IncubateeProduct.query.options(
             db.joinedload(IncubateeProduct.incubatee),
             db.joinedload(IncubateeProduct.pricing_unit)
-        ).get(product_id)  # Use get() instead of get_or_404() for better error handling
+        ).all()
         
-        if not product:
-            return jsonify({"success": False, "error": f"Product with ID {product_id} not found"}), 404
+        products_list = []
+        for product in products:
+            products_list.append({
+                "product_id": product.product_id,
+                "incubatee_id": product.incubatee_id,
+                "name": product.name,
+                "stock_no": product.stock_no,
+                "products": product.products,
+                "stock_amount": product.stock_amount,
+                "price_per_stocks": float(product.price_per_stocks),
+                "pricing_unit": product.pricing_unit.unit_name if product.pricing_unit else "N/A",
+                "pricing_unit_id": product.pricing_unit_id,
+                "details": product.details,
+                "category": product.category,
+                "expiration_date": product.expiration_date.strftime("%Y-%m-%d") if product.expiration_date else "N/A",
+                "warranty": product.warranty,
+                "added_on": product.added_on.strftime("%Y-%m-%d") if product.added_on else "N/A",
+                "image_path": product.image_path,  # Keep for backward compatibility
+                "image_paths": product.image_path.split(',') if product.image_path else [],  # New array field
+                "incubatee_name": f"{product.incubatee.first_name} {product.incubatee.last_name}" if product.incubatee else "Unknown"
+            })
         
-        # Handle multiple image paths
-        image_paths = []
-        if product.image_path:
-            image_paths = [path.strip() for path in product.image_path.split(',')]
-        
-        product_data = {
-            "product_id": product.product_id,
-            "name": product.name,
-            "stock_no": product.stock_no,
-            "products": product.products,
-            "stock_amount": product.stock_amount,
-            "price_per_stocks": float(product.price_per_stocks),
-            "pricing_unit_id": product.pricing_unit_id,
-            "details": product.details,
-            "category": product.category,
-            "expiration_date": product.expiration_date.strftime("%Y-%m-%d") if product.expiration_date else None,
-            "warranty": product.warranty,
-            "image_path": product.image_path,
-            "image_paths": image_paths,  # New: array of image paths
-            "incubatee_name": f"{product.incubatee.first_name} {product.incubatee.last_name}" if product.incubatee else "Unknown"
-        }
-        
-        set_cached_data(cache_key_str, product_data, 1800)  # Cache for 30 minutes
-        return jsonify({"success": True, "product": product_data})
+        response_data = {"success": True, "products": products_list}
+        set_cached_data(cache_key_str, response_data, 1800)  # Cache for 30 minutes
+        return jsonify(response_data)
         
     except Exception as e:
-        current_app.logger.error(f"Error fetching product {product_id}: {str(e)}")
+        current_app.logger.error(f"Error fetching products: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 @admin_bp.route("/get-pricing-units", methods=["GET"])
@@ -1180,7 +1179,15 @@ def get_product(product_id):
         product = IncubateeProduct.query.options(
             db.joinedload(IncubateeProduct.incubatee),
             db.joinedload(IncubateeProduct.pricing_unit)
-        ).get_or_404(product_id)
+        ).get(product_id)  # Use get() instead of get_or_404() for better error handling
+        
+        if not product:
+            return jsonify({"success": False, "error": f"Product with ID {product_id} not found"}), 404
+        
+        # Handle multiple image paths
+        image_paths = []
+        if product.image_path:
+            image_paths = [path.strip() for path in product.image_path.split(',')]
         
         product_data = {
             "product_id": product.product_id,
@@ -1195,6 +1202,7 @@ def get_product(product_id):
             "expiration_date": product.expiration_date.strftime("%Y-%m-%d") if product.expiration_date else None,
             "warranty": product.warranty,
             "image_path": product.image_path,
+            "image_paths": image_paths,  # New: array of image paths
             "incubatee_name": f"{product.incubatee.first_name} {product.incubatee.last_name}" if product.incubatee else "Unknown"
         }
         
@@ -1204,7 +1212,7 @@ def get_product(product_id):
     except Exception as e:
         current_app.logger.error(f"Error fetching product {product_id}: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
-    
+
 @admin_bp.route("/update-product/<int:product_id>", methods=["POST"])
 def update_product(product_id):
     """Update product information - Invalidates cache"""
