@@ -1,7 +1,7 @@
 import os
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, current_app
 from werkzeug.utils import secure_filename
-from ..models.admin import db, IncubateeProduct, Incubatee, PricingUnit, AdminProfile, SalesReport
+from ..models.admin import ProductPopularity, ProductSalesLog, db, IncubateeProduct, Incubatee, PricingUnit, AdminProfile, SalesReport
 from datetime import datetime, timedelta
 from ..models.user import User
 from ..models.reservation import Reservation
@@ -429,8 +429,24 @@ def delete_product(product_id):
     try:
         product = IncubateeProduct.query.get_or_404(product_id)
         incubatee_id = product.incubatee_id
-
-        # Delete image if exists
+        
+        # Delete related records first
+        # 1. Delete from product_popularity
+        popularity_records = ProductPopularity.query.filter_by(product_id=product_id).all()
+        for record in popularity_records:
+            db.session.delete(record)
+        
+        # 2. Delete from product_sales_log
+        sales_logs = ProductSalesLog.query.filter_by(product_id=product_id).all()
+        for log in sales_logs:
+            db.session.delete(log)
+        
+        # 3. Delete from sales_reports
+        sales_reports = SalesReport.query.filter_by(product_id=product_id).all()
+        for report in sales_reports:
+            db.session.delete(report)
+        
+        # 4. Delete image if exists
         if product.image_path:
             try:
                 image_path = os.path.join(current_app.root_path, product.image_path)
@@ -438,30 +454,31 @@ def delete_product(product_id):
                     os.remove(image_path)
             except Exception as e:
                 current_app.logger.warning(f"Image delete failed: {e}")
-
+        
+        # 5. Delete the product itself
         db.session.delete(product)
         db.session.commit()
-
+        
         # Invalidate relevant caches
         invalidate_cache(f"incubatee_products:{incubatee_id}")
         invalidate_cache("products:all")
         invalidate_cache(f"incubatee_details:{incubatee_id}")
         invalidate_cache(f"product:{product_id}")
-
+        
         return jsonify({"success": True, "message": "🗑️ Product deleted successfully"})
-
+        
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error deleting product: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
-
-@admin_bp.route("/get-products", methods=["GET"])
-def get_products():
-    """Get all products for display in admin panel - WITH CACHING"""
+    
+@admin_bp.route("/get-product/<int:product_id>")
+def get_product(product_id):
+    """Get product data for editing - WITH CACHING"""
     if not session.get('admin_logged_in'):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
     
-    cache_key_str = "products:all"
+    cache_key_str = cache_key("product", product_id)
     
     # Try cache first
     cached_data, found = get_cached_data(cache_key_str, expire_seconds=1800)  # 30 minutes cache
@@ -469,40 +486,41 @@ def get_products():
         return jsonify(cached_data)
     
     try:
-        # Get all products with incubatee information
-        products = IncubateeProduct.query.options(
+        product = IncubateeProduct.query.options(
             db.joinedload(IncubateeProduct.incubatee),
             db.joinedload(IncubateeProduct.pricing_unit)
-        ).all()
+        ).get(product_id)  # Use get() instead of get_or_404() for better error handling
         
-        products_list = []
-        for product in products:
-            products_list.append({
-                "product_id": product.product_id,
-                "incubatee_id": product.incubatee_id,
-                "name": product.name,
-                "stock_no": product.stock_no,
-                "products": product.products,
-                "stock_amount": product.stock_amount,
-                "price_per_stocks": float(product.price_per_stocks),
-                "pricing_unit": product.pricing_unit.unit_name if product.pricing_unit else "N/A",
-                "pricing_unit_id": product.pricing_unit_id,
-                "details": product.details,
-                "category": product.category,
-                "expiration_date": product.expiration_date.strftime("%Y-%m-%d") if product.expiration_date else "N/A",
-                "warranty": product.warranty,
-                "added_on": product.added_on.strftime("%Y-%m-%d") if product.added_on else "N/A",
-                "image_path": product.image_path,  # Keep for backward compatibility
-                "image_paths": product.image_path.split(',') if product.image_path else [],  # New array field
-                "incubatee_name": f"{product.incubatee.first_name} {product.incubatee.last_name}" if product.incubatee else "Unknown"
-            })
+        if not product:
+            return jsonify({"success": False, "error": f"Product with ID {product_id} not found"}), 404
         
-        response_data = {"success": True, "products": products_list}
-        set_cached_data(cache_key_str, response_data, 1800)  # Cache for 30 minutes
-        return jsonify(response_data)
+        # Handle multiple image paths
+        image_paths = []
+        if product.image_path:
+            image_paths = [path.strip() for path in product.image_path.split(',')]
+        
+        product_data = {
+            "product_id": product.product_id,
+            "name": product.name,
+            "stock_no": product.stock_no,
+            "products": product.products,
+            "stock_amount": product.stock_amount,
+            "price_per_stocks": float(product.price_per_stocks),
+            "pricing_unit_id": product.pricing_unit_id,
+            "details": product.details,
+            "category": product.category,
+            "expiration_date": product.expiration_date.strftime("%Y-%m-%d") if product.expiration_date else None,
+            "warranty": product.warranty,
+            "image_path": product.image_path,
+            "image_paths": image_paths,  # New: array of image paths
+            "incubatee_name": f"{product.incubatee.first_name} {product.incubatee.last_name}" if product.incubatee else "Unknown"
+        }
+        
+        set_cached_data(cache_key_str, product_data, 1800)  # Cache for 30 minutes
+        return jsonify({"success": True, "product": product_data})
         
     except Exception as e:
-        current_app.logger.error(f"Error fetching products: {str(e)}")
+        current_app.logger.error(f"Error fetching product {product_id}: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 @admin_bp.route("/get-pricing-units", methods=["GET"])
