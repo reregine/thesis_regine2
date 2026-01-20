@@ -70,7 +70,7 @@
                 <div class="metric-icon">💰</div>
                 <div class="metric-content">
                     <div class="metric-value" id="totalRevenue">₱0.00</div>
-                    <div class="metric-label">Total Revenue</div>
+                    <div class="metric-label">Total Sales</div>
                 </div>
             </div>
             <div class="metric-card">
@@ -80,89 +80,17 @@
                     <div class="metric-label">Total Orders</div>
                 </div>
             </div>
-            <div class="metric-card">
-                <div class="metric-icon">✅</div>
-                <div class="metric-content">
-                    <div class="metric-value" id="completedOrders">0</div>
-                    <div class="metric-label">Completed Orders</div>
-                </div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-icon">📊</div>
-                <div class="metric-content">
-                    <div class="metric-value" id="completionRate">0%</div>
-                    <div class="metric-label">Completion Rate</div>
-                </div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-icon">🏪</div>
-                <div class="metric-content">
-                    <div class="metric-value" id="activeIncubatees">0</div>
-                    <div class="metric-label">Active Incubatees</div>
-                </div>
-            </div>
         </div>
 
         <!-- Charts Section -->
         <div class="charts-grid">
             <div class="card chart-card">
-                <h3>Revenue Trend</h3>
-                <canvas id="revenueChart" height="250"></canvas>
-            </div>
-            <div class="card chart-card">
-                <h3>Sales by Category</h3>
+                <h3>Sales by Incubatee</h3>
                 <canvas id="categoryChart" height="250"></canvas>
             </div>
             <div class="card chart-card">
                 <h3>Top Incubatees</h3>
                 <canvas id="incubateeChart" height="250"></canvas>
-            </div>
-            <div class="card chart-card">
-                <h3>Order Status Distribution</h3>
-                <canvas id="statusChart" height="250"></canvas>
-            </div>
-        </div>
-
-        <!-- Detailed Reports -->
-        <div class="card">
-            <div class="card-header">
-                <h2>Detailed Sales Data</h2>
-                <div class="card-actions">
-                    <button class="btn-refresh" onclick="generateReport()">🔄 Refresh</button>
-                    <div class="view-toggle">
-                        <button class="view-btn active" onclick="setView('table')">📋 Table</button>
-                        <button class="view-btn" onclick="setView('cards')">🃏 Cards</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="tableView" class="report-view active">
-                <table class="report-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Order ID</th>
-                            <th>Incubatee</th>
-                            <th>Product</th>
-                            <th>Customer</th>
-                            <th>Quantity</th>
-                            <th>Unit Price</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="reportTableBody">
-                        <tr>
-                            <td colspan="9" class="no-data">Select date range and generate report</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div id="cardsView" class="report-view">
-                <div id="reportCards" class="report-cards">
-                    <div class="no-data">Select date range and generate report</div>
-                </div>
             </div>
         </div>
 

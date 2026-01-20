@@ -938,61 +938,34 @@ def sales_summary():
         # Sort incubatees by revenue
         incubatee_performance.sort(key=lambda x: x['revenue'], reverse=True)
         
-        # Chart data - Revenue trend by date
-        revenue_trend_labels = []
-        revenue_trend_data = []
-        
-        if start_date and end_date and sales_data:
-            try:
-                # Group sales by date
-                date_sales = {}
-                for sale in sales_data:
-                    sale_date = sale.sale_date.isoformat() if sale.sale_date else datetime.utcnow().date().isoformat()
-                    if sale_date not in date_sales:
-                        date_sales[sale_date] = 0
-                    date_sales[sale_date] += float(sale.total_price) if sale.total_price else 0
-                
-                # Convert to sorted lists
-                sorted_dates = sorted(date_sales.keys())
-                revenue_trend_labels = [date[5:] for date in sorted_dates]  # Show MM-DD format
-                revenue_trend_data = [date_sales[date] for date in sorted_dates]
-                
-            except Exception as e:
-                current_app.logger.error(f"Error processing revenue trend: {str(e)}")
-                revenue_trend_labels = ['Total']
-                revenue_trend_data = [total_revenue]
-        else:
-            revenue_trend_labels = ['Total']
-            revenue_trend_data = [total_revenue]
-        
-        # Category sales - get from products
-        category_sales = {}
+        # Sales by incubatee for doughnut chart (all incubatees, not just top 5)
+        incubatee_sales_chart = {}
         for sale in sales_data:
-            category = "Uncategorized"
-            if sale.product and sale.product.category:
-                category = sale.product.category
-            elif sale.product_name:
-                # Try to infer category from product name
-                product_lower = sale.product_name.lower()
-                if any(keyword in product_lower for keyword in ['agriculture', 'aqua', 'crop', 'farm', 'fish', 'seed']):
-                    category = "Agri-Aqua Business"
-                elif any(keyword in product_lower for keyword in ['food', 'processing', 'recipe', 'cook', 'bake']):
-                    category = "Food Processing Technology"
+            incubatee_name = "Unknown"
+            if sale.incubatee:
+                incubatee_name = f"{sale.incubatee.first_name} {sale.incubatee.last_name}"
+            elif sale.product and sale.product.incubatee:
+                incubatee_name = f"{sale.product.incubatee.first_name} {sale.product.incubatee.last_name}"
             
-            if category not in category_sales:
-                category_sales[category] = 0
-            category_sales[category] += float(sale.total_price) if sale.total_price else 0
+            if incubatee_name not in incubatee_sales_chart:
+                incubatee_sales_chart[incubatee_name] = 0
+            incubatee_sales_chart[incubatee_name] += float(sale.total_price) if sale.total_price else 0
         
-        category_sales_labels = list(category_sales.keys())
-        category_sales_data = list(category_sales.values())
+        # Convert to lists for chart, limit to top 8 for better visualization
+        sorted_incubatee_sales = sorted(incubatee_sales_chart.items(), key=lambda x: x[1], reverse=True)
+        incubatee_sales_labels = [inc[0] for inc in sorted_incubatee_sales[:8]]
+        incubatee_sales_data = [inc[1] for inc in sorted_incubatee_sales[:8]]
         
-        # Top incubatees for chart (limit to 5)
+        # If there are more than 8 incubatees, group the rest as "Others"
+        if len(sorted_incubatee_sales) > 8:
+            others_total = sum(inc[1] for inc in sorted_incubatee_sales[8:])
+            if others_total > 0:
+                incubatee_sales_labels.append("Others")
+                incubatee_sales_data.append(others_total)
+        
+        # Top incubatees for bar chart (limit to 5)
         top_incubatees_labels = [inc['name'] for inc in incubatee_performance[:5]]
         top_incubatees_data = [inc['revenue'] for inc in incubatee_performance[:5]]
-        
-        # Status distribution (all completed for sales reports)
-        status_labels = ['Completed']
-        status_data = [total_orders]
         
         response_data = {
             "success": True,
@@ -1006,21 +979,13 @@ def sales_summary():
             "sales_data": sales_list,
             "incubatee_performance": incubatee_performance,
             "charts": {
-                "revenue_trend": {
-                    "labels": revenue_trend_labels,
-                    "data": revenue_trend_data
-                },
-                "category_sales": {
-                    "labels": category_sales_labels,
-                    "data": category_sales_data
+                "incubatee_sales": {  # Changed from "category_sales" to "incubatee_sales"
+                    "labels": incubatee_sales_labels,
+                    "data": incubatee_sales_data
                 },
                 "top_incubatees": {
                     "labels": top_incubatees_labels,
                     "data": top_incubatees_data
-                },
-                "status_distribution": {
-                    "labels": status_labels,
-                    "data": status_data
                 }
             }
         }

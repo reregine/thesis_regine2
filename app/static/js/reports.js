@@ -70,13 +70,36 @@ async function generateReport() {
 }
 
 function showLoadingState() {
-    document.getElementById('reportTableBody').innerHTML = `
-        <tr>
-            <td colspan="9" class="loading-state">Generating report...</td>
-        </tr>
-    `;
-    document.getElementById('reportCards').innerHTML = '<div class="loading-state">Generating report...</div>';
-    document.getElementById('incubateePerformance').innerHTML = '<div class="loading-state">Generating report...</div>';
+    // Only update elements that exist
+    const tableBody = document.getElementById('reportTableBody');
+    if (tableBody) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="9" class="loading-state">Generating report...</td>
+            </tr>
+        `;
+    }
+    
+    const reportCards = document.getElementById('reportCards');
+    if (reportCards) {
+        reportCards.innerHTML = '<div class="loading-state">Generating report...</div>';
+    }
+    
+    const incubateePerformance = document.getElementById('incubateePerformance');
+    if (incubateePerformance) {
+        incubateePerformance.innerHTML = '<div class="loading-state">Generating report...</div>';
+    }
+    
+    // Update metrics to show loading state - FIXED: Use totalRevenue ID
+    const totalRevenueElement = document.getElementById('totalRevenue');
+    if (totalRevenueElement) {
+        totalRevenueElement.textContent = '₱0.00';
+    }
+    
+    const totalOrdersElement = document.getElementById('totalOrders');
+    if (totalOrdersElement) {
+        totalOrdersElement.textContent = '0';
+    }
 }
 
 function displayReportData(data) {
@@ -87,6 +110,7 @@ function displayReportData(data) {
 
 function displayTableData(data) {
     const tbody = document.getElementById('reportTableBody');
+    if (!tbody) return;
     
     if (!data.sales_data || data.sales_data.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9" class="no-data">No sales data for the selected period</td></tr>';
@@ -114,6 +138,7 @@ function displayTableData(data) {
 
 function displayCardData(data) {
     const container = document.getElementById('reportCards');
+    if (!container) return;
     
     if (!data.sales_data || data.sales_data.length === 0) {
         container.innerHTML = '<div class="no-data">No sales data for the selected period</div>';
@@ -153,6 +178,7 @@ function displayCardData(data) {
 
 function displayIncubateePerformance(data) {
     const container = document.getElementById('incubateePerformance');
+    if (!container) return;
     
     if (!data.incubatee_performance || data.incubatee_performance.length === 0) {
         container.innerHTML = '<div class="no-data">No incubatee performance data</div>';
@@ -170,7 +196,7 @@ function displayIncubateePerformance(data) {
             <div class="performance-stats">
                 <div class="performance-stat">
                     <span class="stat-value revenue">₱${incubatee.revenue.toFixed(2)}</span>
-                    <span class="stat-label">Revenue</span>
+                    <span class="stat-label">Total Sales</span>
                 </div>
                 <div class="performance-stat">
                     <span class="stat-value">${incubatee.order_count}</span>
@@ -179,10 +205,6 @@ function displayIncubateePerformance(data) {
                 <div class="performance-stat">
                     <span class="stat-value">${incubatee.product_count}</span>
                     <span class="stat-label">Products</span>
-                </div>
-                <div class="performance-stat">
-                    <span class="stat-value">${incubatee.completion_rate}%</span>
-                    <span class="stat-label">Completion</span>
                 </div>
             </div>
             <div class="performance-trend">
@@ -201,132 +223,93 @@ function getPerformanceRating(revenue) {
 }
 
 function updateMetrics(data) {
-    document.getElementById('totalRevenue').textContent = '₱' + (data.summary?.total_revenue || 0).toFixed(2);
-    document.getElementById('totalOrders').textContent = data.summary?.total_orders || 0;
-    document.getElementById('completedOrders').textContent = data.summary?.completed_orders || 0;
-    document.getElementById('completionRate').textContent = (data.summary?.completion_rate || 0) + '%';
-    document.getElementById('activeIncubatees').textContent = data.summary?.active_incubatees || 0;
+    // Update Total Revenue (keep ID as totalRevenue but label says Total Sales)
+    const totalRevenueElement = document.getElementById('totalRevenue');
+    if (totalRevenueElement) {
+        totalRevenueElement.textContent = '₱' + (data.summary?.total_revenue || 0).toFixed(2);
+    }
+    
+    // Update Total Orders
+    const totalOrdersElement = document.getElementById('totalOrders');
+    if (totalOrdersElement) {
+        totalOrdersElement.textContent = data.summary?.total_orders || 0;
+    }
+    
+    // The other metrics have been removed from HTML
 }
 
 function updateCharts(data) {
     destroyCharts();
     
-    // Revenue Trend Chart
-    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-    charts.revenue = new Chart(revenueCtx, {
-        type: 'line',
-        data: {
-            labels: data.charts?.revenue_trend?.labels || [],
-            datasets: [{
-                label: 'Revenue',
-                data: data.charts?.revenue_trend?.data || [],
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
+    // Remove chart containers that don't exist anymore
+    const chartsToRemove = ['revenueChart', 'statusChart'];
+    chartsToRemove.forEach(id => {
+        const chartElement = document.getElementById(id);
+        if (chartElement && chartElement.parentElement) {
+            chartElement.parentElement.remove();
+        }
+    });
+    
+    // Sales by Incubatee Chart (doughnut)
+    const incubateeSalesCtx = document.getElementById('categoryChart');
+    if (incubateeSalesCtx) {
+        charts.incubateeSales = new Chart(incubateeSalesCtx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: data.charts?.incubatee_sales?.labels || [],
+                datasets: [{
+                    data: data.charts?.incubatee_sales?.data || [],
+                    backgroundColor: [
+                        '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
+                        '#8b5cf6', '#06b6d4', '#84cc16', '#f97316',
+                        '#ec4899', '#6366f1'
+                    ]
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '₱' + value.toFixed(2);
-                        }
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
                     }
                 }
             }
-        }
-    });
-
-    // Category Sales Chart
-    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-    charts.category = new Chart(categoryCtx, {
-        type: 'doughnut',
-        data: {
-            labels: data.charts?.category_sales?.labels || [],
-            datasets: [{
-                data: data.charts?.category_sales?.data || [],
-                backgroundColor: [
-                    '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
-                    '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
+        });
+    }
 
     // Top Incubatees Chart
-    const incubateeCtx = document.getElementById('incubateeChart').getContext('2d');
-    charts.incubatee = new Chart(incubateeCtx, {
-        type: 'bar',
-        data: {
-            labels: data.charts?.top_incubatees?.labels || [],
-            datasets: [{
-                label: 'Revenue',
-                data: data.charts?.top_incubatees?.data || [],
-                backgroundColor: '#10b981'
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
+    const topIncubateeCtx = document.getElementById('incubateeChart');
+    if (topIncubateeCtx) {
+        charts.topIncubatees = new Chart(topIncubateeCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: data.charts?.top_incubatees?.labels || [],
+                datasets: [{
+                    label: 'Sales',
+                    data: data.charts?.top_incubatees?.data || [],
+                    backgroundColor: '#10b981'
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '₱' + value.toFixed(2);
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₱' + value.toFixed(2);
+                            }
                         }
                     }
                 }
             }
-        }
-    });
-
-    // Status Distribution Chart
-    const statusCtx = document.getElementById('statusChart').getContext('2d');
-    charts.status = new Chart(statusCtx, {
-        type: 'pie',
-        data: {
-            labels: data.charts?.status_distribution?.labels || [],
-            datasets: [{
-                data: data.charts?.status_distribution?.data || [],
-                backgroundColor: [
-                    '#f59e0b', // pending
-                    '#3b82f6', // approved
-                    '#10b981', // completed
-                    '#ef4444'  // rejected
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
+        });
+    }
 }
 
 function destroyCharts() {
