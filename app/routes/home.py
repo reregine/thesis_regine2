@@ -155,10 +155,7 @@ def get_featured_products():
     
 @home_bp.route("/")
 def index():
-    # ✅ Check if user is logged in
-    if not session.get("user_logged_in") and not session.get("admin_logged_in"):
-        return redirect(url_for("login.login"))
-    
+    # ALWAYS allow access to home page (landing page)
     # Pass login status to template
     user_logged_in = session.get("user_logged_in")
     admin_logged_in = session.get("admin_logged_in")

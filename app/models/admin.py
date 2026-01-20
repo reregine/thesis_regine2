@@ -91,65 +91,6 @@ class IncubateeProduct(db.Model):
         if self.image_path:
             return [f"/{path.strip()}" for path in self.image_path.split(',')]
         return []
-        # Add these properties to the IncubateeProduct class
-    @property
-    def stock_status(self):
-        """Return stock status based on current stock"""
-        if self.stock_amount <= 0:
-            return "out_of_stock"
-        elif self.stock_amount <= 5:
-            return "critical"
-        elif self.stock_amount <= 10:
-            return "low"
-        else:
-            return "good"
-    
-    @property
-    def stock_status_color(self):
-        """Return color based on stock status"""
-        status_colors = {
-            "out_of_stock": "danger",
-            "critical": "danger",
-            "low": "warning",
-            "good": "success"
-        }
-        return status_colors.get(self.stock_status, "secondary")
-    
-    @property
-    def stock_status_text(self):
-        """Return human-readable stock status"""
-        status_texts = {
-            "out_of_stock": "Out of Stock",
-            "critical": "Critical",
-            "low": "Low",
-            "good": "In Stock"
-        }
-        return status_texts.get(self.stock_status, "Unknown")
-    
-    def update_stock(self, amount, change_type="adjustment", reference_id=None, 
-                     reference_type=None, changed_by="System", reason=""):
-        """Update stock and log the change"""
-        from app.models.inventory import InventoryHistory
-        
-        previous_stock = self.stock_amount
-        self.stock_amount = amount
-        
-        # Log the change
-        history = InventoryHistory(
-            product_id=self.product_id,
-            incubatee_id=self.incubatee_id,
-            previous_stock=previous_stock,
-            new_stock=amount,
-            change_amount=amount - previous_stock,
-            change_type=change_type,
-            reference_id=reference_id,
-            reference_type=reference_type,
-            changed_by=changed_by,
-            change_reason=reason
-        )
-        
-        db.session.add(history)
-        return history
     
 class PricingUnit(db.Model):
     """Represents different pricing units (per item, per kilo, per package, etc.)"""

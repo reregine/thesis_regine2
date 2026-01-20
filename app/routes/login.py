@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
+from flask import Blueprint, make_response, render_template, request, jsonify, session, redirect, url_for
 from ..extension import db
 from ..models.user import User
 
@@ -11,11 +11,21 @@ ADMIN_PASSWORD = "Admin2025_atbi"
 
 @login_bp.route("/")
 def login():
-    """Login page
-        if session.get('admin_logged_in') or session.get('user_logged_in'):
-            return redirect(url_for('home.index'))  # redirect users to home"""
+    """Login page"""
+    if session.get('admin_logged_in') or session.get('user_logged_in'):
+        return redirect(url_for('home.index'))  # redirect users to home
+    
     error = request.args.get('error')
-    return render_template("login/login.html", error=error)
+    
+    # Create response with no-cache headers
+    response = make_response(render_template("login/login.html", error=error))
+    
+    # Prevent caching of login page
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    
+    return response
 
 
 @login_bp.route("/authenticate", methods=["POST"])
@@ -57,16 +67,21 @@ def register_page():
 
 @login_bp.route("/register_api", methods=["POST"])
 def register_api():
-    """Receive username, password, confirm password from frontend and save to DB"""
+    """Receive username, email, password, confirm password from frontend and save to DB"""
     try:
         data = request.get_json() if request.is_json else request.form
         username = data.get("username", "").strip()
+        email = data.get("email", "").strip()
         password = data.get("password", "").strip()
         confirm_password = data.get("confirm_password", "").strip()
 
         # Validate required fields
-        if not username or not password or not confirm_password:
+        if not username or not email or not password or not confirm_password:
             return jsonify({"success": False, "message": "⚠ All fields are required"}), 400
+
+        # Validate email format
+        if '@' not in email or '.' not in email:
+            return jsonify({"success": False, "message": "⚠ Please enter a valid email"}), 400
 
         # Validate confirm password
         if password != confirm_password:
@@ -76,9 +91,13 @@ def register_api():
         if User.query.filter_by(username=username).first():
             return jsonify({"success": False, "message": "⚠ Username already exists"}), 409
 
-        # Create and save new user
-        new_user = User(username=username)
-        new_user.set_password(password)  # this will hash + salt the password
+        # Check if email exists
+        if User.query.filter_by(email=email).first():
+            return jsonify({"success": False, "message": "⚠ Email already registered"}), 409
+
+        # Create and save new user with email
+        new_user = User(username=username, email=email)
+        new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
 

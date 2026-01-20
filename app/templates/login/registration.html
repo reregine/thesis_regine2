@@ -140,16 +140,24 @@
 
     <form id="registerForm">
       <div class="input-group">
+        <label for="email">📧 Email</label>
+        <input type="email" id="email" placeholder="Enter your email" required>
+        <div id="emailError" class="error-message">Valid email is required</div>
+    </div>
+      <div class="input-group">
         <label for="username">👤 Username</label>
         <input type="text" id="username" placeholder="Enter a username" required>
         <div id="usernameError" class="error-message">Username is required</div>
       </div>
 
       <div class="input-group">
-        <label for="password">🔑 Password</label>
-        <input type="password" id="password" placeholder="Enter a password" required>
-        <span class="toggle-password" onclick="togglePassword('password')">👁</span>
-        <div id="passwordError" class="error-message">Password is required</div>
+          <label for="password">🔑 Password</label>
+          <input type="password" id="password" placeholder="Enter a password" required>
+          <span class="toggle-password" onclick="togglePassword('password')">👁</span>
+          <div id="passwordError" class="error-message">Password is required</div>
+          <div class="password-hint" style="font-size: 11px; color: #666; margin-top: 5px;">
+              Must be 8+ characters with 1 uppercase letter and 1 special character (!@#$%^&*...)
+          </div>
       </div>
 
       <div class="input-group">
@@ -169,6 +177,8 @@
 
 <script>
   const registerForm = document.getElementById("registerForm");
+  const emailInput = document.getElementById("email");
+  const emailError = document.getElementById("emailError");
   const usernameInput = document.getElementById("username");
   const passwordInput = document.getElementById("password");
   const confirmPasswordInput = document.getElementById("confirm_password");
@@ -180,6 +190,9 @@
   registerForm.addEventListener("submit", function(event) {
     event.preventDefault();
 
+    // Add email validation in the submit handler
+    const email = emailInput.value.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const username = usernameInput.value.trim();
     const password = passwordInput.value.trim();
     const confirmPassword = confirmPasswordInput.value.trim();
@@ -191,19 +204,55 @@
 
     let isValid = true;
 
+    // Add password complexity check function
+    function validatePassword(password) {
+        const minLength = 8;
+        const hasUpperCase = /[A-Z]/.test(password);
+        const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+        
+        if (password.length < minLength) {
+            return "Password must be at least 8 characters long";
+        }
+        if (!hasUpperCase) {
+            return "Password must contain at least one uppercase letter";
+        }
+        if (!hasSpecialChar) {
+            return "Password must contain at least one special character (!@#$%^&*(),.?\":{}|<>)";
+        }
+        return null; // Password is valid
+    }
+
+    if (email === "" || !emailRegex.test(email)) {
+        emailError.style.display = "block";
+        isValid = false;
+    }
     if (username === "") {
       usernameError.style.display = "block";
       isValid = false;
     }
 
+    // Update the form submission handler
     if (password === "") {
-      passwordError.style.display = "block";
-      isValid = false;
+        passwordError.textContent = "Password is required";
+        passwordError.style.display = "block";
+        isValid = false;
+    } else {
+        const passwordValidationError = validatePassword(password);
+        if (passwordValidationError) {
+            passwordError.textContent = passwordValidationError;
+            passwordError.style.display = "block";
+            isValid = false;
+        }
     }
 
-    if (password !== confirmPassword) {
-      confirmPasswordError.style.display = "block";
-      isValid = false;
+    if (confirmPassword === "") {
+        confirmPasswordError.textContent = "Please confirm your password";
+        confirmPasswordError.style.display = "block";
+        isValid = false;
+    } else if (password !== confirmPassword) {
+        confirmPasswordError.textContent = "Passwords do not match";
+        confirmPasswordError.style.display = "block";
+        isValid = false;
     }
 
     if (!isValid) return;
@@ -213,6 +262,7 @@
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        email: email,
         username: username,
         password: password,
         confirm_password: confirmPassword
@@ -241,6 +291,28 @@
     const field = document.getElementById(fieldId);
     field.type = field.type === "password" ? "text" : "password";
   }
+  // Add real-time password validation
+  passwordInput.addEventListener('input', function() {
+      const password = this.value;
+      const hint = document.querySelector('.password-hint');
+      
+      if (password.length === 0) {
+          passwordError.style.display = 'none';
+          if (hint) hint.style.color = '#666';
+          return;
+      }
+      
+      const validationError = validatePassword(password);
+      
+      if (validationError) {
+          passwordError.textContent = validationError;
+          passwordError.style.display = 'block';
+          if (hint) hint.style.color = '#d93025';
+      } else {
+          passwordError.style.display = 'none';
+          if (hint) hint.style.color = '#34a853';
+      }
+  });
 </script>
 </body>
 </html>

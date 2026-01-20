@@ -1,8 +1,17 @@
 from flask import Blueprint, render_template, session, redirect, url_for, jsonify
 
 dashboard_bp = Blueprint("dashboard", __name__)
+def login_required(f):
+    """Decorator to check if user is logged in"""
+    def decorated_function(*args, **kwargs):
+        if not session.get("user_logged_in") and not session.get("admin_logged_in"):
+            return jsonify({"success": False, "message": "Please login to access this page"}), 401
+        return f(*args, **kwargs)
+    decorated_function.__name__ = f.__name__
+    return decorated_function
 
 @dashboard_bp.route("/dashboard")
+@login_required
 def user_dashboard():
     """Dashboard route that returns the dashboard HTML"""
     # Check if user is logged in
