@@ -430,9 +430,6 @@ function displayIncubatees(incubatees) {
                     <button class="btn-edit" onclick="openEditIncubateeModal(${incubatee.incubatee_id})">
                         ✏️ Edit
                     </button>
-                    <button class="btn-view" onclick="showIncubateeDetails(${incubatee.incubatee_id})">
-                        👁️ View
-                    </button>
                 </div>
             </div>
             
