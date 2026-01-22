@@ -2630,7 +2630,7 @@ async function openEditProductModal(productId) {
     }
 }
 
-// Populate edit form with product data
+// Populate edit form with product data - UPDATED
 function populateEditForm(product) {
     console.log('Populating form with product data:', product);
     
@@ -2654,22 +2654,32 @@ function populateEditForm(product) {
     // Load pricing units and set selected value
     loadPricingUnitsForEdit(product.pricing_unit_id);
 
-    // Show current image
+    // Show current images
+    const previewContainer = document.getElementById('edit_preview_container');
     const currentImageDiv = document.getElementById('edit_current_image');
-    const previewImg = document.getElementById('edit_preview_img');
     
     if (product.image_paths && product.image_paths.length > 0) {
-        currentImageDiv.innerHTML = `
-            <small>Current Images:</small><br>
-            <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">
-                ${product.image_paths.map(path => 
-                    `<img src="/${path}" style="max-width: 80px; height: 80px; object-fit: cover; border-radius: 4px;">`
-                ).join('')}
-            </div>
-        `;
+        if (currentImageDiv) {
+            currentImageDiv.innerHTML = `
+                <small>Current Images (${product.image_paths.length}):</small>
+            `;
+        }
+        
+        if (previewContainer) {
+            previewContainer.innerHTML = product.image_paths.map((path, index) => 
+                `<div class="image-thumbnail" style="position: relative;">
+                    <img src="/${path}" style="max-width: 80px; height: 80px; object-fit: cover; border-radius: 4px;">
+                    <span class="image-counter">${index + 1}</span>
+                </div>`
+            ).join('');
+        }
     } else {
-        currentImageDiv.innerHTML = '<small>No current image</small>';
-        previewImg.style.display = 'none';
+        if (currentImageDiv) {
+            currentImageDiv.innerHTML = '<small>No current images</small>';
+        }
+        if (previewContainer) {
+            previewContainer.innerHTML = '';
+        }
     }
 }
 
@@ -2698,22 +2708,46 @@ async function loadPricingUnitsForEdit(selectedUnitId) {
     }
 }
 
-// Handle edit image preview
+// Handle edit image preview - FIXED VERSION
 function handleEditImagePreview(event) {
-    const file = event.target.files[0];
-    const previewImg = document.getElementById('edit_preview_img');
+    const files = event.target.files;
+    const previewContainer = document.getElementById('edit_preview_container');
     const currentImageDiv = document.getElementById('edit_current_image');
     
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            previewImg.src = e.target.result;
-            previewImg.style.display = "block";
-            currentImageDiv.innerHTML = '<small>New image preview:</small>';
-        };
-        reader.readAsDataURL(file);
+    if (!previewContainer) return;
+    
+    // Clear existing preview
+    previewContainer.innerHTML = '';
+    
+    if (files && files.length > 0) {
+        // Hide current images when new ones are selected
+        if (currentImageDiv) {
+            currentImageDiv.innerHTML = '<small>Current images will be replaced with new selections</small>';
+        }
+        
+        // Create previews for selected files
+        Array.from(files).forEach((file, index) => {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showNotification(`⚠️ File "${file.name}" is not an image and will be skipped.`, 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const thumbnail = document.createElement('div');
+                thumbnail.className = 'image-thumbnail';
+                thumbnail.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview ${index + 1}" style="max-width: 80px; height: 80px; object-fit: cover; border-radius: 4px;">
+                    <span class="image-counter">${index + 1}</span>
+                `;
+                previewContainer.appendChild(thumbnail);
+            };
+            reader.readAsDataURL(file);
+        });
     }
 }
+
 // Scroll the gallery horizontally
 function scrollGallery(direction) {
     const gallery = document.getElementById('imageGallery');
@@ -2766,12 +2800,37 @@ async function handleEditProductSubmit(event) {
     }
 }
 
-// Reset edit form
+// Reset edit form - FIXED VERSION
 function resetEditForm() {
-    document.getElementById('editProductForm').reset();
-    document.getElementById('edit_preview_img').style.display = 'none';
-    document.getElementById('edit_current_image').innerHTML = '';
-    document.getElementById('edit_pricing_unit').innerHTML = '<option value="">Select Pricing Unit</option>';
+    const editForm = document.getElementById('editProductForm');
+    if (editForm) {
+        editForm.reset();
+    }
+    
+    // Clear image preview containers
+    const editPreviewContainer = document.getElementById('edit_preview_container');
+    if (editPreviewContainer) {
+        editPreviewContainer.innerHTML = '';
+    }
+    
+    const editCurrentImage = document.getElementById('edit_current_image');
+    if (editCurrentImage) {
+        editCurrentImage.innerHTML = '';
+    }
+    
+    // Reset the edit image input
+    const editProductImageInput = document.getElementById('edit_product_image');
+    if (editProductImageInput) {
+        editProductImageInput.value = '';
+    }
+    
+    // Reset pricing unit select
+    const editPricingUnitSelect = document.getElementById('edit_pricing_unit');
+    if (editPricingUnitSelect) {
+        editPricingUnitSelect.innerHTML = '<option value="">Select Pricing Unit</option>';
+    }
+    
+    console.log('Edit form reset successfully');
 }
 
 // Add this at the end of your admin.js to debug
