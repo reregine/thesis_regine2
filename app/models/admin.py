@@ -68,6 +68,7 @@ class IncubateeProduct(db.Model):
     products = db.Column(db.String(150), nullable=False)
     stock_amount = db.Column(db.Integer, nullable=False)
     price_per_stocks = db.Column(db.Numeric(8, 2), nullable=False)
+    new_price_per_stocks = db.Column(db.Numeric(8, 2), nullable=True)
     pricing_unit_id = db.Column(db.Integer, db.ForeignKey("pricing_units.unit_id"), nullable=False, default=1)
     details = db.Column(db.Text, nullable=False)
     category = db.Column(db.String(100), nullable=True)
@@ -155,7 +156,6 @@ class ProductPopularity(db.Model):
     
     popularity_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     product_id = db.Column(db.Integer, db.ForeignKey("incubatee_products.product_id"), nullable=False, unique=True)
-    product_name = db.Column(db.String(150), nullable=True)
     incubatee_id = db.Column(db.Integer, db.ForeignKey("incubatees.incubatee_id"), nullable=False)
     
     # Sales statistics

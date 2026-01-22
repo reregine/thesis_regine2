@@ -8,7 +8,8 @@ from io import StringIO
 import redis, json, os
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-import atexit, time
+import atexit
+from decimal import Decimal, ROUND_HALF_UP
 
 reservation_bp = Blueprint("reservation_bp", __name__, url_prefix="/reservations")
 
@@ -161,6 +162,7 @@ def get_scheduler_status():
             "next_run_time": next_run.isoformat() if next_run else None
         }
     return {"running": False}
+
 def process_reservation_queues():
     """
     Process all pending reservations for all products using FCFS algorithm
@@ -275,6 +277,38 @@ def process_product_reservations(product_id):
         db.session.rollback()
         current_app.logger.error(f"❌ Error processing reservations for product {product_id}: {e}")
         return False
+    
+def calculate_discount_percentage(original_price, discounted_price):
+    """
+    Calculate discount percentage between original and discounted price.
+    
+    Args:
+        original_price (Decimal or float): Original price
+        discounted_price (Decimal or float): Discounted price
+        
+    Returns:
+        int: Discount percentage (0-100), rounded to nearest whole number
+    """
+    try:
+        # Convert to Decimal for precise calculation
+        original = Decimal(str(original_price))
+        discounted = Decimal(str(discounted_price))
+        
+        # Check if there's actually a discount
+        if original <= 0 or discounted >= original:
+            return 0
+        
+        # Calculate percentage
+        discount_amount = original - discounted
+        discount_percentage = (discount_amount / original) * 100
+        
+        # Round to nearest whole number
+        rounded_percentage = discount_percentage.quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+        
+        return int(rounded_percentage)
+    except Exception as e:
+        current_app.logger.error(f"Error calculating discount percentage: {e}")
+        return 0
     
 @reservation_bp.route("/create", methods=["POST"])
 def create_reservation():
@@ -529,12 +563,22 @@ def get_all_reservations():
         
         result = []
         for reservation, product in reservations:
+            # Calculate discount percentage
+            discount_percentage = 0
+            if product.new_price_per_stocks and product.new_price_per_stocks < product.price_per_stocks:
+                discount_percentage = calculate_discount_percentage(
+                    product.price_per_stocks, 
+                    product.new_price_per_stocks
+                )
+            
             result.append({
                 "reservation_id": reservation.reservation_id,
                 "user_id": reservation.user_id,
                 "product_id": product.product_id,
                 "product_name": product.name,
                 "price_per_stocks": float(product.price_per_stocks or 0),
+                "new_price_per_stocks": float(product.new_price_per_stocks or 0) if product.new_price_per_stocks else None,
+                "discount_percentage": discount_percentage,  # ADDED: Discount percentage
                 "quantity": reservation.quantity,
                 "status": reservation.status,
                 "reserved_at": reservation.reserved_at.isoformat() if reservation.reserved_at else None,
@@ -557,7 +601,7 @@ def get_all_reservations():
     except Exception as e:
         current_app.logger.error(f"Error fetching all reservations: {e}")
         return jsonify({"success": False, "error": str(e),"reservations": [],"count": 0,"message": "Error fetching reservations"}), 500
-        
+
 # FORCE PROCESS ALL PENDING RESERVATIONS
 @reservation_bp.route("/process-pending", methods=["POST"])
 def process_pending_reservations():
@@ -635,19 +679,30 @@ def get_user_reservations(user_id):
 
         reservations_list = []
         for reservation, product in reservations:
+            # Calculate discount percentage
+            discount_percentage = 0
+            if product.new_price_per_stocks and product.new_price_per_stocks < product.price_per_stocks:
+                discount_percentage = calculate_discount_percentage(
+                    product.price_per_stocks, 
+                    product.new_price_per_stocks
+                )
+            
             reservations_list.append({
                 "reservation_id": reservation.reservation_id,
                 "product_id": product.product_id,
                 "product_name": product.name,
                 "image_path": url_for('static', filename=f'uploads/{product.image_path}') if product.image_path else url_for('static', filename='images/no-image.png'),
                 "price_per_stocks": float(product.price_per_stocks or 0),
+                "new_price_per_stocks": float(product.new_price_per_stocks or 0) if product.new_price_per_stocks else None,
+                "discount_percentage": discount_percentage,  # ADDED: Discount percentage
                 "quantity": reservation.quantity,
                 "status": reservation.status,
                 "reserved_at": reservation.reserved_at.strftime("%Y-%m-%d %H:%M:%S"),
                 "approved_at": reservation.approved_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.approved_at else None,
                 "completed_at": reservation.completed_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.completed_at else None,
                 "rejected_at": reservation.rejected_at.strftime("%Y-%m-%d %H:%M:%S") if reservation.rejected_at else None,
-                "rejected_reason": reservation.rejected_reason  })
+                "rejected_reason": reservation.rejected_reason  
+            })
 
         response_data = {"success": True, "reservations": reservations_list}
         set_cached_data(cache_key_str, response_data, 120)
@@ -656,7 +711,7 @@ def get_user_reservations(user_id):
     except Exception as e:
         current_app.logger.error(f"Error fetching user reservations: {e}")
         return jsonify({"success": False, "message": "Server error"}), 500
-
+    
 @reservation_bp.route("/status/<string:status>", methods=["GET"])
 def get_reservations_by_status(status):
     try:
@@ -698,12 +753,22 @@ def get_reservations_by_status(status):
                     "will_approve_at": (reservation.reserved_at + timedelta(minutes=2)).strftime("%Y-%m-%d %H:%M:%S")
                 }
 
+            # Calculate discount percentage
+            discount_percentage = 0
+            if product.new_price_per_stocks and product.new_price_per_stocks < product.price_per_stocks:
+                discount_percentage = calculate_discount_percentage(
+                    product.price_per_stocks, 
+                    product.new_price_per_stocks
+                )
+
             reservations_list.append({
                 "reservation_id": reservation.reservation_id,
                 "product_id": product.product_id,
                 "product_name": product.name,
                 "image_path": url_for('static', filename=f'uploads/{product.image_path}') if product.image_path else url_for('static', filename='images/no-image.png'),
                 "price_per_stocks": float(product.price_per_stocks or 0),
+                "new_price_per_stocks": float(product.new_price_per_stocks or 0) if product.new_price_per_stocks else None,
+                "discount_percentage": discount_percentage,  # ADDED: Discount percentage
                 "quantity": reservation.quantity,
                 "status": reservation.status,
                 "reserved_at": reservation.reserved_at.strftime("%Y-%m-%d %H:%M:%S"),

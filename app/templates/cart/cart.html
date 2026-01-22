@@ -622,6 +622,109 @@
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
     border: 1px solid #e5e7eb !important;
 }
+/* ===== RESERVATION NOTIFICATION ===== */
+.reservation-notice {
+    background: linear-gradient(135deg, #FFE082, #FFD54F);
+    color: #5D4037;
+    padding: 10px 20px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    border-bottom: 1px solid #FFCA28;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.reservation-notice .icon {
+    font-size: 16px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+/* ===== DISCOUNT STYLES ===== */
+.discount-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 4px 6px;
+    border-radius: 6px;
+    z-index: 2;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    animation: pulseRed 2s infinite;
+}
+
+@keyframes pulseRed {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.discount-percent {
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+.price-comparison {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.current-price {
+    color: var(--green);
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.original-price {
+    color: #9ca3af;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: line-through;
+    opacity: 0.8;
+}
+
+.discount-amount {
+    font-size: 11px;
+    color: #ef4444;
+    font-weight: 600;
+    background: rgba(239, 68, 68, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Image container for positioning badge */
+.image-container {
+    position: relative;
+    width: 70px;
+    height: 70px;
+}
+
+.cart-item img {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 2px solid var(--border-light);
+    transition: all 0.3s ease;
+}
 </style>
 
 <!-- ===== SHOPEE-STYLE CART SIDEBAR CONTENT ===== -->
@@ -630,7 +733,10 @@
     <span>🛒 My Shopping Cart</span>
     <button class="close-cart" id="closeCart">&times;</button>
   </div>
-
+    <div class="reservation-notice">
+        <span class="icon">⏰</span>
+        <span>Reservations last for 3 days only. Pickup your reserved items within this period.</span>
+    </div>
   <!-- 🛒 CART SECTION -->
   <div class="cart-section">
     <div class="cart-title">

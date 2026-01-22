@@ -311,7 +311,7 @@ function displayProducts(products) {
             <td>${escapeHtml(product.stock_no)}</td>
             <td>${escapeHtml(product.name)}</td>
             <td>${product.stock_amount}</td>
-            <td>₱${product.price_per_stocks.toFixed(2)}</td>
+            <td>₱${(product.display_price || product.price_per_stocks || 0).toFixed(2)}</td>
             <td>${product.pricing_unit || 'N/A'}</td>
             <td>
                 <div class="product-image-container" data-product-id="${product.product_id}">
@@ -2639,7 +2639,7 @@ function populateEditForm(product) {
     document.getElementById('edit_stock_no').value = product.stock_no || '';
     document.getElementById('edit_products').value = product.products || '';
     document.getElementById('edit_stock_amount').value = product.stock_amount || '';
-    document.getElementById('edit_price_per_stocks').value = product.price_per_stocks || '';
+    document.getElementById('edit_price_per_stocks').value = product.display_price || product.price_per_stocks || '';
     document.getElementById('edit_details').value = product.details || '';
     document.getElementById('edit_category').value = product.category || '';
     document.getElementById('edit_warranty').value = product.warranty || '';

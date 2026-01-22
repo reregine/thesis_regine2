@@ -270,14 +270,40 @@ window.loadReservationsByStatus = async function(status, container) {
                         hour12: true
                     }).format(reservedDate);
                     
-                    // Inside the reservation mapping in loadReservationsByStatus function
+                    // Use server-provided discount percentage
+                    const discountPercentage = reservation.discount_percentage || 0;
+                    
+                    const priceDisplay = reservation.new_price_per_stocks && parseFloat(reservation.new_price_per_stocks) < parseFloat(reservation.price_per_stocks) ?
+                        `
+                        <div class="price-comparison" style="margin-bottom: 4px;">
+                            <div class="current-price" style="color: #10b981; font-weight: 700;">
+                                ₱${parseFloat(reservation.new_price_per_stocks).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </div>
+                            <div class="original-price" style="color: #9ca3af; font-size: 12px; text-decoration: line-through;">
+                                ₱${parseFloat(reservation.price_per_stocks).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </div>
+                        </div>
+                        `
+                        :
+                        `<div class="reservation-price">₱${reservation.price_per_stocks.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>`;
+                    
                     return `
                     <div class="reservation-item" data-reservation-id="${reservation.reservation_id}">
-                        <img src="${imagePath}" alt="${reservation.product_name}" 
-                            onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/512/4076/4076505.png'">
+                        <div class="image-container" style="position: relative;">
+                            ${discountPercentage > 0 ? 
+                                `<div class="discount-badge" style="position: absolute; top: 5px; right: 5px; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; font-size: 9px; padding: 3px 5px; border-radius: 4px; font-weight: 700;">
+                                    ${discountPercentage}% OFF
+                                </div>` 
+                                : ''
+                            }
+                            <img src="${imagePath}" alt="${reservation.product_name}" 
+                                onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/512/4076/4076505.png'">
+                        </div>
                         <div class="reservation-info">
                             <div class="reservation-name">${reservation.product_name}</div>
-                            <div class="reservation-price">₱${reservation.price_per_stocks.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                            
+                            <!-- Use priceDisplay here -->
+                            ${priceDisplay}
                             
                             <div class="reservation-meta">
                                 <div class="reservation-quantity">Quantity: ${reservation.quantity}</div>
@@ -691,11 +717,41 @@ function attachCartScripts(container) {
             return `
             <div class="cart-item" data-cart-id="${item.cart_id}" data-product-id="${item.product_id}" data-stock="${stockAmount}" data-price="${price}">
                 <input type="checkbox" class="item-checkbox">
-                <img src="${imgSrc}" alt="${item.name}" 
-                    onerror="this.onerror=null; this.src='/static/images/no-image.png'">
+                
+                <!-- Image container with discount badge -->
+                <div class="image-container">
+                    ${item.discount_percentage > 0 ?  // CHANGED: Use item.discount_percentage
+                        `<div class="discount-badge">
+                            <span class="discount-percent">${item.discount_percentage}% OFF</span>
+                        </div>` 
+                        : ''
+                    }
+                    <img src="${imgSrc}" alt="${item.name}" 
+                        onerror="this.onerror=null; this.src='/static/images/no-image.png'">
+                </div>
+                
                 <div class="item-info">
                     <div class="item-name">${item.name}</div>
-                    <div class="item-price">₱${price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                    
+                    <!-- Price comparison section -->
+                    <div class="price-comparison">
+                        ${item.new_price_per_stocks && parseFloat(item.new_price_per_stocks) < parseFloat(item.price_per_stocks) ? 
+                            `
+                            <div class="current-price">
+                                ₱${parseFloat(item.new_price_per_stocks).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </div>
+                            <div class="original-price">
+                                ₱${parseFloat(item.price_per_stocks).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </div>
+                            <div class="discount-amount">
+                                Save ₱${(parseFloat(item.price_per_stocks) - parseFloat(item.new_price_per_stocks)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </div>
+                            `
+                            :
+                            `<div class="current-price">₱${price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>`
+                        }
+                    </div>
+                    
                     ${stockAmount < currentQuantity ? 
                         `<div class="stock-warning">Only ${stockAmount} left in stock</div>` : 
                         `<div class="stock-info">${stockAmount} available</div>`

@@ -88,6 +88,7 @@ def get_cart_items():
 
         items = []
         for cart, product in cart_items:
+            
             # FIX: Handle paths that start with "static/"
             if product.image_path:
                 # Remove "static/" prefix if it exists
@@ -98,13 +99,22 @@ def get_cart_items():
                 image_url = url_for('static', filename=clean_path)
             else:
                 image_url = url_for('static', filename='images/no-image.png')
-                
+            
+            # Calculate discount percentage
+            discount_percentage = 0
+            if product.new_price_per_stocks and product.new_price_per_stocks < product.price_per_stocks:
+                discount_amount = product.price_per_stocks - product.new_price_per_stocks
+                discount_percentage = (discount_amount / product.price_per_stocks) * 100
+                discount_percentage = round(discount_percentage)  # Round to nearest integer
+            
             items.append({
                 "cart_id": cart.cart_id,
                 "product_id": product.product_id,
                 "name": product.name,
                 "image_path": image_url,
                 "price_per_stocks": float(product.price_per_stocks or 0),
+                "new_price_per_stocks": float(product.new_price_per_stocks or 0) if product.new_price_per_stocks else None,  # ADD THIS
+                "discount_percentage": discount_percentage,  # ADD THIS
                 "stock_amount": product.stock_amount or 0,
                 "quantity": cart.quantity,
                 "added_at": cart.added_at.strftime("%Y-%m-%d %H:%M:%S")
@@ -219,23 +229,46 @@ def get_cart_totals():
             .all())
 
         subtotal = 0
+        original_subtotal = 0  # For comparison
         for cart, product in cart_items:
-            # Calculate subtotal based on product price and cart quantity
-            price = float(product.price_per_stocks or 0)
+            # Use discounted price if available, otherwise use regular price
+            if product.new_price_per_stocks and product.new_price_per_stocks < product.price_per_stocks:
+                price = float(product.new_price_per_stocks or 0)
+            else:
+                price = float(product.price_per_stocks or 0)
+            
+            # Original price for comparison
+            original_price = float(product.price_per_stocks or 0)
+            
             quantity = cart.quantity
             subtotal += price * quantity
+            original_subtotal += original_price * quantity
+
+        # Calculate total savings
+        total_savings = original_subtotal - subtotal
 
         # For agricultural products, often no shipping/tax is applied
         tax = 0
         shipping = 0
         total = subtotal
 
-        return jsonify({'success': True,'subtotal': float(subtotal),'tax': float(tax),'shipping': float(shipping),'total': float(total)})
+        return jsonify({
+            'success': True,
+            'subtotal': float(subtotal),
+            'original_subtotal': float(original_subtotal),  # For comparison
+            'total_savings': float(total_savings),  # How much user saved
+            'tax': float(tax),
+            'shipping': float(shipping),
+            'total': float(total)
+        })
 
     except Exception as e:
         current_app.logger.error(f"Error calculating cart totals: {e}")
-        return jsonify({'success': False,'message': f'Error calculating totals: {str(e)}'}), 500
-
+        return jsonify({
+            'success': False,
+            'message': f'Error calculating totals: {str(e)}'
+        }), 500
+        
 @cart_bp.route("/reserve", methods=["POST"])
 def reserve_selected_items():
     try:

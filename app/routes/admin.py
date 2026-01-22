@@ -402,7 +402,7 @@ def add_product():
 
         # Create product entry
         product = IncubateeProduct(incubatee_id=incubatee_id,name=name,stock_no=stock_no,products=products,
-            stock_amount=stock_amount,price_per_stocks=price_per_stocks,pricing_unit_id=pricing_unit_id, 
+            stock_amount=stock_amount,price_per_stocks=price_per_stocks,new_price_per_stocks=price_per_stocks,pricing_unit_id=pricing_unit_id, 
             details=details,category=category,expiration_date=expiration_date,warranty=warranty,added_on=added_on,
             image_path=','.join(image_paths) if image_paths else None,
             created_at=datetime.utcnow(),
@@ -494,6 +494,9 @@ def get_products():
         
         products_list = []
         for product in products:
+            # Use new_price_per_stocks if available, otherwise use price_per_stocks
+            display_price = float(product.new_price_per_stocks) if product.new_price_per_stocks else float(product.price_per_stocks)
+            
             products_list.append({
                 "product_id": product.product_id,
                 "incubatee_id": product.incubatee_id,
@@ -501,7 +504,9 @@ def get_products():
                 "stock_no": product.stock_no,
                 "products": product.products,
                 "stock_amount": product.stock_amount,
-                "price_per_stocks": float(product.price_per_stocks),
+                "price_per_stocks": float(product.price_per_stocks),  # Original price
+                "new_price_per_stocks": float(product.new_price_per_stocks) if product.new_price_per_stocks else None,  # New price
+                "display_price": display_price,  # Price to display (uses new price if available)
                 "pricing_unit": product.pricing_unit.unit_name if product.pricing_unit else "N/A",
                 "pricing_unit_id": product.pricing_unit_id,
                 "details": product.details,
@@ -509,8 +514,8 @@ def get_products():
                 "expiration_date": product.expiration_date.strftime("%Y-%m-%d") if product.expiration_date else "N/A",
                 "warranty": product.warranty,
                 "added_on": product.added_on.strftime("%Y-%m-%d") if product.added_on else "N/A",
-                "image_path": product.image_path,  # Keep for backward compatibility
-                "image_paths": product.image_path.split(',') if product.image_path else [],  # New array field
+                "image_path": product.image_path,
+                "image_paths": product.image_path.split(',') if product.image_path else [],
                 "incubatee_name": f"{product.incubatee.first_name} {product.incubatee.last_name}" if product.incubatee else "Unknown"
             })
         
@@ -521,7 +526,7 @@ def get_products():
     except Exception as e:
         current_app.logger.error(f"Error fetching products: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
-
+    
 @admin_bp.route("/get-pricing-units", methods=["GET"])
 def get_pricing_units():
     """Get all pricing units - WITH CACHING"""
@@ -1144,7 +1149,7 @@ def get_product(product_id):
         product = IncubateeProduct.query.options(
             db.joinedload(IncubateeProduct.incubatee),
             db.joinedload(IncubateeProduct.pricing_unit)
-        ).get(product_id)  # Use get() instead of get_or_404() for better error handling
+        ).get(product_id)
         
         if not product:
             return jsonify({"success": False, "error": f"Product with ID {product_id} not found"}), 404
@@ -1154,20 +1159,25 @@ def get_product(product_id):
         if product.image_path:
             image_paths = [path.strip() for path in product.image_path.split(',')]
         
+        # Use new_price_per_stocks for display in edit form if it exists
+        display_price = float(product.new_price_per_stocks) if product.new_price_per_stocks else float(product.price_per_stocks)
+        
         product_data = {
             "product_id": product.product_id,
             "name": product.name,
             "stock_no": product.stock_no,
             "products": product.products,
             "stock_amount": product.stock_amount,
-            "price_per_stocks": float(product.price_per_stocks),
+            "price_per_stocks": float(product.price_per_stocks),  # Original price
+            "new_price_per_stocks": float(product.new_price_per_stocks) if product.new_price_per_stocks else None,  # New price
+            "display_price": display_price,  # Price to show in edit form
             "pricing_unit_id": product.pricing_unit_id,
             "details": product.details,
             "category": product.category,
             "expiration_date": product.expiration_date.strftime("%Y-%m-%d") if product.expiration_date else None,
             "warranty": product.warranty,
             "image_path": product.image_path,
-            "image_paths": image_paths,  # New: array of image paths
+            "image_paths": image_paths,
             "incubatee_name": f"{product.incubatee.first_name} {product.incubatee.last_name}" if product.incubatee else "Unknown"
         }
         
@@ -1217,9 +1227,13 @@ def update_product(product_id):
         if 'price_per_stocks' in form_data:
             try:
                 new_price = float(form_data['price_per_stocks'])
-                if new_price != product.price_per_stocks:
-                    product.price_per_stocks = new_price
-                    updated_fields.append('price_per_stocks')
+                current_display_price = float(product.new_price_per_stocks) if product.new_price_per_stocks else float(product.price_per_stocks)
+                
+                if new_price != current_display_price:
+                    # ONLY update new_price_per_stocks (NOT price_per_stocks)
+                    product.new_price_per_stocks = new_price
+                    updated_fields.append('new_price_per_stocks')
+                    
             except (TypeError, ValueError):
                 return jsonify({"success": False, "error": "Invalid price per stock"}), 400
                 
@@ -1329,8 +1343,7 @@ def update_product(product_id):
         # Only update timestamp and commit if there are actual changes
         if updated_fields:
             product.updated_at = datetime.utcnow()
-            
-            # **CRITICAL: Update the related product_popularity record if it exists**
+            db.session.commit()
             try:
                 popularity_record = ProductPopularity.query.filter_by(product_id=product_id).first()
                 if popularity_record:
@@ -1341,14 +1354,11 @@ def update_product(product_id):
             except Exception as e:
                 current_app.logger.warning(f"Could not update product_popularity: {str(e)}")
             
-            db.session.commit()
-            
             # Invalidate relevant caches
             invalidate_cache(f"product:{product_id}")
             invalidate_cache(f"incubatee_products:{product.incubatee_id}")
             invalidate_cache("products:all")
             invalidate_cache(f"incubatee_details:{product.incubatee_id}")
-            invalidate_cache(f"popularity:{product_id}")  # Invalidate popularity cache too
             
             return jsonify({
                 "success": True,
