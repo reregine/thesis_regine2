@@ -18,10 +18,10 @@ class EmailSender:
             # Get email configuration from app config
             smtp_host = current_app.config.get('SMTP_HOST', 'smtp.gmail.com')
             smtp_port = current_app.config.get('SMTP_PORT', 587)
-            smtp_username = current_app.config.get('SMTP_USERNAME', 'reginejoycefrancisco110603@gmail.com')
-            smtp_password = current_app.config.get('SMTP_PASSWORD', 'lpsdyhyrsfpzewzy')
-            from_email = current_app.config.get('FROM_EMAIL', 'atbi.system@gmail.com')
-
+            smtp_username = current_app.config.get('SMTP_USERNAME')
+            smtp_password = current_app.config.get('SMTP_PASSWORD')
+            from_email = current_app.config.get('FROM_EMAIL', smtp_username)
+            
             if not all([smtp_username, smtp_password, from_email]):
                 logger.error("Email configuration missing")
                 return False
