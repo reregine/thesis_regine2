@@ -172,7 +172,7 @@
 
         <div class="form-group">
           <label for="name">Product Name <span class="required-star">*</span></label>
-          <input type="text" id="name" name="name" placeholder="Enter incubatee name" required>
+          <input type="text" id="name" name="name" placeholder="Enter incubatee name" required autocomplete="off">
         </div>
         <div class="form-group">
           <label for="stock_no">Stock Number <span class="required-star">*</span></label>
@@ -192,15 +192,15 @@
         </div>
         <!-- Add this form group after the price_per_stocks field -->
         <div class="form-group">
-          <label for="pricing_unit">Pricing Unit <span class="required-star">*</span></label>
-          <div class="pricing-unit-search-container">
-            <input type="text" id="pricing_unit_search" placeholder="Search pricing unit..." autocomplete="off">
-            <div id="pricingUnitDropdown" class="dropdown hidden"></div>
-          </div>
-          <input type="hidden" id="pricing_unit" name="pricing_unit_id" required>
-          <button type="button" class="btn-add-unit" id="addPricingUnitBtn" style="margin-top: 5px; padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
-            + Add New Pricing Unit
-          </button>
+            <label for="pricing_unit_search">Pricing Unit <span class="required-star">*</span></label>
+            <div class="pricing-unit-search-container">
+                <input type="text" id="pricing_unit_search" placeholder="Search pricing unit..." autocomplete="off">
+                <div id="pricingUnitDropdown" class="dropdown hidden"></div>
+            </div>
+            <input type="hidden" id="pricing_unit" name="pricing_unit_id" required>
+            <button type="button" class="btn-add-unit" id="addPricingUnitBtn" style="margin-top: 5px; padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                + Add New Pricing Unit
+            </button>
         </div>
         <div class="form-group">
           <label for="details">Product Description <span class="required-star">*</span></label>
@@ -288,6 +288,67 @@
         </tbody>
       </table>
     </div>
+  </div>
+  <!-- Low Stock Alerts Section -->
+  <div id="lowStockSection" class="low-stock-section" style="display: none;">
+      <div class="low-stock-header">
+          <div class="low-stock-title">
+              Low Stock Products
+              <span class="low-stock-count" id="lowStockCount">0</span>
+          </div>
+          <div class="low-stock-actions">
+              <button class="btn-notify" onclick="sendLowStockNotifications()" id="sendNotificationsBtn">
+                  📧 Notify Incubatees
+              </button>
+              <button class="btn-notify" onclick="checkLowStock()">
+                  🔄 Refresh
+              </button>
+          </div>
+      </div>
+      
+      <table class="low-stock-table">
+          <thead>
+              <tr>
+                  <th>Product</th>
+                  <th>Stock No</th>
+                  <th>Current Stock</th>
+                  <th>Threshold</th>
+                  <th>Incubatee</th>
+                  <th>Status</th>
+                  <th>Last Notified</th>
+              </tr>
+          </thead>
+          <tbody id="lowStockList">
+              <!-- Low stock products will be populated here -->
+          </tbody>
+      </table>
+  </div>
+
+  <!-- Stock Notification Modal -->
+  <div id="stockNotificationModal" class="stock-notification-modal">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h2>📧 Low Stock Notifications</h2>
+              <button class="close-btn" id="closeStockNotificationModal">&times;</button>
+          </div>
+          
+          <div class="notification-summary">
+              <h4>Notification Summary</h4>
+              <p>Ready to send notifications to incubatees with low stock products.</p>
+              <p><strong>Products to notify:</strong> <span id="notificationCount">0</span></p>
+          </div>
+          
+          <div class="notification-list" id="notificationList">
+              <!-- Notification list will be populated here -->
+          </div>
+          
+          <div class="modal-actions">
+              <button type="button" class="btn-cancel" id="closeStockNotificationModalBottom">Cancel</button>
+              <button type="button" class="btn-save" onclick="sendNotificationsNow()" id="sendNowBtn">
+                  Send Notifications Now
+              </button>
+          </div>
+      </div>
   </div>
 
   <!-- Floating Logout Confirmation -->
@@ -430,5 +491,6 @@
 
   <!-- Include the external JavaScript file -->
   <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/lowStock.js') }}"></script>
 </body>
 </html>

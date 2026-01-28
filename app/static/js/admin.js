@@ -9,6 +9,7 @@ let currentButton = null;
 let currentSlide = 0;
 let totalSlides = 0;
 let slidesPerView = 3; // Number of thumbnails visible at once
+
 const today = new Date();
 const formattedDate = today.toISOString().split('T')[0]; 
 // Auto-cancellation timeout in milliseconds (1 minute for testing)
@@ -25,9 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeEditProductModal();
     initializeOrdersModal();
     initializeIncubateeSearch();
-    // REMOVED: initializeSalesReportModal(); - No longer used
     initializeConfirmationModal(); // This will now check if elements exist
-    
+    initializePricingUnitSearch();
     // Users modal
     const openUsersModalBtn = document.getElementById('openUsersModal');
     if (openUsersModalBtn) {
@@ -37,6 +37,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load users.js functionality
     if (typeof initUsersManagement === 'function') {
         initUsersManagement();
+    }
+    // Initialize low stock warnings (modular)
+    if (typeof initializeLowStockWarnings === 'function') {
+        initializeLowStockWarnings();
     }
 });
 
@@ -57,13 +61,12 @@ function initializeAdmin() {
 
     initializeEventListeners();
     initializeOrdersModal();
-    // REMOVED: initializeSalesReportModal(); - No longer used
     initializePricingUnitModal();
     initializeEditProductModal();
     loadPricingUnits(); // Load pricing units
-    
+    initializePricingUnitSearch();
     startAutoCancellationChecker();
-    
+    startAutoCancellationChecker();
     console.log('✅ Main admin initialized successfully');
 }
 
@@ -267,6 +270,39 @@ async function initializeIncubateeSearch() {
     });
 }
 
+function initializeLowStockWarnings() {
+    console.log('🔍 Initializing low stock warnings...');
+    
+    // Add low stock filter button to the filter bar
+    const filterBar = document.querySelector('.filter-bar');
+    if (filterBar && !document.querySelector('.low-stock-filter-btn')) {
+        const lowStockBtn = document.createElement('button');
+        lowStockBtn.className = 'low-stock-filter-btn';
+        lowStockBtn.id = 'lowStockFilterBtn';
+        lowStockBtn.innerHTML = `
+            <span class="icon">⚠️</span>
+            Low Stock
+            <span class="low-stock-badge-count" id="lowStockCount">0</span>
+        `;
+        lowStockBtn.addEventListener('click', toggleLowStockFilter);
+        
+        // Insert after the category filter
+        const categoryFilter = document.getElementById('categoryFilter');
+        if (categoryFilter && categoryFilter.parentNode) {
+            categoryFilter.parentNode.insertBefore(lowStockBtn, categoryFilter.nextSibling);
+        } else {
+            filterBar.appendChild(lowStockBtn);
+        }
+    }
+    
+    // Check for low stock products on page load
+    checkLowStockProducts();
+    
+    // Set up periodic checking (every 30 seconds)
+    setInterval(checkLowStockProducts, 30000);
+    
+    console.log('✅ Low stock warnings initialized');
+}
 // Function to load all products from database
 function loadProducts() {
     fetch("/admin/get-products")
@@ -275,6 +311,10 @@ function loadProducts() {
             if (data.success) {
                 allProducts = data.products; // store all
                 displayProducts(allProducts);
+                // Trigger low stock check after products are loaded
+                if (typeof checkLowStockProducts === 'function') {
+                    setTimeout(checkLowStockProducts, 500);
+                }
             } else {
                 console.error("Error loading products:", data.error);
                 showEmptyState();
@@ -306,11 +346,23 @@ function displayProducts(products) {
     }
 
     tableBody.innerHTML = products.map(product => `
-        <tr data-product-id="${product.product_id}">
+        <tr data-product-id="${product.product_id}" class="${product.stock_amount <= 3 ? 'critical-stock-row' : product.stock_amount <= 10 ? 'low-stock-row' : ''}">
             <td>${escapeHtml(product.incubatee_name || 'Unknown')}</td>
             <td>${escapeHtml(product.stock_no)}</td>
             <td>${escapeHtml(product.name)}</td>
-            <td>${product.stock_amount}</td>
+            <td class="${product.stock_amount <= 3 ? 'stock-count-critical' : product.stock_amount <= 10 ? 'stock-count-low' : ''}">
+                ${product.stock_amount}
+                ${product.stock_amount <= 10 ? `
+                    <div class="stock-warning-tooltip" style="display: inline-block; margin-left: 5px;">
+                        ${product.stock_amount <= 3 ? '🔥' : '⚠️'}
+                        <span class="tooltip-text">
+                            ${product.stock_amount <= 3 ? '🔥 CRITICAL STOCK!' : '⚠️ LOW STOCK!'}<br>
+                            Only ${product.stock_amount} units remaining.<br>
+                            ${product.stock_amount <= 3 ? 'Restock immediately!' : 'Consider restocking soon.'}
+                        </span>
+                    </div>
+                ` : ''}
+            </td>
             <td>₱${(product.display_price || product.price_per_stocks || 0).toFixed(2)}</td>
             <td>${product.pricing_unit || 'N/A'}</td>
             <td>
@@ -321,7 +373,16 @@ function displayProducts(products) {
             <td>${product.expiration_date && product.expiration_date !== 'N/A' ? product.expiration_date : '—'}</td>
             <td>${product.warranty && product.warranty !== 'N/A' ? product.warranty : '—'}</td>
             <td>${product.added_on}</td>
-            <td>
+            <td style="position: relative;">
+                ${product.stock_amount <= 3 ? `
+                    <div class="low-stock-badge critical-stock-badge" title="CRITICAL STOCK! Only ${product.stock_amount} units left. Restock immediately!">
+                        🔥 CRITICAL: ${product.stock_amount}
+                    </div>
+                ` : product.stock_amount <= 10 ? `
+                    <div class="low-stock-badge" title="Low stock: ${product.stock_amount} units remaining. Consider restocking.">
+                        ⚠️ LOW: ${product.stock_amount}
+                    </div>
+                ` : ''}
                 <button class="btn-edit" onclick="openEditProductModal(${product.product_id})" title="Edit product">
                     <span class="btn-edit-icon">✏️</span>
                     <span class="btn-delete-text">Edit</span>
@@ -333,6 +394,11 @@ function displayProducts(products) {
             </td>
         </tr>
     `).join('');
+    
+    // Update the low stock count badge if function exists
+    if (typeof updateLowStockCountBadge === 'function') {
+        updateLowStockCountBadge(products);
+    }
 }
 
 // Function to get product image display HTML

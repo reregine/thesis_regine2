@@ -21,7 +21,7 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 # Update these paths to be relative to your app
 LOGO_UPLOAD_FOLDER = "static/incubatee_logo"  # Changed to relative path
 LOGO_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'svg'}
-
+last_notification_time = {}
 redis_client = None
 def get_redis_client():
     """Get redis client with lazy inizialization"""
@@ -1416,3 +1416,499 @@ def test_redis():
                 return jsonify({"success": False, "message": "❌ Redis connection failed - check your redis_url value"})
     except Exception as e:
         return jsonify({"success": False, "message": f"❌ Redis error: {str(e)}"})
+    
+def should_send_notification(product_id):
+    """Check if we should send notification (cooldown period)"""
+    global last_notification_time
+    
+    cooldown_hours = current_app.config.get('NOTIFICATION_COOLDOWN_HOURS', 24)
+    
+    if product_id in last_notification_time:
+        last_time = last_notification_time[product_id]
+        hours_passed = (datetime.utcnow() - last_time).total_seconds() / 3600
+        
+        if hours_passed < cooldown_hours:
+            return False
+    
+    return True
+
+def record_notification_sent(product_id):
+    """Record that a notification was sent"""
+    global last_notification_time
+    last_notification_time[product_id] = datetime.utcnow()
+    
+@admin_bp.route("/check-low-stock", methods=["GET"])
+def check_low_stock():
+    """Simple low stock check - checks stock_amount in incubatee_products WITH COOLDOWN"""
+    if not session.get('admin_logged_in'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    try:
+        # Get low stock threshold from config or use default
+        low_stock_threshold = current_app.config.get('LOW_STOCK_THRESHOLD', 10)
+        
+        # SIMPLE QUERY: Get products with stock_amount <= threshold
+        low_stock_products = IncubateeProduct.query.filter(
+            IncubateeProduct.stock_amount <= low_stock_threshold
+        ).options(
+            db.joinedload(IncubateeProduct.incubatee)
+        ).all()
+        
+        # AUTO-SEND EMAILS HERE WITH COOLDOWN
+        notifications_sent = 0
+        failed_notifications = 0
+        sent_emails = []
+        
+        for product in low_stock_products:
+            # Check if incubatee has email
+            if product.incubatee and product.incubatee.email:
+                # Check cooldown before sending
+                if should_send_notification(product.product_id):
+                    # Send email automatically
+                    email_sent = send_low_stock_email_to_incubatee({
+                        'product_id': product.product_id,
+                        'product_name': product.name,
+                        'stock_no': product.stock_no,
+                        'current_stock': product.stock_amount,
+                        'threshold': low_stock_threshold,
+                        'incubatee_name': f"{product.incubatee.first_name} {product.incubatee.last_name}",
+                        'incubatee_email': product.incubatee.email,
+                        'status': "Critical" if product.stock_amount <= 3 else "Low"
+                    })
+                    
+                    if email_sent:
+                        notifications_sent += 1
+                        record_notification_sent(product.product_id)
+                        sent_emails.append({
+                            "incubatee": f"{product.incubatee.first_name} {product.incubatee.last_name}",
+                            "email": product.incubatee.email,
+                            "product": product.name
+                        })
+                    else:
+                        failed_notifications += 1
+                else:
+                    current_app.logger.info(f"Skipping email for product {product.product_id} - cooldown active")
+        
+        # Prepare response data
+        products_list = []
+        for product in low_stock_products:
+            # Get incubatee email if available
+            incubatee_email = None
+            if product.incubatee and product.incubatee.email:
+                incubatee_email = product.incubatee.email
+            
+            products_list.append({
+                "product_id": product.product_id,
+                "product_name": product.name,
+                "stock_no": product.stock_no,
+                "current_stock": product.stock_amount,
+                "threshold": low_stock_threshold,
+                "incubatee_name": f"{product.incubatee.first_name} {product.incubatee.last_name}" if product.incubatee else "Unknown",
+                "incubatee_email": incubatee_email,
+                "email": incubatee_email,
+                "status": "Critical" if product.stock_amount <= 3 else "Low"
+            })
+        
+        return jsonify({
+            "success": True,
+            "low_stock_threshold": low_stock_threshold,
+            "total_low_stock": len(products_list),
+            "products": products_list,
+            "timestamp": datetime.utcnow().isoformat(),
+            # Include email sending results
+            "notifications_sent": notifications_sent,
+            "failed_notifications": failed_notifications,
+            "sent_emails": sent_emails,
+            "message": f"Auto-sent {notifications_sent} email notifications" if notifications_sent > 0 else "No emails sent"
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error checking low stock: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@admin_bp.route("/send-low-stock-notifications", methods=["POST"])
+def send_low_stock_notifications():
+    """Send email notifications to incubatees for low stock - ALL LOGIC HERE"""
+    if not session.get('admin_logged_in'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    try:
+        # 1. Get low stock threshold
+        low_stock_threshold = current_app.config.get('LOW_STOCK_THRESHOLD', 10)
+        
+        # 2. QUERY: Get products with low stock AND their incubatee emails
+        low_stock_products = IncubateeProduct.query.filter(
+            IncubateeProduct.stock_amount <= low_stock_threshold
+        ).options(
+            db.joinedload(IncubateeProduct.incubatee)
+        ).all()
+        
+        # 3. Send emails to incubatees
+        notifications_sent = 0
+        failed_notifications = 0
+        sent_emails = []
+        
+        for product in low_stock_products:
+            # Check if incubatee has email
+            if product.incubatee and product.incubatee.email:
+                # Send email (all email logic is here)
+                email_sent = send_low_stock_email_to_incubatee({
+                    'product_id': product.product_id,
+                    'product_name': product.name,
+                    'stock_no': product.stock_no,
+                    'current_stock': product.stock_amount,
+                    'threshold': low_stock_threshold,
+                    'incubatee_name': f"{product.incubatee.first_name} {product.incubatee.last_name}",
+                    'incubatee_email': product.incubatee.email,
+                    'status': "Critical" if product.stock_amount <= 3 else "Low"
+                })
+                
+                if email_sent:
+                    notifications_sent += 1
+                    sent_emails.append({
+                        "incubatee": f"{product.incubatee.first_name} {product.incubatee.last_name}",
+                        "email": product.incubatee.email,
+                        "product": product.name
+                    })
+                else:
+                    failed_notifications += 1
+        
+        return jsonify({
+            "success": True,
+            "message": f"Sent {notifications_sent} email notifications",
+            "notifications_sent": notifications_sent,
+            "failed_notifications": failed_notifications,
+            "total_low_stock": len(low_stock_products),
+            "sent_emails": sent_emails
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error sending low stock notifications: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+def send_low_stock_email_to_incubatee(product_data):
+    """Send email to incubatee about low stock"""
+    try:
+        # Check if email is configured
+        if not current_app.config.get('SMTP_USERNAME') or not current_app.config.get('SMTP_PASSWORD'):
+            current_app.logger.warning("Email not configured - skipping email send")
+            return False
+        
+        # Create email content
+        subject = f"⚠️ Low Stock Alert: {product_data['product_name']}"
+        
+        # Determine severity
+        severity = "CRITICAL" if product_data['current_stock'] <= 3 else "LOW"
+        severity_color = "#dc3545" if product_data['current_stock'] <= 3 else "#f0ad4e"
+        action_required = "RESTOCK IMMEDIATELY" if product_data['current_stock'] <= 3 else "Consider restocking soon"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    margin: 0;
+                    padding: 0;
+                    background-color: #f5f5f5;
+                }}
+                .container {{
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    background-color: white;
+                    border-radius: 10px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }}
+                .header {{
+                    background-color: {severity_color};
+                    color: white;
+                    padding: 20px;
+                    text-align: center;
+                    border-radius: 10px 10px 0 0;
+                }}
+                .content {{
+                    padding: 30px;
+                }}
+                .product-info {{
+                    background-color: #f8f9fa;
+                    padding: 20px;
+                    border-radius: 8px;
+                    border-left: 4px solid {severity_color};
+                    margin: 20px 0;
+                }}
+                .alert-box {{
+                    background-color: #fff3cd;
+                    border: 1px solid #ffeaa7;
+                    padding: 15px;
+                    border-radius: 8px;
+                    margin: 20px 0;
+                }}
+                .footer {{
+                    text-align: center;
+                    padding: 20px;
+                    color: #666;
+                    font-size: 12px;
+                    border-top: 1px solid #eee;
+                    margin-top: 30px;
+                }}
+                .status-badge {{
+                    display: inline-block;
+                    padding: 5px 10px;
+                    background-color: {severity_color};
+                    color: white;
+                    border-radius: 20px;
+                    font-weight: bold;
+                    font-size: 12px;
+                }}
+                .button {{
+                    display: inline-block;
+                    background-color: {severity_color};
+                    color: white;
+                    padding: 12px 24px;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    font-weight: bold;
+                    margin-top: 10px;
+                }}
+                table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 10px 0;
+                }}
+                th, td {{
+                    padding: 8px;
+                    text-align: left;
+                    border-bottom: 1px solid #ddd;
+                }}
+                th {{
+                    background-color: #f8f9fa;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>⚠️ ATBI Low Stock Alert</h1>
+                    <p>Automated Stock Monitoring System</p>
+                </div>
+                
+                <div class="content">
+                    <h2>Hello {product_data['incubatee_name']},</h2>
+                    
+                    <p>Your product is running low on stock and requires your attention.</p>
+                    
+                    <div class="product-info">
+                        <h3>Product Details</h3>
+                        <table>
+                            <tr>
+                                <th>Product Name:</th>
+                                <td><strong>{product_data['product_name']}</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Stock Number:</th>
+                                <td>{product_data['stock_no']}</td>
+                            </tr>
+                            <tr>
+                                <th>Current Stock Level:</th>
+                                <td><span class="status-badge">{product_data['current_stock']} units</span></td>
+                            </tr>
+                            <tr>
+                                <th>Low Stock Threshold:</th>
+                                <td>{product_data['threshold']} units</td>
+                            </tr>
+                            <tr>
+                                <th>Stock Status:</th>
+                                <td><span class="status-badge">{severity} STOCK</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="alert-box">
+                        <h3>⚠️ Action Required</h3>
+                        <p><strong>{action_required}</strong></p>
+                        <p>To avoid running out of stock, please plan to restock this product as soon as possible.</p>
+                    </div>
+                    
+                    <p>You can log in to your account to update your stock levels or contact ATBI administration for assistance.</p>
+                    
+                    <p>Thank you for being part of the ATBI incubator program!</p>
+                    
+                    <p>Best regards,<br>
+                    <strong>ATBI Administration Team</strong></p>
+                </div>
+                
+                <div class="footer">
+                    <p>This is an automated message from the ATBI Stock Monitoring System.</p>
+                    <p>Please do not reply to this email. For assistance, contact ATBI administration.</p>
+                    <p>© {datetime.utcnow().year} ATBI Incubator Program</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Create plain text version
+        text_content = f"""
+        ATBI LOW STOCK ALERT
+        ====================
+        
+        Hello {product_data['incubatee_name']},
+        
+        Your product is running low on stock and requires your attention.
+        
+        PRODUCT DETAILS:
+        - Product Name: {product_data['product_name']}
+        - Stock Number: {product_data['stock_no']}
+        - Current Stock: {product_data['current_stock']} units
+        - Low Stock Threshold: {product_data['threshold']} units
+        - Status: {severity} STOCK
+        
+        ⚠️ ACTION REQUIRED: {action_required}
+        
+        To avoid running out of stock, please plan to restock this product as soon as possible.
+        
+        You can log in to your account to update your stock levels or contact ATBI administration for assistance.
+        
+        Thank you for being part of the ATBI incubator program!
+        
+        Best regards,
+        ATBI Administration Team
+        
+        ---
+        This is an automated message from the ATBI Stock Monitoring System.
+        Please do not reply to this email.
+        """
+        
+        # Send email using Flask-Mail or your email sending method
+        from app.utils.email_sender import EmailSender
+        
+        email_data = {
+            'to_email': product_data['incubatee_email'],
+            'subject': subject,
+            'html_content': html_content,
+            'text_content': text_content,
+            'product_name': product_data['product_name'],
+            'current_stock': product_data['current_stock'],
+            'threshold': product_data['threshold'],
+            'incubatee_name': product_data['incubatee_name']
+        }
+        
+        # Try to send email
+        success = EmailSender.send_email(
+            to_email=email_data['to_email'],
+            subject=email_data['subject'],
+            html_content=email_data['html_content'],
+            text_content=email_data['text_content']
+        )
+        
+        if success:
+            current_app.logger.info(f"✅ Low stock email sent to {product_data['incubatee_email']} for product {product_data['product_name']}")
+        else:
+            current_app.logger.error(f"❌ Failed to send email to {product_data['incubatee_email']}")
+        
+        return success
+        
+    except Exception as e:
+        current_app.logger.error(f"Error sending email to incubatee: {str(e)}")
+        return False
+
+def send_admin_summary_email(sent_emails, total_low_stock):
+    """Send summary email to admin"""
+    try:
+        admin_email = current_app.config.get('ADMIN_EMAIL')
+        if not admin_email:
+            return False
+        
+        from app.utils.email_sender import EmailSender
+        
+        subject = f"📊 Low Stock Notification Summary - {datetime.utcnow().strftime('%Y-%m-%d')}"
+        
+        # Group by incubatee
+        incubatee_summary = {}
+        for email in sent_emails:
+            incubatee_name = email['incubatee']
+            if incubatee_name not in incubatee_summary:
+                incubatee_summary[incubatee_name] = {
+                    'email': email['email'],
+                    'products': []
+                }
+            incubatee_summary[incubatee_name]['products'].append(email['product'])
+        
+        # Create HTML content
+        summary_html = ""
+        for incubatee, data in incubatee_summary.items():
+            products_list = "<br>".join([f"• {p}" for p in data['products']])
+            summary_html += f"""
+            <tr>
+                <td>{incubatee}</td>
+                <td>{data['email']}</td>
+                <td>{len(data['products'])}</td>
+                <td>{products_list}</td>
+            </tr>
+            """
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; }}
+                .container {{ max-width: 700px; margin: 0 auto; }}
+                .header {{ background: #007bff; color: white; padding: 20px; text-align: center; }}
+                .summary {{ padding: 20px; }}
+                table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+                th {{ background: #f8f9fa; padding: 10px; text-align: left; }}
+                td {{ padding: 10px; border-bottom: 1px solid #eee; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>📊 Low Stock Notification Summary</h1>
+                    <p>{datetime.utcnow().strftime('%B %d, %Y %H:%M')}</p>
+                </div>
+                
+                <div class="summary">
+                    <p><strong>Total Low Stock Products:</strong> {total_low_stock}</p>
+                    <p><strong>Notifications Sent:</strong> {len(sent_emails)}</p>
+                    <p><strong>Incubatees Notified:</strong> {len(incubatee_summary)}</p>
+                    
+                    <h3>Notification Details:</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Incubatee</th>
+                                <th>Email</th>
+                                <th>Products</th>
+                                <th>Product Names</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {summary_html}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Send email
+        success = EmailSender.send_email(
+            to_email=admin_email,
+            subject=subject,
+            html_content=html_content,
+            text_content=f"Low stock notifications sent to {len(sent_emails)} incubatees."
+        )
+        
+        return success
+        
+    except Exception as e:
+        current_app.logger.error(f"Error sending admin summary: {str(e)}")
+        return False

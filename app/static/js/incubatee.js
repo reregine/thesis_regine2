@@ -640,11 +640,33 @@ async function toggleIncubateeApproval(incubateeId) {
 
 // Add Incubatee Modal Functions
 function openAddIncubateeModal() {
-    document.getElementById('addIncubateeModal').classList.add('active');
+    const modal = document.getElementById('addIncubateeModal');
+    if (modal) {
+        modal.classList.add('active');
+    } else {
+        // Fallback to the other modal if addIncubateeModal doesn't exist
+        const fallbackModal = document.getElementById('incubateeModal');
+        if (fallbackModal) {
+            fallbackModal.classList.add('active');
+        } else {
+            console.error('No incubatee modal found');
+            showNotification('Error: Could not open incubatee form', 'error');
+        }
+    }
 }
 
 function closeAddIncubateeModal() {
-    document.getElementById('addIncubateeModal').classList.remove('active');
+    const modal = document.getElementById('addIncubateeModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    
+    // Also try to close the other modal if it exists
+    const otherModal = document.getElementById('incubateeModal');
+    if (otherModal) {
+        otherModal.classList.remove('active');
+    }
+    
     const form = document.getElementById('addIncubateeForm');
     if (form) form.reset();
 }

@@ -1,4 +1,4 @@
-# __init__.py
+
 from flask import Flask, session
 from .config import Config
 from .extension import db, migrate
@@ -7,6 +7,7 @@ from .routes.cart import cart_bp
 from .routes.favorites import favorites_bp
 from .routes.dashboard import dashboard_bp
 from .routes import home, incubatee_showroom, layouts, shop, notification, login, admin, contact, about, user
+from .utils.auto_stock_notifier import init_auto_notifier
 
 
 def create_app(config_class=Config):
@@ -39,6 +40,7 @@ def create_app(config_class=Config):
     
     # Initialize product popularity data on startup
     with app.app_context():
+        init_auto_notifier(app)
         try:
             from app.services.popularity_service import ProductPopularityService
             ProductPopularityService.initialize_on_startup()
