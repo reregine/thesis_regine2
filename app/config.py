@@ -13,12 +13,12 @@ class BaseConfig:
     
     # Email configuration for low stock notifications
     # HARDCODED VALUES for Render (change these to your actual values)
-    SMTP_HOST = os.environ.get('SMTP_HOST')
-    SMTP_PORT = os.environ.get('SMTP_PORT')
-    SMTP_USERNAME = os.environ.get('SMTP_USERNAME') 
-    SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD')
-    FROM_EMAIL =  os.environ.get('FROM_EMAIL')
-    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL')
+    SMTP_HOST = 'smtp.gmail.com'
+    SMTP_PORT = 587
+    SMTP_USERNAME = 'reginejoycefrancisco110603@gmail.com'
+    SMTP_PASSWORD = 'lpsdyhyrsfpzewzy'
+    FROM_EMAIL = 'atbi.system@gmail.com'  # ADD THIS - sender email
+    ADMIN_EMAIL = 'reginejoycefrancisco110603@gmail.com'  # ADD THIS - admin notification email
     
     # Redis configuration (optional - comment out if not using Redis)
     REDIS_URL = 'redis://localhost:6379/0'  # Default local Redis
@@ -42,12 +42,12 @@ class LocalConfig(BaseConfig):
     DEBUG = True  # Debug mode ON for local development
     
     # Email settings for local development
-    SMTP_HOST = os.environ.get('SMTP_HOST')
-    SMTP_PORT = os.environ.get('SMTP_PORT')
-    SMTP_USERNAME = os.environ.get('SMTP_USERNAME') 
-    SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD')
-    FROM_EMAIL =  os.environ.get('FROM_EMAIL')
-    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL')
+    SMTP_HOST = 'smtp.gmail.com'
+    SMTP_PORT = 587
+    SMTP_USERNAME = 'reginejoycefrancisco110603@gmail.com'
+    SMTP_PASSWORD = 'lpsdyhyrsfpzewzy'
+    FROM_EMAIL = 'atbi.system.local@gmail.com'
+    ADMIN_EMAIL = 'reginejoycefrancisco110603@gmail.com'
     
     # 🟢 Optimized for local development with Supabase
     SQLALCHEMY_ENGINE_OPTIONS = {
@@ -78,12 +78,12 @@ class SupabaseConfig(BaseConfig):
     DEBUG = False
     
     # Email settings for production - HARDCODED
-    SMTP_HOST = os.environ.get('SMTP_HOST')
-    SMTP_PORT = os.environ.get('SMTP_PORT')
-    SMTP_USERNAME = os.environ.get('SMTP_USERNAME') 
-    SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD')
-    FROM_EMAIL =  os.environ.get('FROM_EMAIL')
-    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL')
+    SMTP_HOST = 'smtp.gmail.com'
+    SMTP_PORT = 587
+    SMTP_USERNAME = 'reginejoycefrancisco110603@gmail.com'
+    SMTP_PASSWORD = 'lpsdyhyrsfpzewzy'
+    FROM_EMAIL = 'atbi.system@gmail.com'
+    ADMIN_EMAIL = 'reginejoycefrancisco110603@gmail.com'
     
     # Important: Validate email configuration
     @classmethod
