@@ -1440,8 +1440,6 @@ def record_notification_sent(product_id):
 @admin_bp.route("/check-low-stock", methods=["GET"])
 def check_low_stock():
     """Simple low stock check - checks stock_amount in incubatee_products WITH COOLDOWN"""
-    if not session.get('admin_logged_in'):
-        return jsonify({"success": False, "error": "Unauthorized"}), 401
     
     try:
         # Get low stock threshold from config or use default
@@ -1529,9 +1527,6 @@ def check_low_stock():
 @admin_bp.route("/send-low-stock-notifications", methods=["POST"])
 def send_low_stock_notifications():
     """Send email notifications to incubatees for low stock - ALL LOGIC HERE"""
-    if not session.get('admin_logged_in'):
-        return jsonify({"success": False, "error": "Unauthorized"}), 401
-    
     try:
         # 1. Get low stock threshold
         low_stock_threshold = current_app.config.get('LOW_STOCK_THRESHOLD', 10)
