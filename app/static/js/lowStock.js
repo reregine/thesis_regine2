@@ -58,12 +58,25 @@ function addLowStockFilterButton() {
     }
 }
 
-// Check low stock (now auto-sends emails)
+// Check low stock (handle HTML errors)
 function checkLowStockProducts() {
-    console.log('🔍 Checking low stock (auto-sending emails)...');
+    console.log('🔍 Checking low stock...');
     
     fetch('/admin/check-low-stock')
-        .then(response => response.json())
+        .then(response => {
+            // First check if response is OK
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            // Check content type to ensure it's JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error(`Expected JSON but got: ${contentType}`);
+            }
+            
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 lowStockProducts = data.products || [];
@@ -71,11 +84,6 @@ function checkLowStockProducts() {
                 
                 // Update visual indicators
                 updateLowStockIndicators();
-                
-                // Show notification if emails were sent
-                if (data.notifications_sent > 0) {
-                    showNotification(`📧 Auto-sent ${data.notifications_sent} email notifications to incubatees`, 'success');
-                }
                 
                 // Check for critical notifications
                 const criticalProducts = lowStockProducts.filter(product => 
@@ -92,10 +100,28 @@ function checkLowStockProducts() {
                 }
             } else {
                 console.error('Error checking low stock:', data.error);
+                showNotification('❌ Error checking low stock: ' + data.error, 'error');
             }
         })
         .catch(error => {
             console.error('Error fetching low stock:', error);
+            
+            // Try to get text response to see what's being returned
+            fetch('/admin/check-low-stock')
+                .then(res => res.text())
+                .then(text => {
+                    console.error('Response text (first 200 chars):', text.substring(0, 200));
+                    
+                    // Check if it's an HTML error page
+                    if (text.includes('<html>') || text.includes('<!DOCTYPE')) {
+                        showNotification('⚠️ Session expired. Please refresh the page.', 'warning');
+                        // Optionally redirect to login
+                        // setTimeout(() => { window.location.reload(); }, 3000);
+                    }
+                })
+                .catch(e => {
+                    console.error('Could not get response text:', e);
+                });
         });
 }
 
