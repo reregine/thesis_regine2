@@ -2692,10 +2692,7 @@ function initializeEditProductModal() {
         if (btn) {
             btn.addEventListener("click", () => {
                 console.log('Closing edit modal');
-                editProductModal.classList.remove("active");
-                resetEditForm();
-                // Hide any loading overlay
-                showEditModalLoading(false);
+                closeEditProductModal(); // Use the new function
             });
         }
     });
@@ -2705,10 +2702,7 @@ function initializeEditProductModal() {
         editProductModal.addEventListener("click", (e) => {
             if (e.target === editProductModal) {
                 console.log('Closing edit modal from outside click');
-                editProductModal.classList.remove("active");
-                resetEditForm();
-                // Hide any loading overlay
-                showEditModalLoading(false);
+                closeEditProductModal(); // Use the new function
             }
         });
     }
@@ -2726,6 +2720,16 @@ function initializeEditProductModal() {
         editProductImageInput.addEventListener("change", handleEditImagePreview);
     }
 
+    // Also close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const editProductModal = document.getElementById("editProductModal");
+            if (editProductModal && editProductModal.classList.contains("active")) {
+                closeEditProductModal();
+            }
+        }
+    });
+
     console.log('Edit product modal initialized successfully');
 }
 
@@ -2734,41 +2738,128 @@ async function openEditProductModal(productId) {
     console.log('Opening edit modal for product:', productId);
     
     const editProductModal = document.getElementById("editProductModal");
-    if (!editProductModal) return;
+    if (!editProductModal) {
+        console.error('Edit product modal not found!');
+        showNotification('❌ Edit modal not found on page', 'error');
+        return;
+    }
     
     try {
         // Show modal immediately with loading state
         editProductModal.classList.add("active");
+        document.body.style.overflow = 'hidden'; // Prevent scrolling
         
         // Show loading state in the modal
         showEditModalLoading(true);
         
-        // Fetch product data
-        const response = await fetch(`/admin/get-product/${productId}`);
-        const data = await response.json();
+        // Add cache-busting timestamp to prevent stale data
+        const timestamp = Date.now();
+        const response = await fetch(`/admin/get-product/${productId}?t=${timestamp}`, {
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
         
-        if (data.success) {
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Server response error:', response.status, errorText);
+            
+            // Don't close modal on error - show error inside modal
+            showEditModalLoading(false);
+            
+            // Show error message in modal content
+            const modalContent = editProductModal.querySelector('.modal-content');
+            if (modalContent) {
+                // Temporarily show error message
+                modalContent.innerHTML = `
+                    <div style="padding: 40px; text-align: center;">
+                        <div style="color: #dc2626; font-size: 48px; margin-bottom: 20px;">❌</div>
+                        <h3 style="color: #dc2626; margin-bottom: 10px;">Error Loading Product</h3>
+                        <p style="color: #666; margin-bottom: 20px;">Failed to load product data. HTTP ${response.status}</p>
+                        <p style="color: #999; font-size: 14px; margin-bottom: 30px;">Product ID: ${productId}</p>
+                        <button onclick="closeEditProductModal()" style="background: #dc2626; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                            Close
+                        </button>
+                        <button onclick="openEditProductModal(${productId})" style="background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+                            Try Again
+                        </button>
+                    </div>
+                `;
+            }
+            
+            showNotification(`❌ Error loading product (HTTP ${response.status})`, 'error');
+            return;
+        }
+        
+        const data = await response.json();
+        console.log('Product data response:', data);
+        
+        if (data.success && data.product) {
             const product = data.product;
-            console.log('Product data loaded:', product);
+            console.log('Product data loaded successfully:', product);
             populateEditForm(product);
             console.log('Edit modal populated successfully');
         } else {
-            console.error('Error loading product:', data.error);
-            showNotification('❌ Error loading product data: ' + data.error, 'error');
-            // Close modal on error
-            editProductModal.classList.remove("active");
+            console.error('Error in response:', data.error || 'Unknown error');
+            showEditModalLoading(false);
+            
+            // Show error in modal without closing it
+            const modalContent = editProductModal.querySelector('.modal-content');
+            if (modalContent) {
+                // Keep the modal open but show error
+                modalContent.innerHTML = `
+                    <div style="padding: 40px; text-align: center;">
+                        <div style="color: #f59e0b; font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                        <h3 style="color: #f59e0b; margin-bottom: 10px;">Product Not Found</h3>
+                        <p style="color: #666; margin-bottom: 20px;">${data.error || 'The product could not be found in the database.'}</p>
+                        <p style="color: #999; font-size: 14px; margin-bottom: 30px;">Product ID: ${productId}</p>
+                        <button onclick="closeEditProductModal()" style="background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                            Close
+                        </button>
+                    </div>
+                `;
+            }
+            
+            showNotification(`⚠️ ${data.error || 'Product not found'}`, 'error');
         }
     } catch (error) {
-        console.error('Error loading product:', error);
-        showNotification('❌ Failed to load product data', 'error');
-        // Close modal on error
-        editProductModal.classList.remove("active");
-    } finally {
-        // Hide loading state
+        console.error('Network or JavaScript error loading product:', error);
         showEditModalLoading(false);
+        
+        // Don't close modal - show network error
+        const modalContent = editProductModal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.innerHTML = `
+                <div style="padding: 40px; text-align: center;">
+                    <div style="color: #ef4444; font-size: 48px; margin-bottom: 20px;">🔌</div>
+                    <h3 style="color: #ef4444; margin-bottom: 10px;">Network Error</h3>
+                    <p style="color: #666; margin-bottom: 20px;">Failed to connect to server: ${error.message}</p>
+                    <p style="color: #999; font-size: 14px; margin-bottom: 30px;">Product ID: ${productId}</p>
+                    <button onclick="closeEditProductModal()" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                        Close
+                    </button>
+                    <button onclick="openEditProductModal(${productId})" style="background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+                        Retry
+                    </button>
+                </div>
+            `;
+        }
+        
+        showNotification(`🔌 Network error: ${error.message}`, 'error');
+    } finally {
+        // We're NOT hiding loading state here anymore - it's done in each condition above
     }
 }
-
+function closeEditProductModal() {
+    const editProductModal = document.getElementById("editProductModal");
+    if (editProductModal) {
+        editProductModal.classList.remove("active");
+        document.body.style.overflow = '';
+        resetEditForm();
+    }
+}
 // Show/hide loading state in edit modal
 function showEditModalLoading(show) {
     const modalContent = document.querySelector('#editProductModal .modal-content');
