@@ -3,8 +3,8 @@
 const LOW_STOCK_CONFIG = {
     LOW_STOCK_THRESHOLD: 10,      // ≤ 10 = low stock
     CRITICAL_THRESHOLD: 3,        // ≤ 3 = critical stock
-    CHECK_INTERVAL: 30000,        // Check every 30 seconds
-    NOTIFICATION_DURATION: 10000, // Notification shows for 10 seconds
+    CHECK_INTERVAL: 120000,        // Check every 30 seconds
+    NOTIFICATION_DURATION: 120000, // Notification shows for 10 seconds
     COOLDOWN_MINUTES: 5           // Don't show same notification within 5 minutes
 };
 

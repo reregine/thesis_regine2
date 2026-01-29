@@ -23,6 +23,11 @@ LOGO_UPLOAD_FOLDER = "static/incubatee_logo"  # Changed to relative path
 LOGO_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'svg'}
 last_notification_time = {}
 redis_client = None
+
+last_notification_time = {}
+email_counter = {}  # Track email counts per 5-minute window
+MAX_EMAILS_PER_5_MIN = 2  # Maximum 2 emails per 5 minutes
+    
 def get_redis_client():
     """Get redis client with lazy inizialization"""
     global redis_client
@@ -1433,13 +1438,25 @@ def should_send_notification(product_id):
     return True
 
 def record_notification_sent(product_id):
-    """Record that a notification was sent"""
+    """Record that a notification was sent - with cleanup"""
     global last_notification_time
+    
+    # Clean up old entries (older than 24 hours)
+    cutoff_time = datetime.utcnow() - timedelta(hours=24)
+    keys_to_delete = []
+    for pid, timestamp in last_notification_time.items():
+        if timestamp < cutoff_time:
+            keys_to_delete.append(pid)
+    
+    for pid in keys_to_delete:
+        del last_notification_time[pid]
+    
+    # Record new notification
     last_notification_time[product_id] = datetime.utcnow()
     
 @admin_bp.route("/check-low-stock", methods=["GET"])
 def check_low_stock():
-    """Simple low stock check - checks stock_amount in incubatee_products WITH COOLDOWN"""
+    """Simple low stock check - checks stock_amount in incubatee_products WITH LIMITED AUTO-EMAILS"""
     if not session.get('admin_logged_in'):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
     
@@ -1454,15 +1471,36 @@ def check_low_stock():
             db.joinedload(IncubateeProduct.incubatee)
         ).all()
         
-        # AUTO-SEND EMAILS HERE WITH COOLDOWN
+        # LIMITED AUTO-EMAILS: Only send 2 emails per 5 minutes
         notifications_sent = 0
         failed_notifications = 0
         sent_emails = []
         
+        # Get current time
+        current_time = datetime.utcnow()
+        
+        # Clean up old counter entries (older than 5 minutes)
+        five_minutes_ago = current_time - timedelta(minutes=5)
+        keys_to_delete = []
+        for key, (timestamp, count) in email_counter.items():
+            if timestamp < five_minutes_ago:
+                keys_to_delete.append(key)
+        
+        for key in keys_to_delete:
+            del email_counter[key]
+        
+        # Get current email count in last 5 minutes
+        current_email_count = sum(count for timestamp, count in email_counter.values())
+        
         for product in low_stock_products:
             # Check if incubatee has email
             if product.incubatee and product.incubatee.email:
-                # Check cooldown before sending
+                # Check if we've reached the limit (2 emails per 5 minutes)
+                if current_email_count >= MAX_EMAILS_PER_5_MIN:
+                    current_app.logger.info(f"Email limit reached ({MAX_EMAILS_PER_5_MIN} per 5 min). Skipping further emails.")
+                    break
+                
+                # Check cooldown before sending (individual product cooldown)
                 if should_send_notification(product.product_id):
                     # Send email automatically
                     email_sent = send_low_stock_email_to_incubatee({
@@ -1478,7 +1516,16 @@ def check_low_stock():
                     
                     if email_sent:
                         notifications_sent += 1
+                        current_email_count += 1
                         record_notification_sent(product.product_id)
+                        
+                        # Track email count per 5-minute window
+                        minute_key = current_time.strftime("%Y%m%d%H%M")
+                        if minute_key not in email_counter:
+                            email_counter[minute_key] = (current_time, 0)
+                        timestamp, count = email_counter[minute_key]
+                        email_counter[minute_key] = (timestamp, count + 1)
+                        
                         sent_emails.append({
                             "incubatee": f"{product.incubatee.first_name} {product.incubatee.last_name}",
                             "email": product.incubatee.email,
@@ -1515,11 +1562,13 @@ def check_low_stock():
             "total_low_stock": len(products_list),
             "products": products_list,
             "timestamp": datetime.utcnow().isoformat(),
-            # Include email sending results
+            # Include email sending results with limit info
             "notifications_sent": notifications_sent,
             "failed_notifications": failed_notifications,
             "sent_emails": sent_emails,
-            "message": f"Auto-sent {notifications_sent} email notifications" if notifications_sent > 0 else "No emails sent"
+            "email_limit": MAX_EMAILS_PER_5_MIN,
+            "emails_remaining": MAX_EMAILS_PER_5_MIN - current_email_count,
+            "message": f"Auto-sent {notifications_sent} email notifications (limit: {MAX_EMAILS_PER_5_MIN} per 5 min)" if notifications_sent > 0 else "No emails sent (limit reached or cooldown active)"
         })
         
     except Exception as e:
