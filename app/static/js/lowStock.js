@@ -180,10 +180,11 @@ function updateLowStockIndicators() {
     
     productRows.forEach(row => {
         const productId = parseInt(row.getAttribute('data-product-id'));
-        // Try to find product in server data first, then fall back to window.allProducts
+        // Try to find product in server data first
         let product = lowStockProducts.find(p => p.product_id == productId);
         
-        if (!product && window.allProducts) {
+        // Only fall back to window.allProducts if it exists
+        if (!product && window.allProducts && Array.isArray(window.allProducts)) {
             product = window.allProducts.find(p => p.product_id == productId);
         }
         
@@ -208,11 +209,21 @@ function updateProductRowWarning(row, product) {
     row.classList.remove('low-stock-row', 'critical-stock-row');
     
     // Determine stock amount (handle both data formats)
-    const stockAmount = product.current_stock || product.stock_amount;
+    let stockAmount = 0;
+    if (product.current_stock !== undefined && product.current_stock !== null) {
+        stockAmount = product.current_stock;
+    } else if (product.stock_amount !== undefined && product.stock_amount !== null) {
+        stockAmount = product.stock_amount;
+    } else if (product.stock !== undefined && product.stock !== null) {
+        stockAmount = product.stock;
+    }
+    
+    // Ensure it's a number
+    stockAmount = Number(stockAmount) || 0;
     
     // Check stock level
     if (stockAmount <= LOW_STOCK_CONFIG.CRITICAL_THRESHOLD) {
-        // Critical stock (≤ 3)
+        // Critical stock (≤ 3, including 0)
         row.classList.add('critical-stock-row');
         addLowStockBadge(row, stockAmount, 'critical');
         updateStockCellWarning(row, product, 'critical');
@@ -231,6 +242,9 @@ function updateProductRowWarning(row, product) {
 function addLowStockBadge(row, stockAmount, severity = 'low') {
     const badge = document.createElement('div');
     badge.className = `low-stock-badge ${severity === 'critical' ? 'critical-stock-badge' : ''}`;
+    
+    // Ensure stockAmount is a number
+    stockAmount = Number(stockAmount) || 0;
     
     if (severity === 'critical') {
         badge.textContent = `CRITICAL: ${stockAmount}`;
@@ -255,8 +269,18 @@ function updateStockCellWarning(row, product, severity) {
     
     stockCell.classList.add(severity === 'critical' ? 'stock-count-critical' : 'stock-count-low');
     
-    // Get stock amount from either format
-    const stockAmount = product.current_stock || product.stock_amount;
+    // Get stock amount from multiple possible field names
+    let stockAmount = 0;
+    if (product.current_stock !== undefined && product.current_stock !== null) {
+        stockAmount = product.current_stock;
+    } else if (product.stock_amount !== undefined && product.stock_amount !== null) {
+        stockAmount = product.stock_amount;
+    } else if (product.stock !== undefined && product.stock !== null) {
+        stockAmount = product.stock;
+    }
+    
+    // Ensure it's a number
+    stockAmount = Number(stockAmount) || 0;
     
     const tooltipText = severity === 'critical' 
         ? `🔥 CRITICAL STOCK!<br>Only ${stockAmount} units remaining.<br>Please restock immediately!`
@@ -267,7 +291,7 @@ function updateStockCellWarning(row, product, severity) {
     const stockNumber = currentContent.split(' ')[0] || stockAmount;
     
     stockCell.innerHTML = `
-        ${stockNumber}
+        ${stockAmount}
         <div class="stock-warning-tooltip" style="display: inline-block; margin-left: 5px;">
             ${severity === 'critical' ? '🔥' : '⚠️'}
             <span class="tooltip-text">
@@ -284,9 +308,23 @@ function clearStockCellWarning(row) {
         stockCell.classList.remove('stock-count-low', 'stock-count-critical');
         if (stockCell.querySelector('.stock-warning-tooltip')) {
             const productId = row.getAttribute('data-product-id');
-            const product = window.allProducts.find(p => p.product_id == productId);
-            if (product) {
-                stockCell.innerHTML = product.stock_amount;
+            
+            // Check if window.allProducts exists
+            if (window.allProducts && Array.isArray(window.allProducts)) {
+                const product = window.allProducts.find(p => p.product_id == productId);
+                if (product) {
+                    stockCell.innerHTML = product.stock_amount;
+                } else {
+                    // If product not found, just show the number from the cell
+                    const currentText = stockCell.textContent.trim();
+                    const stockNumber = currentText.split(' ')[0];
+                    stockCell.innerHTML = stockNumber || '';
+                }
+            } else {
+                // If window.allProducts doesn't exist, just remove the warning icon
+                const currentText = stockCell.textContent.trim();
+                const stockNumber = currentText.split(' ')[0];
+                stockCell.innerHTML = stockNumber || '';
             }
         }
     }
@@ -401,10 +439,25 @@ function showCriticalStockNotification(criticalProducts) {
     `;
     
     criticalProducts.slice(0, 3).forEach(product => {
-        // Handle both data formats
-        const productName = product.product_name || product.name;
-        const incubateeName = product.incubatee_name || (window.allProducts?.find(p => p.product_id == product.product_id)?.incubatee_name) || 'Unknown';
-        const stockAmount = product.current_stock || product.stock_amount;
+        // Handle both data formats - check all possible field names
+        const productName = product.product_name || product.name || 'Unknown Product';
+        const incubateeName = product.incubatee_name || 
+                             product.incubatee_name || 
+                             (window.allProducts?.find(p => p.product_id == product.product_id)?.incubatee_name) || 
+                             'Unknown Incubatee';
+        
+        // Get stock amount from multiple possible field names
+        let stockAmount = 0;
+        if (product.current_stock !== undefined && product.current_stock !== null) {
+            stockAmount = product.current_stock;
+        } else if (product.stock_amount !== undefined && product.stock_amount !== null) {
+            stockAmount = product.stock_amount;
+        } else if (product.stock !== undefined && product.stock !== null) {
+            stockAmount = product.stock;
+        }
+        
+        // Ensure stockAmount is a number and show 0 if it's 0
+        stockAmount = Number(stockAmount) || 0;
         
         notificationHTML += `
             <li>

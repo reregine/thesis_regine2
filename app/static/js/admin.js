@@ -309,6 +309,7 @@ function loadProducts() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                window.allProducts = data.products;
                 allProducts = data.products; // store all
                 displayProducts(allProducts);
                 // Trigger low stock check after products are loaded
