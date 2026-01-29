@@ -62,7 +62,7 @@ function addLowStockFilterButton() {
 function checkLowStockProducts() {
     console.log('🔍 Checking low stock...');
     
-    fetch('/api/stock/low-stock-check')
+    fetch('/admin/check-low-stock')
         .then(response => {
             // First check if response is OK
             if (!response.ok) {
@@ -107,7 +107,7 @@ function checkLowStockProducts() {
             console.error('Error fetching low stock:', error);
             
             // Try to get text response to see what's being returned
-            fetch('/api/stock/low-stock-check')
+            fetch('/admin/check-low-stock')
                 .then(res => res.text())
                 .then(text => {
                     console.error('Response text (first 200 chars):', text.substring(0, 200));
