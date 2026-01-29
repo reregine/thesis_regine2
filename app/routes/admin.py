@@ -1456,103 +1456,39 @@ def record_notification_sent(product_id):
     
 @admin_bp.route("/check-low-stock", methods=["GET"])
 def check_low_stock():
-    """Simple low stock check - checks stock_amount in incubatee_products WITH LIMITED AUTO-EMAILS"""
+    """Simple low stock check - OPTIMIZED for speed"""
     if not session.get('admin_logged_in'):
         return jsonify({"success": False, "error": "Unauthorized"}), 401
     
     try:
-        # Get low stock threshold from config or use default
+        # Use simple SELECT with LIMIT for faster response
         low_stock_threshold = current_app.config.get('LOW_STOCK_THRESHOLD', 10)
         
-        # SIMPLE QUERY: Get products with stock_amount <= threshold
-        low_stock_products = IncubateeProduct.query.filter(
+        # OPTIMIZED QUERY: Only fetch essential fields
+        low_stock_products = db.session.query(
+            IncubateeProduct.product_id,
+            IncubateeProduct.name,
+            IncubateeProduct.stock_no,
+            IncubateeProduct.stock_amount,
+            Incubatee.email,
+            Incubatee.first_name,
+            Incubatee.last_name
+        ).join(
+            Incubatee, IncubateeProduct.incubatee_id == Incubatee.incubatee_id
+        ).filter(
             IncubateeProduct.stock_amount <= low_stock_threshold
-        ).options(
-            db.joinedload(IncubateeProduct.incubatee)
-        ).all()
+        ).limit(50).all()  # LIMIT to prevent huge queries
         
-        # LIMITED AUTO-EMAILS: Only send 2 emails per 5 minutes
-        notifications_sent = 0
-        failed_notifications = 0
-        sent_emails = []
-        
-        # Get current time
-        current_time = datetime.utcnow()
-        
-        # Clean up old counter entries (older than 5 minutes)
-        five_minutes_ago = current_time - timedelta(minutes=5)
-        keys_to_delete = []
-        for key, (timestamp, count) in email_counter.items():
-            if timestamp < five_minutes_ago:
-                keys_to_delete.append(key)
-        
-        for key in keys_to_delete:
-            del email_counter[key]
-        
-        # Get current email count in last 5 minutes
-        current_email_count = sum(count for timestamp, count in email_counter.values())
-        
-        for product in low_stock_products:
-            # Check if incubatee has email
-            if product.incubatee and product.incubatee.email:
-                # Check if we've reached the limit (2 emails per 5 minutes)
-                if current_email_count >= MAX_EMAILS_PER_5_MIN:
-                    current_app.logger.info(f"Email limit reached ({MAX_EMAILS_PER_5_MIN} per 5 min). Skipping further emails.")
-                    break
-                
-                # Check cooldown before sending (individual product cooldown)
-                if should_send_notification(product.product_id):
-                    # Send email automatically
-                    email_sent = send_low_stock_email_to_incubatee({
-                        'product_id': product.product_id,
-                        'product_name': product.name,
-                        'stock_no': product.stock_no,
-                        'current_stock': product.stock_amount,
-                        'threshold': low_stock_threshold,
-                        'incubatee_name': f"{product.incubatee.first_name} {product.incubatee.last_name}",
-                        'incubatee_email': product.incubatee.email,
-                        'status': "Critical" if product.stock_amount <= 3 else "Low"
-                    })
-                    
-                    if email_sent:
-                        notifications_sent += 1
-                        current_email_count += 1
-                        record_notification_sent(product.product_id)
-                        
-                        # Track email count per 5-minute window
-                        minute_key = current_time.strftime("%Y%m%d%H%M")
-                        if minute_key not in email_counter:
-                            email_counter[minute_key] = (current_time, 0)
-                        timestamp, count = email_counter[minute_key]
-                        email_counter[minute_key] = (timestamp, count + 1)
-                        
-                        sent_emails.append({
-                            "incubatee": f"{product.incubatee.first_name} {product.incubatee.last_name}",
-                            "email": product.incubatee.email,
-                            "product": product.name
-                        })
-                    else:
-                        failed_notifications += 1
-                else:
-                    current_app.logger.info(f"Skipping email for product {product.product_id} - cooldown active")
-        
-        # Prepare response data
         products_list = []
         for product in low_stock_products:
-            # Get incubatee email if available
-            incubatee_email = None
-            if product.incubatee and product.incubatee.email:
-                incubatee_email = product.incubatee.email
-            
             products_list.append({
                 "product_id": product.product_id,
                 "product_name": product.name,
                 "stock_no": product.stock_no,
                 "current_stock": product.stock_amount,
                 "threshold": low_stock_threshold,
-                "incubatee_name": f"{product.incubatee.first_name} {product.incubatee.last_name}" if product.incubatee else "Unknown",
-                "incubatee_email": incubatee_email,
-                "email": incubatee_email,
+                "incubatee_name": f"{product.first_name} {product.last_name}" if product.first_name and product.last_name else "Unknown",
+                "incubatee_email": product.email,
                 "status": "Critical" if product.stock_amount <= 3 else "Low"
             })
         
@@ -1561,19 +1497,72 @@ def check_low_stock():
             "low_stock_threshold": low_stock_threshold,
             "total_low_stock": len(products_list),
             "products": products_list,
-            "timestamp": datetime.utcnow().isoformat(),
-            # Include email sending results with limit info
-            "notifications_sent": notifications_sent,
-            "failed_notifications": failed_notifications,
-            "sent_emails": sent_emails,
-            "email_limit": MAX_EMAILS_PER_5_MIN,
-            "emails_remaining": MAX_EMAILS_PER_5_MIN - current_email_count,
-            "message": f"Auto-sent {notifications_sent} email notifications (limit: {MAX_EMAILS_PER_5_MIN} per 5 min)" if notifications_sent > 0 else "No emails sent (limit reached or cooldown active)"
+            "timestamp": datetime.utcnow().isoformat()
         })
         
     except Exception as e:
         current_app.logger.error(f"Error checking low stock: {str(e)}")
-        return jsonify({"success": False, "error": str(e)}), 500
+        # Return minimal error response
+        return jsonify({
+            "success": False, 
+            "error": "Server error",
+            "message": "Unable to check low stock at this time"
+        }), 500
+
+@admin_bp.route("/check-overdue", methods=["POST"])
+def check_overdue():
+    """Check for overdue reservations - OPTIMIZED"""
+    if not session.get('admin_logged_in'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    try:
+        data = request.get_json() or {}
+        timeout_ms = data.get('timeout_ms', 3 * 24 * 60 * 60 * 1000)  # Default 3 days
+        
+        # Calculate cutoff time
+        cutoff_time = datetime.utcnow() - timedelta(milliseconds=timeout_ms)
+        
+        # OPTIMIZED QUERY: Only get IDs that need processing
+        overdue_reservations = Reservation.query.with_entities(
+            Reservation.reservation_id
+        ).filter(
+            Reservation.status == 'approved',
+            Reservation.reserved_at <= cutoff_time
+        ).limit(100).all()  # Process max 100 at a time
+        
+        reservation_ids = [r.reservation_id for r in overdue_reservations]
+        rejected_count = 0
+        
+        if reservation_ids:
+            # Update in batches for better performance
+            batch_size = 50
+            for i in range(0, len(reservation_ids), batch_size):
+                batch = reservation_ids[i:i + batch_size]
+                updated = Reservation.query.filter(
+                    Reservation.reservation_id.in_(batch)
+                ).update({
+                    'status': 'rejected',
+                    'rejected_reason': 'Not picked up on time (auto-rejected)',
+                    'updated_at': datetime.utcnow()
+                }, synchronize_session=False)
+                
+                db.session.commit()
+                rejected_count += updated
+        
+        return jsonify({
+            "success": True,
+            "rejected_count": rejected_count,
+            "message": f"Auto-rejected {rejected_count} overdue reservations"
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error checking overdue: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": "Server error",
+            "message": "Unable to process overdue reservations"
+        }), 500
 
 @admin_bp.route("/send-low-stock-notifications", methods=["POST"])
 def send_low_stock_notifications():
