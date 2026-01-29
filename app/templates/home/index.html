@@ -179,7 +179,7 @@
                       </div>
                       
                       <div class="details-actions">
-                        <button class="btn-add-cart-full" onclick="event.stopPropagation(); addToCart({{ product.product_id }})">
+                          <button class="btn-add-cart-full" onclick="event.stopPropagation(); addToCart('{{ product.product_id }}')">
                           <i class="fas fa-cart-plus"></i> Add to Cart
                         </button>
                       </div>
@@ -366,7 +366,7 @@
   <script src="{{ url_for('static', filename='js/home.js') }}"></script>
   <!-- Add this right after the carousel track in your index.html -->
   <script>
-      console.log('Featured products data:', {{ featured_products | tojson | safe }});
+      console.log('Featured products data:', '{{ featured_products | tojson | safe }}');
   </script>
 </body>
 </html>

@@ -17,8 +17,8 @@ class BaseConfig:
     SMTP_PORT = 587
     SMTP_USERNAME = 'reginejoycefrancisco110603@gmail.com'
     SMTP_PASSWORD = 'lpsdyhyrsfpzewzy'
-    FROM_EMAIL = 'atbi.system@gmail.com'  # ADD THIS - sender email
-    ADMIN_EMAIL = 'reginejoycefrancisco110603@gmail.com'  # ADD THIS - admin notification email
+    FROM_EMAIL = 'atbi.system@gmail.com'  
+    ADMIN_EMAIL = 'reginejoycefrancisco110603@gmail.com'  
     
     # Redis configuration (optional - comment out if not using Redis)
     REDIS_URL = 'redis://localhost:6379/0'  # Default local Redis
