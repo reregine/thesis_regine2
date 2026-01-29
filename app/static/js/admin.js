@@ -16,7 +16,59 @@ const formattedDate = today.toISOString().split('T')[0];
 //const AUTO_CANCEL_TIMEOUT = 60 * 1000; // 1 minute
 // For production, use: 
 const AUTO_CANCEL_TIMEOUT = 3 * 24 * 60 * 60 * 1000; // 3 days
-
+// Add this function to add spinner animation CSS
+function addSpinnerStyles() {
+    if (!document.getElementById('spinner-styles')) {
+        const style = document.createElement('style');
+        style.id = 'spinner-styles';
+        style.textContent = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            .loading-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(255, 255, 255, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+                border-radius: 10px;
+                backdrop-filter: blur(2px);
+            }
+            
+            .loading-content {
+                text-align: center;
+                padding: 30px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+            
+            .loading-spinner {
+                width: 40px;
+                height: 40px;
+                border: 3px solid #f3f3f3;
+                border-top: 3px solid #3498db;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 15px;
+            }
+            
+            .loading-text {
+                color: #333;
+                font-weight: 500;
+                font-size: 14px;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeAdmin();
@@ -2632,6 +2684,9 @@ function initializeEditProductModal() {
     const closeEditProductModalTop = document.getElementById("closeEditProductModalTop");
     const closeEditProductModalBottom = document.getElementById("closeEditProductModalBottom");
 
+    // Add spinner styles
+    addSpinnerStyles();
+
     // Close modal from both buttons
     [closeEditProductModalTop, closeEditProductModalBottom].forEach(btn => {
         if (btn) {
@@ -2639,6 +2694,8 @@ function initializeEditProductModal() {
                 console.log('Closing edit modal');
                 editProductModal.classList.remove("active");
                 resetEditForm();
+                // Hide any loading overlay
+                showEditModalLoading(false);
             });
         }
     });
@@ -2650,6 +2707,8 @@ function initializeEditProductModal() {
                 console.log('Closing edit modal from outside click');
                 editProductModal.classList.remove("active");
                 resetEditForm();
+                // Hide any loading overlay
+                showEditModalLoading(false);
             }
         });
     }
@@ -2674,7 +2733,17 @@ function initializeEditProductModal() {
 async function openEditProductModal(productId) {
     console.log('Opening edit modal for product:', productId);
     
+    const editProductModal = document.getElementById("editProductModal");
+    if (!editProductModal) return;
+    
     try {
+        // Show modal immediately with loading state
+        editProductModal.classList.add("active");
+        
+        // Show loading state in the modal
+        showEditModalLoading(true);
+        
+        // Fetch product data
         const response = await fetch(`/admin/get-product/${productId}`);
         const data = await response.json();
         
@@ -2682,18 +2751,91 @@ async function openEditProductModal(productId) {
             const product = data.product;
             console.log('Product data loaded:', product);
             populateEditForm(product);
-            
-            // Show the modal
-            const editProductModal = document.getElementById("editProductModal");
-            editProductModal.classList.add("active");
-            console.log('Edit modal opened successfully');
+            console.log('Edit modal populated successfully');
         } else {
             console.error('Error loading product:', data.error);
             showNotification('❌ Error loading product data: ' + data.error, 'error');
+            // Close modal on error
+            editProductModal.classList.remove("active");
         }
     } catch (error) {
         console.error('Error loading product:', error);
         showNotification('❌ Failed to load product data', 'error');
+        // Close modal on error
+        editProductModal.classList.remove("active");
+    } finally {
+        // Hide loading state
+        showEditModalLoading(false);
+    }
+}
+
+// Show/hide loading state in edit modal
+function showEditModalLoading(show) {
+    const modalContent = document.querySelector('#editProductModal .modal-content');
+    const loadingOverlay = document.getElementById('editModalLoadingOverlay');
+    const form = document.getElementById('editProductForm');
+    
+    if (show) {
+        // Create loading overlay if it doesn't exist
+        if (!loadingOverlay) {
+            const overlay = document.createElement('div');
+            overlay.id = 'editModalLoadingOverlay';
+            overlay.style.cssText = `
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(255, 255, 255, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10;
+                border-radius: 10px;
+            `;
+            overlay.innerHTML = `
+                <div style="text-align: center;">
+                    <div class="spinner" style="
+                        width: 40px;
+                        height: 40px;
+                        border: 3px solid #f3f3f3;
+                        border-top: 3px solid #3498db;
+                        border-radius: 50%;
+                        animation: spin 1s linear infinite;
+                        margin: 0 auto 10px;
+                    "></div>
+                    <p style="color: #333; font-weight: 500;">Loading product data...</p>
+                </div>
+            `;
+            
+            if (modalContent) {
+                modalContent.style.position = 'relative';
+                modalContent.appendChild(overlay);
+            }
+        } else {
+            loadingOverlay.style.display = 'flex';
+        }
+        
+        // Disable form inputs during loading
+        if (form) {
+            const inputs = form.querySelectorAll('input, select, textarea, button');
+            inputs.forEach(input => {
+                input.disabled = true;
+            });
+        }
+    } else {
+        // Hide loading overlay
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'none';
+        }
+        
+        // Re-enable form inputs
+        if (form) {
+            const inputs = form.querySelectorAll('input, select, textarea, button');
+            inputs.forEach(input => {
+                input.disabled = false;
+            });
+        }
     }
 }
 
@@ -2701,6 +2843,7 @@ async function openEditProductModal(productId) {
 function populateEditForm(product) {
     console.log('Populating form with product data:', product);
     
+    // Fill in form fields
     document.getElementById('edit_product_id').value = product.product_id;
     document.getElementById('edit_name').value = product.name || '';
     document.getElementById('edit_stock_no').value = product.stock_no || '';
@@ -2728,21 +2871,37 @@ function populateEditForm(product) {
     if (product.image_paths && product.image_paths.length > 0) {
         if (currentImageDiv) {
             currentImageDiv.innerHTML = `
-                <small>Current Images (${product.image_paths.length}):</small>
+                <small style="color: #666; margin-bottom: 10px; display: block;">
+                    Current Images (${product.image_paths.length}):
+                </small>
             `;
         }
         
         if (previewContainer) {
             previewContainer.innerHTML = product.image_paths.map((path, index) => 
-                `<div class="image-thumbnail" style="position: relative;">
-                    <img src="/${path}" style="max-width: 80px; height: 80px; object-fit: cover; border-radius: 4px;">
-                    <span class="image-counter">${index + 1}</span>
+                `<div class="image-thumbnail" style="position: relative; display: inline-block; margin: 0 5px 5px 0;">
+                    <img src="/${path}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                    <span style="
+                        position: absolute;
+                        top: 5px;
+                        right: 5px;
+                        background: rgba(0,0,0,0.7);
+                        color: white;
+                        width: 20px;
+                        height: 20px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 10px;
+                        font-weight: bold;
+                    ">${index + 1}</span>
                 </div>`
             ).join('');
         }
     } else {
         if (currentImageDiv) {
-            currentImageDiv.innerHTML = '<small>No current images</small>';
+            currentImageDiv.innerHTML = '<small style="color: #999; font-style: italic;">No current images</small>';
         }
         if (previewContainer) {
             previewContainer.innerHTML = '';
