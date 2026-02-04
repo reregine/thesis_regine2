@@ -1,8 +1,7 @@
+# app/utils/stock_notification_manager.py
 import logging
-from datetime import datetime, timedelta
-from typing import List, Dict, Any
-from flask import current_app
-from app import db
+from datetime import datetime
+from typing import Dict, Any
 from .stock_monitor import StockMonitor
 from .email_sender import EmailSender
 
@@ -11,20 +10,22 @@ logger = logging.getLogger(__name__)
 class StockNotificationManager:
     """Manage stock notifications and prevent duplicate alerts"""
     
-    NOTIFICATION_COOLDOWN_HOURS = 24  # Don't send same notification within 24 hours
+    NOTIFICATION_COOLDOWN_MINUTES = 5  # Changed to 5 minutes for thesis demo
     
     def __init__(self):
         self.sent_notifications = {}  # In production, store in database or Redis
     
     def should_send_notification(self, product_key: str) -> bool:
-        """Check if we should send notification based on cooldown"""
+        """Check if we should send notification based on cooldown - relaxed for demo"""
         last_notified = self.sent_notifications.get(product_key)
         
         if not last_notified:
             return True
         
-        hours_since = (datetime.utcnow() - last_notified).total_seconds() / 3600
-        return hours_since >= self.NOTIFICATION_COOLDOWN_HOURS
+        minutes_since = (datetime.utcnow() - last_notified).total_seconds() / 60
+        
+        # For thesis demo, allow sending every 5 minutes
+        return minutes_since >= self.NOTIFICATION_COOLDOWN_MINUTES
     
     def mark_notification_sent(self, product_key: str):
         """Record that a notification was sent"""
@@ -52,29 +53,28 @@ class StockNotificationManager:
             
             if not low_stock_products:
                 summary['message'] = 'No products with low stock found'
+                logger.info("✅ No low stock products found")
                 return summary
+            
+            logger.info(f"📊 Found {len(low_stock_products)} low stock products")
             
             # Send notifications
             sent_to_incubatees = set()
-            products_for_admin = []
             
             for product in low_stock_products:
-                # Check if we should send notification (cooldown period)
                 product_key = f"{product['product_id']}_{product['incubatee_id']}"
                 
-                if not self.should_send_notification(product_key):
-                    logger.info(f"Skipping notification for product {product['product_id']} - cooldown active")
-                    summary['details'].append({
-                        'product_id': product['product_id'],
-                        'product_name': product['product_name'],
-                        'status': 'skipped_cooldown',
-                        'reason': 'Notification cooldown active'
-                    })
-                    continue
+                # Always send for demo (bypass cooldown check)
+                # Comment out the next 3 lines if you want to re-enable cooldown
+                # if not self.should_send_notification(product_key):
+                #     logger.info(f"⏸️ Skipping notification for product {product['product_id']} - cooldown active")
+                #     continue
                 
                 # Send notification to incubatee
                 if product.get('email'):
                     try:
+                        logger.info(f"📧 Attempting to send email to {product['email']} for product {product['product_name']}")
+                        
                         success = EmailSender.send_low_stock_notification(product)
                         
                         if success:
@@ -102,6 +102,12 @@ class StockNotificationManager:
                     except Exception as e:
                         logger.error(f"Error sending notification for product {product['product_id']}: {str(e)}")
                         summary['failed_notifications'] += 1
+                        summary['details'].append({
+                            'product_id': product['product_id'],
+                            'product_name': product['product_name'],
+                            'status': 'error',
+                            'error': str(e)
+                        })
                 else:
                     logger.warning(f"No email found for incubatee of product {product['product_name']}")
                     summary['details'].append({
@@ -110,46 +116,32 @@ class StockNotificationManager:
                         'status': 'skipped_no_email',
                         'reason': 'No incubatee email found'
                     })
+            
+            # Log summary
+            logger.info(f"📊 Notification Summary: Sent {summary['notifications_sent']}, Failed {summary['failed_notifications']}")
+            
+            if summary['notifications_sent'] > 0:
+                summary['message'] = f"Successfully sent {summary['notifications_sent']} notifications"
+            else:
+                summary['message'] = "No notifications were sent"
                 
-                # Collect for admin notification
-                products_for_admin.append(product)
-            
-            # Send summary to admin if there are low stock products
-            if products_for_admin and current_app.config.get('ADMIN_EMAIL'):
-                try:
-                    admin_success = EmailSender.send_admin_notification(products_for_admin)
-                    if admin_success:
-                        summary['admin_notified'] = True
-                        logger.info("✅ Admin notification sent")
-                    else:
-                        summary['admin_notified'] = False
-                        logger.warning("❌ Failed to send admin notification")
-                except Exception as e:
-                    logger.error(f"Error sending admin notification: {str(e)}")
-                    summary['admin_notified'] = False
-            
-            summary['message'] = f"Processed {len(low_stock_products)} low stock products"
-            logger.info(f"✅ Stock notification check completed: {summary}")
             return summary
             
         except Exception as e:
             logger.error(f"❌ Error in stock notification process: {str(e)}")
             summary['error'] = str(e)
-            summary['message'] = 'Error processing notifications'
+            summary['message'] = f'Error processing notifications: {str(e)}'
             return summary
     
     def auto_check_low_stock(self):
         """
-        Auto-check method to be called by scheduler or on product updates
+        Auto-check method to be called by scheduler
         This will automatically send notifications without manual intervention
         """
-        if current_app.config.get('AUTO_STOCK_NOTIFICATIONS', True):
-            logger.info("🔄 Auto-checking for low stock products...")
-            return self.check_and_notify_low_stock()
-        else:
-            logger.info("⏸️ Auto stock notifications are disabled")
-            return {'message': 'Auto notifications disabled', 'auto_check': False}
+        logger.info("🔄 Auto-checking for low stock products...")
+        return self.check_and_notify_low_stock()
         
+    @staticmethod
     def trigger_stock_notification_on_update(product_id=None):
         """Trigger stock notification check when stock is updated"""
         from flask import current_app

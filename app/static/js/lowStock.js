@@ -12,6 +12,7 @@ const LOW_STOCK_CONFIG = {
 let lowStockProducts = [];
 let isLowStockFilterActive = false;
 let criticalStockNotified = false;
+window.criticalNotificationActive = false;
 
 
 // Main initialization function
@@ -422,6 +423,14 @@ function checkCriticalStockNotifications() {
 
 // Show critical stock notification
 function showCriticalStockNotification(criticalProducts) {
+    // Don't show if already showing or recently closed
+    if (window.criticalNotificationActive) {
+        return;
+    }
+    
+    // Set flag to prevent multiple notifications
+    window.criticalNotificationActive = true;
+    
     // Create floating notification
     const notification = document.createElement('div');
     notification.id = 'criticalStockNotification';
@@ -431,33 +440,18 @@ function showCriticalStockNotification(criticalProducts) {
         <div class="critical-notification-header">
             <span class="critical-icon">🔥</span>
             <strong>CRITICAL STOCK ALERT!</strong>
-            <button class="close-critical-notification" onclick="this.parentElement.parentElement.remove()">&times;</button>
+            <button class="close-critical-notification" onclick="closeCriticalNotification()">&times;</button>
         </div>
         <div class="critical-notification-body">
-            <p>${criticalProducts.length} product(s) have critically low stock:</p>
+            <p>${criticalProducts.length} product(s) have critically low stock (≤ ${LOW_STOCK_CONFIG.CRITICAL_THRESHOLD} units):</p>
             <ul>
     `;
     
     criticalProducts.slice(0, 3).forEach(product => {
-        // Handle both data formats - check all possible field names
+        // Get product data from response
         const productName = product.product_name || product.name || 'Unknown Product';
-        const incubateeName = product.incubatee_name || 
-                             product.incubatee_name || 
-                             (window.allProducts?.find(p => p.product_id == product.product_id)?.incubatee_name) || 
-                             'Unknown Incubatee';
-        
-        // Get stock amount from multiple possible field names
-        let stockAmount = 0;
-        if (product.current_stock !== undefined && product.current_stock !== null) {
-            stockAmount = product.current_stock;
-        } else if (product.stock_amount !== undefined && product.stock_amount !== null) {
-            stockAmount = product.stock_amount;
-        } else if (product.stock !== undefined && product.stock !== null) {
-            stockAmount = product.stock;
-        }
-        
-        // Ensure stockAmount is a number and show 0 if it's 0
-        stockAmount = Number(stockAmount) || 0;
+        const incubateeName = product.incubatee_name || 'Unknown Incubatee';
+        const stockAmount = product.current_stock || product.stock_amount || 0;
         
         notificationHTML += `
             <li>
@@ -474,11 +468,14 @@ function showCriticalStockNotification(criticalProducts) {
     
     notificationHTML += `
             </ul>
-            <p>Please contact incubatees for immediate restocking.</p>
+            <p>Please check the low stock section or contact incubatees for immediate restocking.</p>
         </div>
         <div class="critical-notification-actions">
-            <button class="btn-view-low-stock" onclick="window.toggleLowStockFilter(); this.parentElement.parentElement.remove();">
+            <button class="btn-view-low-stock" onclick="viewLowStockAndClose()">
                 🔍 View All Low Stock
+            </button>
+            <button class="btn-dismiss" onclick="closeCriticalNotification()">
+                ✕ Dismiss
             </button>
         </div>
     `;
@@ -490,12 +487,38 @@ function showCriticalStockNotification(criticalProducts) {
     
     // Auto-remove after duration
     setTimeout(() => {
-        if (notification.parentNode) {
-            notification.style.opacity = '0';
-            notification.style.transform = 'translateX(100%)';
-            setTimeout(() => notification.remove(), 300);
-        }
+        closeCriticalNotification();
     }, LOW_STOCK_CONFIG.NOTIFICATION_DURATION);
+}
+
+// Add helper functions for closing the notification
+function closeCriticalNotification() {
+    const notification = document.getElementById('criticalStockNotification');
+    if (notification && notification.parentNode) {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+            window.criticalNotificationActive = false;
+            
+            // Set cooldown to prevent immediate re-showing
+            setTimeout(() => {
+                window.criticalNotificationActive = false;
+            }, LOW_STOCK_CONFIG.COOLDOWN_MINUTES * 60 * 1000);
+        }, 300);
+    } else {
+        window.criticalNotificationActive = false;
+    }
+}
+
+function viewLowStockAndClose() {
+    // Toggle low stock filter
+    if (typeof toggleLowStockFilter === 'function') {
+        toggleLowStockFilter();
+    }
+    closeCriticalNotification();
 }
 
 // Add CSS styles for low stock warnings
@@ -505,6 +528,29 @@ function addLowStockStyles() {
     const style = document.createElement('style');
     style.id = 'low-stock-styles';
     style.textContent = `
+    .btn-dismiss {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: normal;
+    transition: all 0.3s;
+    margin-left: 10px;
+    }
+
+    .btn-dismiss:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .critical-notification-actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        padding: 12px 15px;
+        background: rgba(0, 0, 0, 0.1);
+    }
         /* Low Stock Warning Styles */
         .low-stock-badge {
             position: absolute;
@@ -773,17 +819,30 @@ function sendLowStockEmails() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification(`✅ Sent ${data.notifications_sent} email notifications`, 'success');
+            lowStockProducts = data.products || [];
+            updateLowStockCountBadge();
             
-            // Show success details
-            if (data.sent_emails && data.sent_emails.length > 0) {
-                showEmailSuccessModal(data);
+            // Update visual indicators
+            updateLowStockIndicators();
+            
+            // Check for critical notifications
+            const criticalProducts = lowStockProducts.filter(product => {
+                const stockAmount = product.current_stock || product.stock_amount || 0;
+                return stockAmount <= LOW_STOCK_CONFIG.CRITICAL_THRESHOLD;
+            });
+            
+            // Only show if we have critical products and haven't shown recently
+            if (criticalProducts.length > 0 && !criticalStockNotified && !window.criticalNotificationActive) {
+                showCriticalStockNotification(criticalProducts);
+                criticalStockNotified = true;
+                
+                setTimeout(() => {
+                    criticalStockNotified = false;
+                }, LOW_STOCK_CONFIG.COOLDOWN_MINUTES * 60 * 1000);
             }
-            
-            // Refresh the low stock list
-            checkLowStockProducts();
         } else {
-            showNotification('❌ Error sending emails: ' + data.error, 'error');
+            console.error('Error checking low stock:', data.error);
+            showNotification('❌ Error checking low stock: ' + data.error, 'error');
         }
     })
     .catch(error => {
@@ -808,8 +867,8 @@ window.lowStockModule = {
         const icon = severity === 'critical' ? '🔥' : '⚠️';
         const message = `${icon} ${severity.toUpperCase()} STOCK: "${productName}" has ${stockAmount} units left`;
         
-        if (typeof window.showNotification === 'function') {
-            window.showNotification(message, severity === 'critical' ? 'error' : 'warning');
+        if (typeof window.Notification === 'function') {
+            window.Notification(message, severity === 'critical' ? 'error' : 'warning');
         }
     }
 };

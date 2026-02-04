@@ -1,4 +1,3 @@
-
 from flask import Flask, session
 from .config import Config
 from .extension import db, migrate
@@ -7,7 +6,7 @@ from .routes.cart import cart_bp
 from .routes.favorites import favorites_bp
 from .routes.dashboard import dashboard_bp
 from .routes import home, incubatee_showroom, layouts, shop, notification, login, admin, contact, about, user
-from .utils.auto_stock_notifier import init_auto_notifier
+from .utils.auto_stock_notifier import get_auto_notifier
 
 
 def create_app(config_class=Config):
@@ -40,12 +39,17 @@ def create_app(config_class=Config):
     
     # Initialize product popularity data on startup
     with app.app_context():
-        init_auto_notifier(app)
         try:
             from app.services.popularity_service import ProductPopularityService
             ProductPopularityService.initialize_on_startup()
         except Exception as e:
             print(f"⚠️ Could not initialize popularity data: {e}")
             
+    # Initialize the scheduler with the app
     init_scheduler(app)
+    
+    # Initialize auto stock notifier AFTER app context is fully set up
+    from .utils.auto_stock_notifier import init_auto_notifier
+    init_auto_notifier(app)
+    
     return app

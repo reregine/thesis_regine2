@@ -494,12 +494,25 @@
             updateConfirmButtonState();
         });
 
-        // Confirm reservation
-        confirmBtn.onclick = function() {
+        // Confirm reservation in the modal
+        confirmBtn.onclick = async function() {
             const quantity = parseInt(quantityInput.value) || 1;
             if (quantity > 0 && quantity <= currentReservationMaxStock) {
-                processReservation(currentReservationProductId, quantity);
-                closeReservationModal();
+                try {
+                    // Disable button and show loading
+                    confirmBtn.disabled = true;
+                    confirmBtn.innerHTML = 'Processing...';
+                    
+                    await processReservation(currentReservationProductId, quantity);
+                    closeReservationModal();
+                } catch (error) {
+                    console.error('Reservation error:', error);
+                    showNotification('Error processing reservation', 'error');
+                } finally {
+                    // Reset button
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = 'Confirm Reservation';
+                }
             }
         }
     }
@@ -546,6 +559,12 @@
     // Process reservation with quantity
     async function processReservation(productId, quantity) {
         const userId = sessionStorage.getItem('user_id');
+        
+        if (!userId) {
+            showNotification('Please log in to reserve products.', 'error');
+            window.location.href = '/login';
+            return;
+        }
 
         try {
             const res = await fetch('/reservations/create', {
@@ -554,6 +573,7 @@
                 body: JSON.stringify({ product_id: productId, quantity, user_id: userId })
             });
 
+            // Check for JSON response
             const contentType = res.headers.get("content-type") || "";
             if (!contentType.includes("application/json")) {
                 showNotification('Session expired. Please log in again.', 'error');
@@ -563,15 +583,23 @@
 
             const data = await res.json();
             if (data.success) {
-                showNotification(`Product reserved (${quantity} items)! Status: ${data.status}`, 'success');
-                updateReserveButton(productId, data.status);
+                // Show success notification
+                showNotification(`Successfully reserved ${quantity} item(s)!`, 'success');
                 
-                // Refresh stock display after successful reservation
+                // Reset the button back to "Reserve"
+                updateReserveButton(productId);
+                
+                // Update stock in UI immediately
+                updateProductStockInUI(productId, quantity);
+                
+                // Refresh product stocks after a delay
                 setTimeout(() => {
                     refreshProductStocks();
                 }, 1000);
             } else {
+                // Show error notification
                 showNotification(data.message || 'Reservation failed', 'error');
+                console.error('Reservation failed:', data);
             }
         } catch (err) {
             console.error('❌ Reservation error:', err);
@@ -580,20 +608,15 @@
     }
 
     //  Update reserve button based on backend status
-    function updateReserveButton(productId, status) {
+    function updateReserveButton(productId) {
         const button = document.querySelector(`[data-id="${productId}"] .reserve-btn`);
         if (!button) return;
-
-        const colors = {
-            pending: 'linear-gradient(135deg, #facc15 0%, #eab308 100%)',
-            approved: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-            completed: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-            rejected: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-        };
-
-        button.textContent = status.charAt(0).toUpperCase() + status.slice(1);
-        button.style.background = colors[status] || colors.pending;
-        button.disabled = status !== 'pending';
+        
+        // Always reset to original reserve button
+        button.textContent = 'Reserve';
+        button.style.background = ''; // Reset to default
+        button.disabled = false;
+        button.innerHTML = '<span class="btn-icon">📋</span> Reserve';
     }
 
     // 🔄 Load user reservations (on page load)

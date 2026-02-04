@@ -1,5 +1,6 @@
 import os
 import socket
+from datetime import timedelta
 
 class BaseConfig:
     """Base configuration with common settings"""
@@ -23,12 +24,42 @@ class BaseConfig:
     # Redis configuration (optional - comment out if not using Redis)
     REDIS_URL = 'redis://localhost:6379/0'  # Default local Redis
     
-    # Low stock notification settings
+    # Low stock notification settings - UPDATED FOR THESIS DEMO
     LOW_STOCK_THRESHOLD = 10
     NOTIFICATION_COOLDOWN_HOURS = 24
     
     # Enable/disable auto notifications
     AUTO_STOCK_NOTIFICATIONS = True
+    
+    # 🔥 NEW: Email interval settings for thesis demonstration
+    EMAIL_INTERVAL_MINUTES = 5  # Send emails every 5 minutes (for demo)
+    STOCK_CHECK_INTERVAL_MINUTES = 5  # Check for low stock every 5 minutes
+    
+    # 🔥 NEW: Dual notification schedule within each 5-minute interval
+    FIRST_NOTIFICATION_MINUTE = 1  # Send first batch at minute 1
+    SECOND_NOTIFICATION_MINUTE = 4  # Send second batch at minute 4
+    
+    # 🔥 NEW: Email logging
+    EMAIL_LOGGING_ENABLED = True
+    EMAIL_LOG_RETENTION_DAYS = 7  # Keep logs for 7 days
+    
+    # 🔥 NEW: Notification batches configuration
+    NOTIFICATION_BATCHES = [
+        {
+            'name': 'first_batch',
+            'minute_offset': FIRST_NOTIFICATION_MINUTE,
+            'send_to_admin': True  # Send admin summary with first batch
+        },
+        {
+            'name': 'second_batch', 
+            'minute_offset': SECOND_NOTIFICATION_MINUTE,
+            'send_to_admin': False  # Don't send admin summary with second batch
+        }
+    ]
+    
+    # 🔥 NEW: Test mode for thesis demonstration
+    DEMO_MODE = True  # Set to True for thesis demo
+    DEMO_NOTIFICATIONS_PER_BATCH = 2  # Send 2 notifications per batch for demo
 
 class LocalConfig(BaseConfig):
     """🟢 LOCAL DEVELOPMENT"""
@@ -48,6 +79,13 @@ class LocalConfig(BaseConfig):
     SMTP_PASSWORD = 'lpsdyhyrsfpzewzy'
     FROM_EMAIL = 'atbi.system.local@gmail.com'
     ADMIN_EMAIL = 'reginejoycefrancisco110603@gmail.com'
+    
+    # 🔥 LOCAL DEMO SETTINGS (faster for testing)
+    EMAIL_INTERVAL_MINUTES = 2  # Faster interval for local testing
+    STOCK_CHECK_INTERVAL_MINUTES = 2
+    FIRST_NOTIFICATION_MINUTE = 0.5  # 30 seconds for first batch
+    SECOND_NOTIFICATION_MINUTE = 1.5  # 90 seconds for second batch
+    DEMO_MODE = True
     
     # 🟢 Optimized for local development with Supabase
     SQLALCHEMY_ENGINE_OPTIONS = {
@@ -85,6 +123,14 @@ class SupabaseConfig(BaseConfig):
     FROM_EMAIL = 'atbi.system@gmail.com'
     ADMIN_EMAIL = 'reginejoycefrancisco110603@gmail.com'
     
+    # 🔥 PRODUCTION SETTINGS FOR THESIS DEMO
+    EMAIL_INTERVAL_MINUTES = 5  # 5-minute intervals for thesis demonstration
+    STOCK_CHECK_INTERVAL_MINUTES = 5
+    FIRST_NOTIFICATION_MINUTE = 1  # First batch at minute 1
+    SECOND_NOTIFICATION_MINUTE = 4  # Second batch at minute 4
+    DEMO_MODE = True  # Keep in demo mode for thesis presentation
+    DEMO_NOTIFICATIONS_PER_BATCH = 2  # Show 2 notifications per batch
+    
     # Important: Validate email configuration
     @classmethod
     def validate_email_config(cls):
@@ -105,6 +151,14 @@ class SupabaseConfig(BaseConfig):
             print(f"⚠️ WARNING: These email variables need to be updated: {', '.join(missing_or_default)}")
             print("⚠️ Low stock notifications will not work until you update them in config.py")
             return False
+        
+        # 🔥 NEW: Validate demo configuration
+        print(f"🔥 DEMO MODE CONFIGURATION:")
+        print(f"   Interval: {cls.EMAIL_INTERVAL_MINUTES} minutes")
+        print(f"   First batch: minute {cls.FIRST_NOTIFICATION_MINUTE}")
+        print(f"   Second batch: minute {cls.SECOND_NOTIFICATION_MINUTE}")
+        print(f"   Emails per batch: {cls.DEMO_NOTIFICATIONS_PER_BATCH}")
+        
         return True
     
     # 🟢 OPTIMIZED FOR RENDER + SUPABASE FREE TIER
@@ -157,6 +211,13 @@ Config = config_dict.get(config_name, SupabaseConfig)  # Default to SupabaseConf
 print(f"🔧 Loaded configuration: {config_name}")
 print(f"📊 Database: {Config.SQLALCHEMY_DATABASE_URI.split('@')[-1] if '@' in Config.SQLALCHEMY_DATABASE_URI else 'Local database'}")
 
+# 🔥 NEW: Print demo configuration details
+print(f"🔥 DEMO NOTIFICATION SYSTEM:")
+print(f"   Interval: {Config.EMAIL_INTERVAL_MINUTES} minutes")
+print(f"   First notification: minute {Config.FIRST_NOTIFICATION_MINUTE}")
+print(f"   Second notification: minute {Config.SECOND_NOTIFICATION_MINUTE}")
+print(f"   Mode: {'Thesis Demo' if Config.DEMO_MODE else 'Production'}")
+
 # Validate email configuration
 if hasattr(Config, 'validate_email_config'):
     Config.validate_email_config()
@@ -171,3 +232,13 @@ print(f"📦 Low stock threshold: {Config.LOW_STOCK_THRESHOLD} units")
 print(f"🔄 Auto notifications: {'✅ Enabled' if Config.AUTO_STOCK_NOTIFICATIONS else '❌ Disabled'}")
 print(f"📧 From email: {Config.FROM_EMAIL}")
 print(f"📧 Admin email: {Config.ADMIN_EMAIL}")
+print(f"📊 Email logging: {'✅ Enabled' if Config.EMAIL_LOGGING_ENABLED else '❌ Disabled'}")
+print(f"🗄️ Log retention: {Config.EMAIL_LOG_RETENTION_DAYS} days")
+
+# 🔥 NEW: Print schedule summary
+print(f"\n🎯 NOTIFICATION SCHEDULE SUMMARY:")
+print(f"   Every {Config.EMAIL_INTERVAL_MINUTES} minutes:")
+print(f"     → Minute {Config.FIRST_NOTIFICATION_MINUTE}: Send first batch (with admin summary)")
+print(f"     → Minute {Config.SECOND_NOTIFICATION_MINUTE}: Send second batch")
+print(f"   Demo mode: {'✅ ON' if Config.DEMO_MODE else '❌ OFF'}")
+print(f"   Emails per batch: {Config.DEMO_NOTIFICATIONS_PER_BATCH if Config.DEMO_MODE else 'All low stock products'}")

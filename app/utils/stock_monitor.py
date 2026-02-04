@@ -33,7 +33,7 @@ class StockMonitor:
             products_list = []
             for product, incubatee in low_stock_products:
                 products_list.append({
-                    'product_id': product.product_id,
+                    'product_id': product.product_id,  # Ensure product_id is included
                     'product_name': product.name,
                     'stock_no': product.stock_no,
                     'current_stock': product.stock_amount,

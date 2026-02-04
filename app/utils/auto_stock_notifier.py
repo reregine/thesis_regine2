@@ -1,7 +1,7 @@
-# app/utils/auto_stock_notifier.py
+
 import logging
 import atexit
-from datetime import datetime, timedelta
+from datetime import datetime
 from flask import current_app
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -14,31 +14,48 @@ logger = logging.getLogger(__name__)
 class AutoStockNotifier:
     """Automatically send email notifications for low stock with built-in scheduler"""
     
-    def __init__(self):
-        self.last_check_time = None
-        self.sent_notifications = {}  # product_id -> last_notified_time
-        self.scheduler = None
-        self.scheduler_running = False
-        
-    def init_scheduler(self):
-        """Initialize and start the scheduler"""
+    _instance = None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(AutoStockNotifier, cls).__new__(cls)
+            cls._instance.scheduler = None
+            cls._instance.scheduler_running = False
+            cls._instance.app = None
+        return cls._instance
+    
+    def init_scheduler(self, app):
+        """Initialize and start the scheduler with dual email schedule"""
         if self.scheduler_running:
             logger.warning("Scheduler already running")
             return
         
         try:
+            # Store app reference
+            self.app = app
+            
             # Create scheduler
             self.scheduler = BackgroundScheduler(daemon=True)
             
-            # Get check interval from config (default: 1 hour)
-            check_interval_minutes = current_app.config.get('STOCK_CHECK_INTERVAL_MINUTES', 60)
+            # Get interval from config (default: 5 minutes for thesis demo)
+            check_interval_minutes = app.config.get('STOCK_CHECK_INTERVAL_MINUTES', 5)
             
-            # Add job to check stock periodically
+            # Schedule both jobs using lambda functions that include app context
             self.scheduler.add_job(
-                func=self.check_and_send_notifications,
+                func=self._send_batch_with_context,
                 trigger=IntervalTrigger(minutes=check_interval_minutes),
-                id='auto_stock_check',
-                name='Automatic stock notification check',
+                args=[app, 1],  # Pass app and batch number
+                id='first_notification_batch',
+                name='First notification batch',
+                replace_existing=True
+            )
+            
+            self.scheduler.add_job(
+                func=self._send_batch_with_context,
+                trigger=IntervalTrigger(minutes=check_interval_minutes),
+                args=[app, 2],  # Pass app and batch number
+                id='second_notification_batch',
+                name='Second notification batch',
                 replace_existing=True
             )
             
@@ -46,13 +63,26 @@ class AutoStockNotifier:
             self.scheduler.start()
             self.scheduler_running = True
             
-            logger.info(f"✅ Stock notification scheduler started (checking every {check_interval_minutes} minutes)")
+            logger.info(f"✅ Dual notification scheduler started ({check_interval_minutes}-minute interval)")
+            logger.info("📧 First notification at minute 1, second at minute 4 of each interval")
             
             # Register shutdown
             atexit.register(self.shutdown)
             
         except Exception as e:
             logger.error(f"❌ Failed to start scheduler: {str(e)}")
+    
+    def _send_batch_with_context(self, app, batch_number):
+        """Send notification batch with proper Flask context"""
+        with app.app_context():
+            try:
+                if batch_number == 1:
+                    return self._send_notification_batch(batch_number=1)
+                else:
+                    return self._send_notification_batch(batch_number=2)
+            except Exception as e:
+                logger.error(f"❌ Error in batch {batch_number}: {str(e)}")
+                return {'success': False, 'error': str(e), 'batch': batch_number}
     
     def shutdown(self):
         """Shutdown the scheduler"""
@@ -61,244 +91,125 @@ class AutoStockNotifier:
             self.scheduler_running = False
             logger.info("🛑 Stock notification scheduler stopped")
     
-    def start_scheduler(self):
-        """Start the scheduler (for manual control)"""
-        if not current_app.config.get('AUTO_STOCK_NOTIFICATIONS', True):
-            logger.info("Auto stock notifications are disabled - not starting scheduler")
-            return False
-        
-        if not self.scheduler_running:
-            self.init_scheduler()
-        return self.scheduler_running
-    
-    def stop_scheduler(self):
-        """Stop the scheduler"""
-        self.shutdown()
-    
-    def check_and_send_notifications(self):
-        """Main method to check stock and send notifications automatically"""
+    def _send_notification_batch(self, batch_number=1):
+        """Send a batch of notifications"""
         try:
             # Check if auto notifications are enabled
             if not current_app.config.get('AUTO_STOCK_NOTIFICATIONS', True):
                 logger.info("Auto stock notifications are disabled")
-                return {'success': False, 'message': 'Auto notifications disabled'}
+                return {'success': False, 'message': 'Auto notifications disabled', 'batch': batch_number}
             
-            logger.info("🔍 Checking for low stock products...")
+            logger.info(f"🔍 Batch {batch_number}: Checking for low stock products...")
             
             # Get all low stock products
             low_stock_products = StockMonitor.check_low_stock_products()
             
             if not low_stock_products:
-                logger.info("✅ No low stock products found")
-                return {'success': True, 'message': 'No low stock products', 'notifications_sent': 0}
+                logger.info(f"✅ Batch {batch_number}: No low stock products found")
+                return {
+                    'success': True, 
+                    'message': 'No low stock products', 
+                    'notifications_sent': 0,
+                    'batch': batch_number
+                }
             
-            logger.info(f"⚠️ Found {len(low_stock_products)} low stock products")
+            logger.info(f"⚠️ Batch {batch_number}: Found {len(low_stock_products)} low stock products")
             
-            # Check cooldown period
-            cooldown_hours = current_app.config.get('NOTIFICATION_COOLDOWN_HOURS', 24)
-            now = datetime.utcnow()
+            # For demo mode, limit the number of notifications
+            demo_mode = current_app.config.get('DEMO_MODE', False)
+            max_notifications = current_app.config.get('DEMO_NOTIFICATIONS_PER_BATCH', 2)
             
             notifications_sent = 0
             failed_notifications = 0
             sent_to_incubatees = []
             
-            for product in low_stock_products:
+            for index, product in enumerate(low_stock_products):
+                # Limit notifications in demo mode
+                if demo_mode and notifications_sent >= max_notifications:
+                    logger.info(f"📊 Demo mode: Sent {max_notifications} emails, stopping for batch {batch_number}")
+                    break
+                
                 product_id = product['product_id']
                 
-                # Check if we should send notification (cooldown period)
-                last_notified = self.sent_notifications.get(product_id)
-                if last_notified:
-                    hours_since = (now - last_notified).total_seconds() / 3600
-                    if hours_since < cooldown_hours:
-                        logger.debug(f"Skipping notification for product {product_id} - cooldown active")
-                        continue
+                # Check if we should send based on interval (using EmailSender's logic)
+                should_send = EmailSender.should_send_email(
+                    product.get('incubatee_id'),
+                    product_id,
+                    interval_minutes=current_app.config.get('EMAIL_INTERVAL_MINUTES', 5)
+                )
+                
+                if not should_send:
+                    logger.debug(f"Batch {batch_number}: Skipping product {product_id} - within interval")
+                    continue
                 
                 # Send notification to incubatee
                 if product.get('email'):
-                    logger.info(f"📧 Sending low stock notification to {product['email']}")
+                    logger.info(f"📧 Batch {batch_number}: Sending notification to {product['email']}")
                     
                     success = EmailSender.send_low_stock_notification(product)
                     
                     if success:
                         notifications_sent += 1
-                        self.sent_notifications[product_id] = now
                         sent_to_incubatees.append(product['incubatee_name'])
-                        logger.info(f"✅ Notification sent for product {product_id}")
+                        logger.info(f"✅ Batch {batch_number}: Notification sent for product {product_id}")
                     else:
                         failed_notifications += 1
-                        logger.error(f"❌ Failed to send notification for product {product_id}")
+                        logger.error(f"❌ Batch {batch_number}: Failed to send notification for product {product_id}")
                 else:
-                    logger.warning(f"No email found for incubatee {product['incubatee_name']}")
+                    logger.warning(f"Batch {batch_number}: No email for {product['incubatee_name']}")
             
-            # Send summary to admin if notifications were sent
-            if notifications_sent > 0:
-                self.send_admin_summary(low_stock_products, notifications_sent, sent_to_incubatees)
-            
-            self.last_check_time = now
+            # Send admin summary if notifications were sent
+            admin_notified = False
+            if notifications_sent > 0 and batch_number == 1:  # Only send admin summary from first batch
+                admin_products = [p for p in low_stock_products if p.get('email')]
+                if admin_products and admin_products[:max_notifications]:  # Limit for demo
+                    admin_success = EmailSender.send_admin_notification(admin_products[:max_notifications])
+                    admin_notified = admin_success
             
             result = {
                 'success': True,
-                'message': f'Sent {notifications_sent} notifications',
+                'message': f'Batch {batch_number}: Sent {notifications_sent} notifications',
+                'batch': batch_number,
                 'notifications_sent': notifications_sent,
                 'failed_notifications': failed_notifications,
                 'total_low_stock': len(low_stock_products),
-                'check_time': now.isoformat(),
-                'scheduler_running': self.scheduler_running
+                'admin_notified': admin_notified,
+                'check_time': datetime.utcnow().isoformat(),
+                'scheduler_running': self.scheduler_running,
+                'demo_mode': demo_mode
             }
             
-            logger.info(f"✅ Auto stock check completed: {result}")
+            logger.info(f"✅ Batch {batch_number} completed: {result}")
             return result
             
         except Exception as e:
-            logger.error(f"❌ Error in auto stock notifier: {str(e)}")
-            return {'success': False, 'error': str(e)}
-    
-    def send_admin_summary(self, low_stock_products, notifications_sent, sent_to_incubatees):
-        """Send summary email to admin"""
-        try:
-            admin_email = current_app.config.get('ADMIN_EMAIL')
-            if not admin_email:
-                logger.warning("No admin email configured for summary")
-                return False
-            
-            from .email_templates import EmailTemplates
-            
-            subject = f"📊 Low Stock Report: {len(low_stock_products)} Products Need Attention"
-            
-            # Group by severity
-            critical_products = [p for p in low_stock_products if p['current_stock'] <= 3]
-            low_products = [p for p in low_stock_products if p['current_stock'] > 3 and p['current_stock'] <= 10]
-            
-            # Create list of notified incubatees
-            notified_incubatees = ", ".join(set(sent_to_incubatees)) if sent_to_incubatees else "None"
-            
-            html_content = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>
-                    body {{ font-family: Arial, sans-serif; }}
-                    .container {{ max-width: 600px; margin: 0 auto; }}
-                    .header {{ background-color: #f0ad4e; color: white; padding: 20px; text-align: center; }}
-                    .summary {{ padding: 20px; background-color: #f9f9f9; }}
-                    .product-list {{ margin: 20px 0; }}
-                    .product-item {{ padding: 10px; border-bottom: 1px solid #eee; }}
-                    .critical {{ background-color: #f2dede; border-left: 4px solid #d9534f; }}
-                    .low {{ background-color: #fcf8e3; border-left: 4px solid #f0ad4e; }}
-                    .count {{ font-size: 24px; font-weight: bold; }}
-                    .success {{ color: #28a745; }}
-                    .warning {{ color: #dc3545; }}
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>📊 ATBI Low Stock Report</h1>
-                        <p>Automated Stock Monitoring System</p>
-                    </div>
-                    
-                    <div class="summary">
-                        <h2>Summary</h2>
-                        <p><span class="count">{len(low_stock_products)}</span> products are low on stock</p>
-                        <p><span class="count success">{notifications_sent}</span> email notifications sent to incubatees</p>
-                        <p><span class="count warning">{len(critical_products)}</span> critical products (≤ 3 units)</p>
-                        <p><strong>Notified Incubatees:</strong> {notified_incubatees}</p>
-                        <p>Check time: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
-                    </div>
-                    
-                    <div class="product-list">
-                        <h3>Critical Products (≤ 3 units)</h3>
-                        {"".join([self._format_product_html(p, 'critical') for p in critical_products[:5]])}
-                        
-                        <h3>Low Products (4-10 units)</h3>
-                        {"".join([self._format_product_html(p, 'low') for p in low_products[:5]])}
-                        
-                        {f'<p>... and {len(low_stock_products) - 10} more products</p>' if len(low_stock_products) > 10 else ''}
-                    </div>
-                    
-                    <div style="padding: 20px; text-align: center; background-color: #f5f5f5; margin-top: 20px;">
-                        <p>This is an automated report from ATBI Stock Monitoring System.</p>
-                        <p><a href="{current_app.config.get('BASE_URL', 'http://localhost:5000')}/admin">View in Admin Panel</a></p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """
-            
-            text_content = f"""
-            ATBI Low Stock Report
-            =====================
-            
-            SUMMARY:
-            - Total low stock products: {len(low_stock_products)}
-            - Notifications sent: {notifications_sent}
-            - Critical products (≤ 3 units): {len(critical_products)}
-            - Low products (4-10 units): {len(low_products)}
-            - Notified incubatees: {notified_incubatees}
-            
-            Check time: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}
-            
-            This is an automated report from ATBI Stock Monitoring System.
-            """
-            
-            success = EmailSender.send_email(
-                to_email=admin_email,
-                subject=subject,
-                html_content=html_content,
-                text_content=text_content
-            )
-            
-            if success:
-                logger.info("✅ Admin summary email sent successfully")
-            else:
-                logger.error("❌ Failed to send admin summary email")
-            
-            return success
-            
-        except Exception as e:
-            logger.error(f"Error sending admin summary: {str(e)}")
-            return False
-    
-    def _format_product_html(self, product, severity):
-        """Format product HTML for admin email"""
-        severity_class = 'critical' if severity == 'critical' else 'low'
-        stock_status = "🔥 CRITICAL" if severity == 'critical' else "⚠️ LOW"
-        
-        return f"""
-        <div class="product-item {severity_class}">
-            <strong>{product['product_name']}</strong> ({product['stock_no']})<br>
-            Incubatee: {product['incubatee_name']}<br>
-            Current Stock: <strong>{product['current_stock']}</strong> units ({stock_status})<br>
-            Email: {product['email'] or 'No email available'}
-        </div>
-        """
+            logger.error(f"❌ Error in notification batch {batch_number}: {str(e)}")
+            return {'success': False, 'error': str(e), 'batch': batch_number}
     
     def get_status(self):
         """Get current status of the notifier"""
-        return {
-            'scheduler_running': self.scheduler_running,
-            'last_check_time': self.last_check_time.isoformat() if self.last_check_time else None,
-            'sent_notifications_count': len(self.sent_notifications),
-            'auto_notifications_enabled': current_app.config.get('AUTO_STOCK_NOTIFICATIONS', True),
-            'check_interval_minutes': current_app.config.get('STOCK_CHECK_INTERVAL_MINUTES', 60),
-            'cooldown_hours': current_app.config.get('NOTIFICATION_COOLDOWN_HOURS', 24),
-            'low_stock_threshold': current_app.config.get('LOW_STOCK_THRESHOLD', 10)
-        }
-
-# Singleton instance
-_auto_notifier = None
+        if not self.app:
+            return {'scheduler_running': False, 'error': 'No app context'}
+        
+        with self.app.app_context():
+            jobs = []
+            if self.scheduler and self.scheduler_running:
+                jobs = self.scheduler.get_jobs()
+            
+            return {
+                'scheduler_running': self.scheduler_running,
+                'jobs': [job.id for job in jobs],
+                'next_run_times': [str(job.next_run_time) for job in jobs] if jobs else [],
+                'auto_notifications_enabled': current_app.config.get('AUTO_STOCK_NOTIFICATIONS', True),
+                'check_interval_minutes': current_app.config.get('STOCK_CHECK_INTERVAL_MINUTES', 5),
+                'email_interval_minutes': current_app.config.get('EMAIL_INTERVAL_MINUTES', 5),
+                'low_stock_threshold': current_app.config.get('LOW_STOCK_THRESHOLD', 10),
+                'demo_mode': current_app.config.get('DEMO_MODE', False)
+            }
 
 def get_auto_notifier():
     """Get or create auto notifier instance"""
-    global _auto_notifier
-    if _auto_notifier is None:
-        _auto_notifier = AutoStockNotifier()
-    return _auto_notifier
-
-def check_and_send_auto_notifications():
-    """Convenience function to check and send notifications"""
-    notifier = get_auto_notifier()
-    return notifier.check_and_send_notifications()
+    return AutoStockNotifier()
 
 def init_auto_notifier(app):
     """Initialize auto notifier with Flask app"""
@@ -306,7 +217,11 @@ def init_auto_notifier(app):
     
     # Start scheduler if auto notifications are enabled
     if app.config.get('AUTO_STOCK_NOTIFICATIONS', True):
-        with app.app_context():
-            notifier.start_scheduler()
-    
-    return notifier
+        notifier.init_scheduler(app)
+        print(f"✅ Auto stock notifier initialized")
+        print(f"📧 Email interval: {app.config.get('EMAIL_INTERVAL_MINUTES', 5)} minutes")
+        print(f"🔥 Demo mode: {'ON' if app.config.get('DEMO_MODE', False) else 'OFF'}")
+        return True
+    else:
+        print("⏸️ Auto stock notifications disabled in config")
+        return False
