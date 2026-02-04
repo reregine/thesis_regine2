@@ -347,12 +347,6 @@ function initializeLowStockWarnings() {
         }
     }
     
-    // Check for low stock products on page load
-    checkLowStockProducts();
-    
-    // Set up periodic checking (every 30 seconds)
-    setInterval(checkLowStockProducts, 30000);
-    
     console.log('✅ Low stock warnings initialized');
 }
 // Function to load all products from database

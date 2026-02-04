@@ -47,16 +47,28 @@
                         <input type="date" id="endDate" value="{{ today }}">
                     </div>
                     <div class="form-group">
-                        <label>Report Type</label>
-                        <select id="reportType">
-                            <option value="overview">Overview</option>
+                        <label>Filter By</label>
+                        <select id="filterType" onchange="toggleFilterOptions()">
+                            <option value="all">All Data</option>
                             <option value="incubatee">By Incubatee</option>
                             <option value="category">By Category</option>
-                            <option value="product">By Product</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="incubateeFilterGroup" style="display: none;">
+                        <label>Select Incubatee</label>
+                        <select id="incubateeFilter">
+                            <option value="">Loading incubatees...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="categoryFilterGroup" style="display: none;">
+                        <label>Select Category</label>
+                        <select id="categoryFilter">
+                            <option value="">Loading categories...</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>&nbsp;</label>
+                        <button class="btn-preview" onclick="previewReport()">👁️ Preview Report</button>
                         <button class="btn-generate" onclick="generateReport()">📈 Generate Report</button>
                         <button class="btn-export" onclick="exportReport()">📥 Export Report</button>
                     </div>
@@ -104,7 +116,65 @@
             </div>
         </div>
     </div>
-    
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="preview-modal hidden">
+        <div class="preview-content">
+            <div class="preview-header">
+                <h3>📄 Report Preview</h3>
+                <button class="close-btn" onclick="closePreview()">×</button>
+            </div>
+            <div class="preview-body">
+                <div class="preview-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">Date Range:</span>
+                        <span class="summary-value" id="preview-date-range">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Filter:</span>
+                        <span class="summary-value" id="preview-filter">All Data</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Total Revenue:</span>
+                        <span class="summary-value" id="preview-revenue">₱0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Rows Previewed:</span>
+                        <span class="summary-value" id="preview-rows">0</span>
+                    </div>
+                </div>
+                
+                <div class="preview-table-container">
+                    <table class="preview-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Order ID</th>
+                                <th>Incubatee</th>
+                                <th>Product</th>
+                                <th>Customer</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="preview-table-body">
+                            <tr>
+                                <td colspan="8" class="no-data">Generate preview to see data</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="preview-footer">
+                    <div class="preview-actions">
+                        <button class="btn-generate" onclick="generateFromPreview()">📈 Generate Full Report</button>
+                        <button class="btn-export" onclick="exportFromPreview()">📥 Export Report</button>
+                        <button class="btn-cancel" onclick="closePreview()">Close Preview</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Load the dedicated reports JavaScript -->
     <script src="{{ url_for('static', filename='js/reports.js') }}"></script>
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>

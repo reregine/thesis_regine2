@@ -2,6 +2,10 @@
 let currentView = 'table';
 let currentReportData = null;
 let charts = {};
+let currentFilterType = 'all';
+let currentFilterValue = '';
+let previewData = null;
+
 
 // Use different variable names to avoid conflict with admin.js
 const currentDate = new Date().toISOString().split('T')[0];
@@ -15,8 +19,174 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Generate initial report
     generateReport();
+    // Load filter options
+    loadFilterOptions();
+    
+    // Initialize filter display
+    toggleFilterOptions();
 });
 
+// New functions for filters and preview
+async function loadFilterOptions() {
+    try {
+        // Load incubatees
+        const incubateeResponse = await fetch('/admin/reports/get-incubatees');
+        const incubateeData = await incubateeResponse.json();
+        
+        if (incubateeData.success) {
+            const incubateeSelect = document.getElementById('incubateeFilter');
+            incubateeSelect.innerHTML = '<option value="">Select incubatee...</option>';
+            incubateeData.incubatees.forEach(inc => {
+                incubateeSelect.innerHTML += `<option value="${inc.id}">${inc.name}</option>`;
+            });
+        }
+        
+        // Load categories
+        const categoryResponse = await fetch('/admin/reports/get-categories');
+        const categoryData = await categoryResponse.json();
+        
+        if (categoryData.success) {
+            const categorySelect = document.getElementById('categoryFilter');
+            categorySelect.innerHTML = '<option value="">Select category...</option>';
+            categoryData.categories.forEach(cat => {
+                categorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+        }
+    } catch (error) {
+        console.error('Error loading filter options:', error);
+    }
+}
+
+function toggleFilterOptions() {
+    currentFilterType = document.getElementById('filterType').value;
+    
+    // Show/hide filter inputs
+    document.getElementById('incubateeFilterGroup').style.display = 
+        currentFilterType === 'incubatee' ? 'block' : 'none';
+    document.getElementById('categoryFilterGroup').style.display = 
+        currentFilterType === 'category' ? 'block' : 'none';
+    
+    // Reset filter values when switching types
+    if (currentFilterType !== 'incubatee') {
+        document.getElementById('incubateeFilter').value = '';
+    }
+    if (currentFilterType !== 'category') {
+        document.getElementById('categoryFilter').value = '';
+    }
+}
+
+async function previewReport() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const filterType = document.getElementById('filterType').value;
+    
+    // Get filter value
+    let filterValue = '';
+    if (filterType === 'incubatee') {
+        filterValue = document.getElementById('incubateeFilter').value;
+    } else if (filterType === 'category') {
+        filterValue = document.getElementById('categoryFilter').value;
+    }
+    
+    if (!startDate || !endDate) {
+        showNotification('Please select both start and end dates', 'error');
+        return;
+    }
+    
+    if ((filterType === 'incubatee' || filterType === 'category') && !filterValue) {
+        showNotification(`Please select a ${filterType}`, 'error');
+        return;
+    }
+    
+    showLoadingState();
+    
+    try {
+        // Build query parameters
+        let url = `/admin/reports/preview?start_date=${startDate}&end_date=${endDate}&filter=${filterType}`;
+        if (filterType === 'incubatee' && filterValue) {
+            url += `&incubatee_id=${filterValue}`;
+        } else if (filterType === 'category' && filterValue) {
+            url += `&category=${encodeURIComponent(filterValue)}`;
+        }
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.success) {
+            previewData = data;
+            displayPreview(data);
+            showNotification('✅ Preview generated successfully!', 'success');
+        } else {
+            throw new Error(data.error || 'Failed to generate preview');
+        }
+    } catch (error) {
+        console.error('Error generating preview:', error);
+        showNotification('Failed to generate preview: ' + error.message, 'error');
+    }
+}
+
+function displayPreview(data) {
+    // Update preview summary
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const filterType = document.getElementById('filterType').value;
+    let filterText = 'All Data';
+    
+    if (filterType === 'incubatee') {
+        const incubateeSelect = document.getElementById('incubateeFilter');
+        const selectedOption = incubateeSelect.options[incubateeSelect.selectedIndex];
+        filterText = `Incubatee: ${selectedOption.text}`;
+    } else if (filterType === 'category') {
+        const categorySelect = document.getElementById('categoryFilter');
+        const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+        filterText = `Category: ${selectedOption.text}`;
+    }
+    
+    document.getElementById('preview-date-range').textContent = 
+        `${startDate} to ${endDate}`;
+    document.getElementById('preview-filter').textContent = filterText;
+    document.getElementById('preview-revenue').textContent = 
+        `₱${data.total_revenue.toFixed(2)}`;
+    document.getElementById('preview-rows').textContent = 
+        `${data.total_rows} rows${data.has_more_data ? ' (first 20 shown)' : ''}`;
+    
+    // Update preview table
+    const tbody = document.getElementById('preview-table-body');
+    if (data.preview_data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="no-data">No data found for the selected filters</td></tr>';
+    } else {
+        tbody.innerHTML = data.preview_data.map(row => `
+            <tr>
+                <td>${formatDateOnly(row.date)}</td>
+                <td>#${row.order_id}</td>
+                <td>${escapeHtml(row.incubatee)}</td>
+                <td>${escapeHtml(row.product)}</td>
+                <td>${escapeHtml(row.customer)}</td>
+                <td>${row.quantity}</td>
+                <td>₱${row.unit_price.toFixed(2)}</td>
+                <td><strong>₱${row.total.toFixed(2)}</strong></td>
+            </tr>
+        `).join('');
+    }
+    
+    // Show modal
+    document.getElementById('preview-modal').classList.remove('hidden');
+}
+
+function closePreview() {
+    document.getElementById('preview-modal').classList.add('hidden');
+    previewData = null;
+}
+
+function generateFromPreview() {
+    closePreview();
+    generateReport();
+}
+
+function exportFromPreview() {
+    closePreview();
+    exportReport();
+}
 
 function setView(view) {
     currentView = view;
@@ -37,20 +207,42 @@ function setView(view) {
     }
 }
 
+// Update generateReport function to include filters
 async function generateReport() {
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
-    const reportType = document.getElementById('reportType').value;
-
+    const filterType = document.getElementById('filterType').value;
+    
+    // Get filter value
+    let filterValue = '';
+    if (filterType === 'incubatee') {
+        filterValue = document.getElementById('incubateeFilter').value;
+    } else if (filterType === 'category') {
+        filterValue = document.getElementById('categoryFilter').value;
+    }
+    
     if (!startDate || !endDate) {
         showNotification('Please select both start and end dates', 'error');
         return;
     }
-
+    
+    if ((filterType === 'incubatee' || filterType === 'category') && !filterValue) {
+        showNotification(`Please select a ${filterType}`, 'error');
+        return;
+    }
+    
     showLoadingState();
-
+    
     try {
-        const response = await fetch(`/admin/sales-summary?start_date=${startDate}&end_date=${endDate}&type=${reportType}`);
+        // Build query parameters
+        let url = `/admin/reports/sales-summary?start_date=${startDate}&end_date=${endDate}&filter=${filterType}`;
+        if (filterType === 'incubatee' && filterValue) {
+            url += `&incubatee_id=${filterValue}`;
+        } else if (filterType === 'category' && filterValue) {
+            url += `&category=${encodeURIComponent(filterValue)}`;
+        }
+        
+        const response = await fetch(url);
         const data = await response.json();
         
         if (data.success) {
@@ -68,6 +260,7 @@ async function generateReport() {
         resetCharts();
     }
 }
+
 
 function showLoadingState() {
     // Only update elements that exist
@@ -327,28 +520,50 @@ function resetCharts() {
     updateCharts({ charts: {} });
 }
 
+// Update exportReport function to include filters
 async function exportReport() {
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
-    const reportType = document.getElementById('reportType').value;
-
+    const filterType = document.getElementById('filterType').value;
+    
+    // Get filter value
+    let filterValue = '';
+    if (filterType === 'incubatee') {
+        filterValue = document.getElementById('incubateeFilter').value;
+    } else if (filterType === 'category') {
+        filterValue = document.getElementById('categoryFilter').value;
+    }
+    
     if (!startDate || !endDate) {
         showNotification('Please select both start and end dates', 'error');
         return;
     }
-
+    
+    if ((filterType === 'incubatee' || filterType === 'category') && !filterValue) {
+        showNotification(`Please select a ${filterType}`, 'error');
+        return;
+    }
+    
     try {
-        const response = await fetch(`/admin/export-report?start_date=${startDate}&end_date=${endDate}&type=${reportType}`);
+        // Build query parameters
+        let url = `/admin/reports/export?start_date=${startDate}&end_date=${endDate}&filter=${filterType}`;
+        if (filterType === 'incubatee' && filterValue) {
+            url += `&incubatee_id=${filterValue}`;
+        } else if (filterType === 'category' && filterValue) {
+            url += `&category=${encodeURIComponent(filterValue)}`;
+        }
+        
+        const response = await fetch(url);
         const blob = await response.blob();
         
-        const url = window.URL.createObjectURL(blob);
+        const urlObject = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
-        a.href = url;
-        a.download = `incubatee-report-${startDate}-to-${endDate}.csv`;
+        a.href = urlObject;
+        a.download = `report-${startDate}-to-${endDate}.csv`;
         document.body.appendChild(a);
         a.click();
-        window.URL.revokeObjectURL(url);
+        window.URL.revokeObjectURL(urlObject);
         
         showNotification('✅ Report exported successfully!', 'success');
     } catch (error) {

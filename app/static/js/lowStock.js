@@ -33,6 +33,7 @@ function initializeLowStockWarnings() {
     updateLowStockCountBadge();
     console.log('✅ Low stock warnings initialized');
 }
+window.checkLowStockProducts = checkLowStockProducts;
 
 // Add low stock filter button to UI
 function addLowStockFilterButton() {

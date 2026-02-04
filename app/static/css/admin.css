@@ -1757,7 +1757,152 @@
   position: relative;
   width: 100%;
 }
+/* Add Pricing Unit Modal Styles */
+.add-pricing-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
 
+.add-pricing-modal.active {
+    display: flex;
+}
+
+.add-pricing-modal .modal-content {
+    background: white;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.add-pricing-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.add-pricing-modal .modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.add-pricing-modal .close-btn {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.add-pricing-modal .close-btn:hover {
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.add-pricing-modal form {
+    padding: 20px;
+}
+
+.add-pricing-modal .form-group {
+    margin-bottom: 20px;
+}
+
+.add-pricing-modal label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.add-pricing-modal .required-star {
+    color: #dc3545;
+}
+
+.add-pricing-modal input[type="text"],
+.add-pricing-modal textarea {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.add-pricing-modal input[type="text"]:focus,
+.add-pricing-modal textarea:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.add-pricing-modal textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+.add-pricing-modal .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid #e9ecef;
+    background-color: #f8f9fa;
+    border-radius: 0 0 10px 10px;
+}
+
+.add-pricing-modal .btn-cancel,
+.add-pricing-modal .btn-save {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.add-pricing-modal .btn-cancel {
+    background-color: #6c757d;
+    color: white;
+}
+
+.add-pricing-modal .btn-cancel:hover {
+    background-color: #5a6268;
+}
+
+.add-pricing-modal .btn-save {
+    background-color: #28a745;
+    color: white;
+}
+
+.add-pricing-modal .btn-save:hover {
+    background-color: #218838;
+}
+
+.add-pricing-modal .btn-save:disabled {
+    background-color: #b0d9b8;
+    cursor: not-allowed;
+}
 #pricing_unit_search {
   width: 100%;
   padding: 10px;
