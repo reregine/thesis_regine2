@@ -462,7 +462,7 @@ function showCriticalStockNotification(criticalProducts) {
         `;
     });
     
-    if (criticalProducts.length > 3) {
+    if (criticalProducts.length > 10) {
         notificationHTML += `<li>...and ${criticalProducts.length - 3} more</li>`;
     }
     
