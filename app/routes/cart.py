@@ -435,3 +435,175 @@ def get_product_stock(product_id):
     except Exception as e:
         current_app.logger.error(f"Error fetching product stock: {e}")
         return jsonify({"success": False, "message": "Server error"}), 500
+    
+@cart_bp.route("/reservations/<status>", methods=["GET"])
+def get_reservations_by_status(status):
+    """Get paginated reservations by status"""
+    try:
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"success": False, "message": "User not logged in"}), 401
+        
+        # Validate status
+        valid_statuses = ["pending", "approved", "completed", "rejected"]
+        if status not in valid_statuses:
+            return jsonify({"success": False, "message": "Invalid status"}), 400
+        
+        # Get pagination parameters
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get("per_page", 10, type=int)
+        
+        # Limit per_page to avoid overload
+        per_page = min(per_page, 50)
+        
+        # Query reservations with pagination
+        query = (
+            db.session.query(
+                Reservation,
+                IncubateeProduct.name.label("product_name"),
+                IncubateeProduct.image_path,
+                IncubateeProduct.price_per_stocks,
+                IncubateeProduct.new_price_per_stocks
+            )
+            .join(IncubateeProduct, Reservation.product_id == IncubateeProduct.product_id)
+            .filter(
+                Reservation.user_id == user_id,
+                Reservation.status == status
+            )
+            .order_by(Reservation.reserved_at.desc())
+        )
+        
+        # Get total count
+        total_count = query.count()
+        
+        # Apply pagination
+        paginated_query = query.paginate(page=page, per_page=per_page, error_out=False)
+        reservations_data = paginated_query.items
+        
+        # Format response data
+        reservations = []
+        for reservation, product_name, image_path, price_per_stocks, new_price_per_stocks in reservations_data:
+            # Calculate discount percentage in Python
+            discount_percentage = 0
+            if new_price_per_stocks and price_per_stocks and price_per_stocks > 0:
+                if new_price_per_stocks < price_per_stocks:
+                    discount_amount = price_per_stocks - new_price_per_stocks
+                    discount_percentage = round((discount_amount / price_per_stocks) * 100)
+            
+            reservations.append({
+                "reservation_id": reservation.reservation_id,
+                "product_name": product_name,
+                "image_path": image_path,
+                "price_per_stocks": float(price_per_stocks or 0),
+                "new_price_per_stocks": float(new_price_per_stocks or 0) if new_price_per_stocks else None,
+                "discount_percentage": discount_percentage,
+                "quantity": reservation.quantity,
+                "status": reservation.status,
+                "reserved_at": reservation.reserved_at.isoformat() if reservation.reserved_at else None,
+                "approved_at": reservation.approved_at.isoformat() if reservation.approved_at else None,
+                "completed_at": reservation.completed_at.isoformat() if reservation.completed_at else None,
+                "rejected_at": reservation.rejected_at.isoformat() if reservation.rejected_at else None,
+                "rejected_reason": reservation.rejected_reason
+            })
+        
+        return jsonify({
+            "success": True,
+            "reservations": reservations,
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total": total_count,
+                "pages": paginated_query.pages,
+                "has_next": paginated_query.has_next,
+                "has_prev": paginated_query.has_prev
+            }
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching {status} reservations: {e}")
+        return jsonify({"success": False, "message": "Server error"}), 500
+
+@cart_bp.route("/reservations/count", methods=["GET"])
+def get_reservation_counts():
+    """Get counts of reservations by status"""
+    try:
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"success": False, "message": "User not logged in"}), 401
+        
+        # Get counts for each status
+        counts = {}
+        for status in ["pending", "approved", "completed", "rejected"]:
+            count = Reservation.query.filter_by(
+                user_id=user_id, 
+                status=status
+            ).count()
+            counts[status] = count
+        
+        return jsonify({
+            "success": True,
+            "counts": counts
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching reservation counts: {e}")
+        return jsonify({"success": False, "message": "Server error"}), 500
+
+@cart_bp.route("/reservations/user/<int:user_id>", methods=["GET"])
+def get_user_reservations(user_id):
+    """Get all reservations for a user (with pagination)"""
+    try:
+        # Verify the requesting user matches the user_id or is admin
+        current_user_id = session.get("user_id")
+        if not current_user_id:
+            return jsonify({"success": False, "message": "User not logged in"}), 401
+        
+        if current_user_id != user_id and not session.get("admin_logged_in"):
+            return jsonify({"success": False, "message": "Unauthorized"}), 403
+        
+        # Get pagination parameters
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get("per_page", 20, type=int)
+        per_page = min(per_page, 100)
+        
+        # Query with pagination
+        query = (
+            db.session.query(
+                Reservation,
+                IncubateeProduct.name.label("product_name"),
+                IncubateeProduct.image_path
+            )
+            .join(IncubateeProduct, Reservation.product_id == IncubateeProduct.product_id)
+            .filter(Reservation.user_id == user_id)
+            .order_by(Reservation.reserved_at.desc())
+        )
+        
+        paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+        
+        reservations = []
+        for reservation, product_name, image_path in paginated.items:
+            reservations.append({
+                "reservation_id": reservation.reservation_id,
+                "product_id": reservation.product_id,
+                "product_name": product_name,
+                "image_path": image_path,
+                "quantity": reservation.quantity,
+                "status": reservation.status,
+                "reserved_at": reservation.reserved_at.isoformat() if reservation.reserved_at else None,
+                "rejected_reason": reservation.rejected_reason
+            })
+        
+        return jsonify({
+            "success": True,
+            "reservations": reservations,
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total": paginated.total,
+                "pages": paginated.pages
+            }
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching user reservations: {e}")
+        return jsonify({"success": False, "message": "Server error"}), 500

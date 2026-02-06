@@ -725,6 +725,105 @@
     border: 2px solid var(--border-light);
     transition: all 0.3s ease;
 }
+/* Add to cart.html styles */
+.pagination-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    color: white !important;
+    border-color: #10b981 !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.pagination-btn:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+/* Style for reservation items */
+.reservation-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+}
+
+.reservation-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: #d1fae5;
+}
+
+.reservation-info {
+    flex: 1;
+}
+
+.reservation-name {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 15px;
+    margin-bottom: 8px;
+}
+
+.reservation-meta {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-approved {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-completed {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.reservation-actions {
+    margin-top: 12px;
+}
+
+.action-btn {
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-btn.secondary {
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    color: #4b5563;
+}
+
+.action-btn.secondary:hover {
+    background: #e5e7eb;
+}
 </style>
 
 <!-- ===== SHOPEE-STYLE CART SIDEBAR CONTENT ===== -->
