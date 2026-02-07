@@ -243,15 +243,41 @@ class ProductInteractions {
     async updateCartCount() {
         try {
             const response = await fetch('/cart/count');
-            const data = await response.json();
-            if (data.success) {
+            
+            // Handle 401 Unauthorized by hiding the badge
+            if (response.status === 401) {
                 const badge = document.getElementById('cartCountBadge');
                 if (badge) {
+                    badge.style.display = 'none';
+                }
+                return;
+            }
+            
+            // Only parse JSON if response is OK
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            const badge = document.getElementById('cartCountBadge');
+            
+            if (badge) {
+                if (data.success) {
                     badge.textContent = data.count;
                     badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+                } else {
+                    // Hide badge if request failed
+                    badge.style.display = 'none';
                 }
             }
-        } catch (error) { console.error('Error updating cart count:', error); }
+        } catch (error) { 
+            console.error('Error updating cart count:', error);
+            // Hide badge on any error
+            const badge = document.getElementById('cartCountBadge');
+            if (badge) {
+                badge.style.display = 'none';
+            }
+        }
     }
     
     showNotification(message, type = 'info') {
@@ -360,21 +386,252 @@ function addCartButtonStyles() {
     document.head.appendChild(styleSheet);
 }
 
-// ================= INITIALIZE EVERYTHING =================
+// Initialize everything when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing...');
+  console.log('DOM loaded, initializing...');
+  
+  // Initialize carousel
+  if (document.querySelector('.featured-products-carousel')) {
+    window.featuredCarousel = new FeaturedProductsCarousel();
+    console.log('Carousel initialized');
+  }
+  
+  // Initialize product interactions
+  window.productInteractions = new ProductInteractions();
+  
+  // Add cart button styles
+  addCartButtonStyles();
+  manageLoadingStates();
+  
+  // Initialize hero animations
+  window.heroAnimations = new HeroAnimations();
+  
+  // Add scroll indicator to hero section
+  const heroSection = document.querySelector('.hero');
+  if (heroSection) {
+    const scrollIndicator = document.createElement('div');
+    scrollIndicator.className = 'scroll-indicator';
+    scrollIndicator.innerHTML = `
+      <div class="mouse">
+        <div class="wheel"></div>
+      </div>
+      <span>Scroll to explore</span>
+    `;
+    heroSection.appendChild(scrollIndicator);
+  }
+});
+// ================= HERO ANIMATIONS =================
+class HeroAnimations {
+  constructor() {
+    this.typewriterTexts = [
+      'Agri-Aqua Mart',
+      'Agri-Aqua Store',
+      'Agri-Aqua Hub',
+      'Agri-Aqua Market',
+      'Agri-Aqua Shop'
+    ];
     
-    // Initialize carousel
-    if (document.querySelector('.featured-products-carousel')) {
-        window.featuredCarousel = new FeaturedProductsCarousel();
-        console.log('Carousel initialized');
+    this.qualityWords = [
+      'Smart', 'Fresh', 'Sustainable', 'Premium', 'Healthy'
+    ];
+    
+    this.benefitWords = [
+      'Direct from Farmers',
+      'Eco-Friendly',
+      '24/7 Convenience',
+      'Farm-to-Table',
+      'Locally Sourced'
+    ];
+    
+    this.currentTypeIndex = 0;
+    this.currentQualityIndex = 0;
+    this.currentBenefitIndex = 0;
+    this.isDeleting = false;
+    this.typeText = '';
+    this.speed = 100;
+    
+    this.init();
+  }
+  
+  init() {
+    this.startTypewriter();
+    this.startWordChanger();
+    this.setupScrollAnimations();
+    this.setupFloatingElements();
+  }
+  
+  startTypewriter() {
+    const typewriterElement = document.getElementById('typewriter-text');
+    const cursor = document.querySelector('.typing-cursor');
+    if (!typewriterElement || !cursor) return;
+    
+    // Add typing class for better animation
+    cursor.classList.add('modern'); // or 'block' or keep as text
+    
+    const type = () => {
+      const currentText = this.typewriterTexts[this.currentTypeIndex];
+      
+      if (this.isDeleting) {
+        this.typeText = currentText.substring(0, this.typeText.length - 1);
+      } else {
+        this.typeText = currentText.substring(0, this.typeText.length + 1);
+      }
+      
+      typewriterElement.textContent = this.typeText;
+      
+      // Position cursor correctly using CSS animation
+      this.positionCursor(typewriterElement, cursor);
+      
+      let delta = this.speed;
+      
+      if (!this.isDeleting && this.typeText === currentText) {
+        delta = 2000; // Pause at end
+        this.isDeleting = true;
+        // Cursor blinks faster when paused
+        cursor.style.animation = 'cursorBlink 0.6s infinite, cursorPulse 2s infinite';
+      } else if (this.isDeleting && this.typeText === '') {
+        this.isDeleting = false;
+        this.currentTypeIndex = (this.currentTypeIndex + 1) % this.typewriterTexts.length;
+        delta = 500;
+        // Reset cursor animation speed
+        cursor.style.animation = 'cursorBlink 1.2s infinite, cursorPulse 2s infinite';
+      } else if (this.isDeleting) {
+        delta = this.speed / 2;
+      }
+      
+      setTimeout(() => type(), delta);
+    };
+    
+    setTimeout(() => type(), 1000);
+  }
+
+positionCursor(textElement, cursorElement) {
+  // Create a temporary span to measure text width
+  const tempSpan = document.createElement('span');
+  tempSpan.style.cssText = `
+    position: absolute;
+    visibility: hidden;
+    white-space: nowrap;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+  `;
+  tempSpan.textContent = this.typeText;
+  document.body.appendChild(tempSpan);
+  
+  // Get the text width
+  const textWidth = tempSpan.offsetWidth;
+  
+  // Remove temp span
+  document.body.removeChild(tempSpan);
+  
+  // Position cursor at the end of text
+  cursorElement.style.transform = `translateX(${textWidth}px) translateY(-1px)`;
+}
+  
+  startWordChanger() {
+    const qualityElement = document.getElementById('changing-word');
+    const benefitElement = document.getElementById('benefit-word');
+    const indicators = document.querySelectorAll('.word-indicator');
+    
+    if (!qualityElement || !benefitElement) return;
+    
+    setInterval(() => {
+      // Change quality word
+      this.currentQualityIndex = (this.currentQualityIndex + 1) % this.qualityWords.length;
+      this.animateWordChange(qualityElement, this.qualityWords[this.currentQualityIndex], 'quality');
+      
+      // Change benefit word
+      this.currentBenefitIndex = (this.currentBenefitIndex + 1) % this.benefitWords.length;
+      this.animateWordChange(benefitElement, this.benefitWords[this.currentBenefitIndex], 'benefit');
+      
+      // Update indicators
+      indicators.forEach(indicator => {
+        const word = indicator.getAttribute('data-word');
+        const type = indicator.getAttribute('data-type');
+        
+        if (type === 'quality' && word === this.qualityWords[this.currentQualityIndex]) {
+          indicator.classList.add('active');
+        } else if (type === 'benefit' && word === this.benefitWords[this.currentBenefitIndex]) {
+          indicator.classList.add('active');
+        } else {
+          indicator.classList.remove('active');
+        }
+      });
+    }, 3000);
+  }
+  
+  animateWordChange(element, newWord, type) {
+    element.classList.remove('active');
+    
+    setTimeout(() => {
+      element.textContent = newWord;
+      element.style.opacity = '0';
+      element.style.transform = 'translateY(20px)';
+      
+      requestAnimationFrame(() => {
+        element.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+        element.style.opacity = '1';
+        element.style.transform = 'translateY(0)';
+        
+        setTimeout(() => {
+          element.classList.add('active');
+        }, 100);
+      });
+    }, 500);
+  }
+  
+  setupScrollAnimations() {
+    const video = document.querySelector('.floating-video');
+    const container = document.querySelector('.video-container');
+    
+    if (video && container) {
+      window.addEventListener('scroll', () => {
+        const scrolled = window.pageYOffset;
+        const rate = scrolled * -0.5;
+        
+        video.style.transform = `translateY(${rate}px) rotate(${rate * 0.1}deg)`;
+        container.style.transform = `perspective(1000px) rotateY(${rate * 0.05}deg) rotateX(${rate * 0.02}deg)`;
+      });
     }
+  }
+  
+  setupFloatingElements() {
+    const elements = document.querySelectorAll('.floating-element');
     
-    // Initialize product interactions
-    window.productInteractions = new ProductInteractions();
+    elements.forEach((element, index) => {
+      // Randomize animations slightly
+      const duration = 6 + Math.random() * 2;
+      const delay = index * 0.5;
+      
+      element.style.animation = `float ${duration}s ease-in-out ${delay}s infinite`;
+      
+      // Add hover effect
+      element.addEventListener('mouseenter', () => {
+        element.style.animationPlayState = 'paused';
+        element.style.transform = 'scale(1.2) rotate(15deg)';
+      });
+      
+      element.addEventListener('mouseleave', () => {
+        element.style.animationPlayState = 'running';
+        element.style.transform = '';
+      });
+    });
+  }
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  window.heroAnimations = new HeroAnimations();
+  
+  // Add scroll trigger for background elements
+  window.addEventListener('scroll', () => {
+    const scrolled = window.pageYOffset / 1000;
+    const bgElements = document.querySelectorAll('.hero-bg-element');
     
-    // Add cart button styles
-    addCartButtonStyles();
-    
-    manageLoadingStates();
+    bgElements.forEach((element, index) => {
+      const rate = scrolled * (index + 1) * 0.5;
+      element.style.transform = `translateY(${rate}px) rotate(${rate}deg)`;
+    });
+  });
 });

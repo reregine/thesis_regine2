@@ -341,11 +341,14 @@ body {
 
 .product-card {
     background: white;
-    border-radius: 20px;
+    border-radius: 15px;
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     transition: all 0.3s ease;
     border: 1px solid rgba(34, 197, 94, 0.1);
+    width: 280px;
+    height: 90%; /* Ensure all cards stretch to same height */
+    min-height: 480px; /* Set minimum height */
 }
 
 .product-card:hover {
@@ -364,6 +367,7 @@ body {
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s ease;
+    border-radius: 15px;
 }
 
 .product-card:hover .product-image img {
@@ -371,7 +375,7 @@ body {
 }
 
 .product-info {
-    padding: 1.5rem;
+    padding: 0.5rem;
     text-align: center;
 }
 
@@ -388,7 +392,20 @@ body {
     color: #22c55e;
     margin-bottom: 1rem;
 }
-
+.product-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+.product-details {
+    font-size: 0.85rem; /* Slightly smaller font */
+    color: #555;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 .add-to-cart {
     background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
     color: white;

@@ -22,18 +22,22 @@ def cart_page():
 def cart_count():
     try:
         user_id = session.get("user_id")
+        
+        # For non-logged in users, check if there's a cart in session
         if not user_id:
-            return jsonify({"success": False, "message": "User not logged in"}), 401
+            # You could check for a session cart here if you have one
+            # Otherwise return 0
+            return jsonify({"success": True, "count": 0,"authenticated": False}), 200
 
         # Count DISTINCT products in the user's cart
         total_items = db.session.query(db.func.count(Cart.product_id))\
             .filter(Cart.user_id == user_id).scalar() or 0
 
-        return jsonify({"success": True, "count": total_items}), 200
+        return jsonify({"success": True, "count": total_items,"authenticated": True}), 200
 
     except Exception as e:
         current_app.logger.error(f"Error fetching cart count: {e}")
-        return jsonify({"success": False, "message": "Server error"}), 500
+        return jsonify({"success": True, "count": 0,"authenticated": False,"error": str(e)}), 200
     
 @cart_bp.route("/add", methods=["POST"])
 def add_to_cart():
