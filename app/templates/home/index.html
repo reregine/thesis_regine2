@@ -132,7 +132,7 @@
   </section>
 
   <!-- ================= FEATURED PRODUCTS CAROUSEL ================= -->
-  <section class="featured-products-carousel" id="featured-products">
+  <section class="featured-products-carousel scroll-animate" id="featured-products">
     <div class="section-header">
       <h2 class="section-title">Featured Products</h2>
       <p class="section-subtitle">Discover this week's best sellers and popular choices from our incubatees</p>
@@ -283,7 +283,7 @@
   </section>
 
   <!-- ================= CALL FOR INCUBATEES ================= -->
-  <section class="call-section" id="apply">
+  <section class="call-section scroll-animate scroll-trigger" id="apply">
     <div class="call-content">
       <h2 class="call-title">Call for Batch 5 Incubatees!</h2>
       <p class="call-text">
@@ -302,7 +302,7 @@
   </section>
 
   <!-- ================= ABOUT PREVIEW SECTION ================= -->
-  <section class="about-preview" id="about-preview">
+  <section class="about-preview scroll-animate scroll-trigger" id="about-preview">
     <div class="container">
       <div class="about-preview-content">
         <div class="about-text">
@@ -339,7 +339,7 @@
   </section>
 
   <!-- ================= CONTACT PREVIEW SECTION ================= -->
-  <section class="contact-preview" id="contact-preview">
+  <section class="contact-preview scroll-animate scroll-trigger" id="contact-preview">
     <div class="container">
       <div class="contact-preview-content">
         <div class="contact-text">
@@ -403,6 +403,10 @@
       </div>
     </div>
   </footer>
+  <!-- Back to Top Button -->
+  <button class="back-to-top" aria-label="Back to top">
+    <i class="fas fa-chevron-up"></i>
+  </button>
   <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
   <!-- Add this right before the closing </body> tag, after your existing scripts -->
   <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>

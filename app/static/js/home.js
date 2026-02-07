@@ -399,6 +399,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize product interactions
   window.productInteractions = new ProductInteractions();
   
+  // Initialize scroll animations
+  window.scrollAnimations = new ScrollAnimations();
+
   // Add cart button styles
   addCartButtonStyles();
   manageLoadingStates();
@@ -419,7 +422,80 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     heroSection.appendChild(scrollIndicator);
   }
+  setupScrollEffects();
+  setupBackToTop();
 });
+// Additional scroll effects
+function setupScrollEffects() {
+  // Card hover effects on scroll
+  const cards = document.querySelectorAll('.featured-product-card');
+  
+  window.addEventListener('scroll', () => {
+    cards.forEach(card => {
+      const rect = card.getBoundingClientRect();
+      const isVisible = rect.top < window.innerHeight * 0.8 && rect.bottom > 0;
+      
+      if (isVisible) {
+        card.classList.add('scroll-hover');
+      } else {
+        card.classList.remove('scroll-hover');
+      }
+    });
+    
+    // Hide scroll indicator when scrolling down
+    const scrollIndicator = document.querySelector('.scroll-indicator');
+    if (scrollIndicator && window.scrollY > 100) {
+      scrollIndicator.classList.add('hidden');
+    } else if (scrollIndicator) {
+      scrollIndicator.classList.remove('hidden');
+    }
+  });
+  
+  // Text reveal on scroll
+  const textReveals = document.querySelectorAll('.text-reveal');
+  const textObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('revealed');
+      }
+    });
+  }, { threshold: 0.5 });
+  
+  textReveals.forEach(reveal => textObserver.observe(reveal));
+  
+  // Gradient border animation
+  const gradientBorders = document.querySelectorAll('.gradient-border');
+  const borderObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('scroll-active');
+      }
+    });
+  }, { threshold: 0.3 });
+  
+  gradientBorders.forEach(border => borderObserver.observe(border));
+}
+// Back to Top functionality
+function setupBackToTop() {
+  const backToTopBtn = document.querySelector('.back-to-top');
+  if (!backToTopBtn) return;
+  
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 300) {
+      backToTopBtn.classList.add('visible');
+    } else {
+      backToTopBtn.classList.remove('visible');
+    }
+  });
+  
+  backToTopBtn.addEventListener('click', () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  });
+}
+
 // ================= HERO ANIMATIONS =================
 class HeroAnimations {
   constructor() {
@@ -438,7 +514,7 @@ class HeroAnimations {
     this.benefitWords = [
       'Direct from Farmers',
       'Eco-Friendly',
-      '24/7 Convenience',
+      '12/7 Convenience',
       'Farm-to-Table',
       'Locally Sourced'
     ];
@@ -635,3 +711,324 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+// ================= SCROLL ANIMATIONS =================
+class ScrollAnimations {
+  constructor() {
+    this.observer = null;
+    this.scrollElements = [];
+    this.lastScrollY = window.scrollY;
+    this.scrollingUp = false;
+    
+    this.init();
+  }
+  
+  init() {
+    this.setupScrollObserver();
+    this.setupScrollEvents();
+    this.animateOnLoad();
+  }
+  
+  setupScrollObserver() {
+    // Create intersection observer for scroll animations
+    this.observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('scroll-visible');
+          entry.target.classList.add('animated');
+          
+          // Add staggered delay for child elements
+          const children = entry.target.querySelectorAll('.stagger-child');
+          children.forEach((child, index) => {
+            child.style.animationDelay = `${index * 0.1}s`;
+          });
+        }
+      });
+    }, {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    });
+    
+    // Observe all scrollable elements
+    document.querySelectorAll('.scroll-animate').forEach(el => {
+      this.observer.observe(el);
+    });
+  }
+  
+  setupScrollEvents() {
+    let ticking = false;
+    
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          this.handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    });
+    
+    // Parallax effect for hero section
+    this.setupParallaxEffect();
+    
+    // Progress scroll indicator
+    this.setupScrollProgress();
+  }
+  
+  handleScroll() {
+    const currentScrollY = window.scrollY;
+    this.scrollingUp = currentScrollY < this.lastScrollY;
+    this.lastScrollY = currentScrollY;
+    
+    // Add/remove scroll class to body
+    if (currentScrollY > 100) {
+      document.body.classList.add('scrolled');
+    } else {
+      document.body.classList.remove('scrolled');
+    }
+    
+    // Add scroll direction class
+    if (this.scrollingUp) {
+      document.body.classList.add('scrolling-up');
+      document.body.classList.remove('scrolling-down');
+    } else {
+      document.body.classList.add('scrolling-down');
+      document.body.classList.remove('scrolling-up');
+    }
+    
+    // Update progress bar
+    this.updateScrollProgress(currentScrollY);
+    
+    // Trigger scroll animations
+    this.triggerScrollAnimations(currentScrollY);
+  }
+  
+  setupParallaxEffect() {
+    const heroImage = document.querySelector('.floating-image');
+    const heroSection = document.querySelector('.hero');
+    
+    if (heroImage && heroSection) {
+      window.addEventListener('scroll', () => {
+        const scrolled = window.pageYOffset;
+        const rate = scrolled * 0.3;
+        
+        // Parallax effect for hero image
+        heroImage.style.transform = `translateY(${rate * 0.5}px) scale(${1 - rate * 0.0005})`;
+        
+        // Parallax for floating elements
+        document.querySelectorAll('.floating-element').forEach((el, index) => {
+          el.style.transform = `translateY(${rate * (0.2 + index * 0.05)}px)`;
+        });
+      });
+    }
+  }
+  
+  setupScrollProgress() {
+    // Create progress bar if it doesn't exist
+    if (!document.querySelector('.scroll-progress')) {
+      const progressBar = document.createElement('div');
+      progressBar.className = 'scroll-progress';
+      progressBar.innerHTML = '<div class="scroll-progress-bar"></div>';
+      document.body.appendChild(progressBar);
+      
+      // Add styles for progress bar
+      this.addProgressBarStyles();
+    }
+  }
+  
+  updateScrollProgress(scrollY) {
+    const progressBar = document.querySelector('.scroll-progress-bar');
+    if (!progressBar) return;
+    
+    const windowHeight = window.innerHeight;
+    const docHeight = document.documentElement.scrollHeight - windowHeight;
+    const scrollPercent = (scrollY / docHeight) * 100;
+    
+    progressBar.style.width = `${scrollPercent}%`;
+    
+    // Add glow effect when scrolling
+    if (scrollPercent > 0) {
+      progressBar.classList.add('active');
+    } else {
+      progressBar.classList.remove('active');
+    }
+  }
+  
+  triggerScrollAnimations(scrollY) {
+    // Animate sections based on scroll position
+    const sections = document.querySelectorAll('.scroll-trigger');
+    
+    sections.forEach(section => {
+      const rect = section.getBoundingClientRect();
+      const isVisible = rect.top < window.innerHeight * 0.8 && rect.bottom > 0;
+      
+      if (isVisible) {
+        section.classList.add('in-view');
+        
+        // Add direction-specific animations
+        if (this.scrollingUp) {
+          section.classList.add('scroll-up');
+          section.classList.remove('scroll-down');
+        } else {
+          section.classList.add('scroll-down');
+          section.classList.remove('scroll-up');
+        }
+      } else {
+        section.classList.remove('in-view');
+      }
+    });
+    
+    // Sticky header effect
+    this.handleStickyHeader(scrollY);
+  }
+  
+  handleStickyHeader(scrollY) {
+    const header = document.querySelector('.header');
+    if (!header) return;
+    
+    if (scrollY > 100) {
+      header.classList.add('sticky');
+      header.classList.add('scrolled-header');
+    } else {
+      header.classList.remove('sticky');
+      header.classList.remove('scrolled-header');
+    }
+  }
+  
+  animateOnLoad() {
+    // Animate elements on page load
+    setTimeout(() => {
+      document.body.classList.add('page-loaded');
+      
+      // Animate hero section
+      const hero = document.querySelector('.hero');
+      if (hero) {
+        hero.classList.add('loaded');
+      }
+    }, 100);
+  }
+  
+  addProgressBarStyles() {
+    if (document.getElementById('scroll-progress-styles')) return;
+    
+    const styles = `
+      .scroll-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: transparent;
+        z-index: 9999;
+        pointer-events: none;
+      }
+      
+      .scroll-progress-bar {
+        width: 0%;
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent-color), var(--secondary-color));
+        transition: width 0.2s ease;
+        box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+      }
+      
+      .scroll-progress-bar.active {
+        box-shadow: 0 0 15px rgba(34, 197, 94, 0.8);
+      }
+      
+      /* Sticky header styles */
+      .header.sticky {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        animation: slideDown 0.3s ease-out;
+        z-index: 1000;
+      }
+      
+      .header.scrolled-header {
+        padding: 0.5rem 0;
+      }
+      
+      @keyframes slideDown {
+        from { transform: translateY(-100%); }
+        to { transform: translateY(0); }
+      }
+      
+      /* Scroll animation classes */
+      .scroll-animate {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+      }
+      
+      .scroll-animate.scroll-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      
+      .scroll-trigger {
+        transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      
+      .scroll-trigger.in-view {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      
+      .scroll-trigger.scroll-up {
+        animation: slideUp 0.6s ease-out;
+      }
+      
+      .scroll-trigger.scroll-down {
+        animation: slideDown 0.6s ease-out;
+      }
+      
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(50px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      .stagger-child {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.5s ease;
+      }
+      
+      .scroll-visible .stagger-child {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      
+      /* Body scroll classes */
+      body.scrolled {
+        padding-top: 70px;
+      }
+      
+      body.scrolling-down .header {
+        transform: translateY(0);
+      }
+      
+      body.scrolling-up .header {
+        transform: translateY(0);
+      }
+      
+      /* Parallax elements */
+      .parallax-element {
+        transition: transform 0.3s ease-out;
+      }
+    `;
+    
+    const styleSheet = document.createElement('style');
+    styleSheet.id = 'scroll-progress-styles';
+    styleSheet.textContent = styles;
+    document.head.appendChild(styleSheet);
+  }
+}

@@ -27,7 +27,6 @@ def login():
     
     return response
 
-
 @login_bp.route("/authenticate", methods=["POST"])
 def authenticate():
     """Handle login"""
@@ -48,10 +47,7 @@ def authenticate():
             session['user_logged_in'] = True
             session['user_id'] = user.id_no
             session['username'] = user.username
-            return jsonify({
-                'success': True,
-                'message': f'✅ Welcome back, {user.username}!',
-                'redirect_url': url_for('home.index')})
+            return jsonify({'success': True,'message': f'✅ Welcome back, {user.username}!','redirect_url': url_for('home.index')})
 
         return jsonify({'success': False, 'message': '❌ Invalid username or password'}), 401
 
@@ -123,4 +119,3 @@ def login_status():
         return jsonify({"success": True,"admin": True,"username": session.get("admin_username"),"role": "admin"})
     else:
         return jsonify({"success": False, "message": "Not logged in"}), 401
-

@@ -13,79 +13,48 @@ def get_current_user():
             user_id = session.get("user_id")
             username = session.get("username")
             
-            return jsonify({
-                'success': True,
-                'user_id': user_id,
-                'username': username
-            })
+            return jsonify({'success': True,'user_id': user_id,'username': username})
         else:
-            return jsonify({
-                'success': False, 
-                'message': 'Not logged in'
-            }), 401
+            return jsonify({'success': False, 'message': 'Not logged in'}), 401
             
     except Exception as e:
         current_app.logger.error(f"Error getting current user: {e}")
-        return jsonify({
-            'success': False, 
-            'message': 'Server error'
-        }), 500
+        return jsonify({'success': False, 'message': 'Server error'}), 500
 
 @user_bp.route("/profile", methods=["GET"])
 def get_user_profile():
     """Get user profile data"""
     try:
         if not session.get("user_logged_in"):
-            return jsonify({
-                'success': False, 
-                'message': 'Not logged in'
-            }), 401
+            return jsonify({'success': False, 'message': 'Not logged in'}), 401
 
         user_id = session.get("user_id")
         user = User.query.get(user_id)
         
         if not user:
-            return jsonify({
-                'success': False, 
-                'message': 'User not found'
-            }), 404
+            return jsonify({'success': False, 'message': 'User not found'}), 404
 
         # Return basic profile info (extend this based on your user model fields)
-        profile_data = {
-            'username': user.username,
-            'created_at': user.created_at.isoformat() if user.created_at else None
-        }
+        profile_data = {'username': user.username,'created_at': user.created_at.isoformat() if user.created_at else None}
 
-        return jsonify({
-            'success': True,
-            'profile': profile_data
-        })
+        return jsonify({'success': True,'profile': profile_data})
 
     except Exception as e:
         current_app.logger.error(f"Error getting user profile: {e}")
-        return jsonify({
-            'success': False, 
-            'message': 'Server error'
-        }), 500
+        return jsonify({'success': False, 'message': 'Server error'}), 500
 
 @user_bp.route("/profile", methods=["POST"])
 def update_user_profile():
     """Update user profile"""
     try:
         if not session.get("user_logged_in"):
-            return jsonify({
-                'success': False, 
-                'message': 'Not logged in'
-            }), 401
+            return jsonify({'success': False, 'message': 'Not logged in'}), 401
 
         user_id = session.get("user_id")
         user = User.query.get(user_id)
         
         if not user:
-            return jsonify({
-                'success': False, 
-                'message': 'User not found'
-            }), 404
+            return jsonify({'success': False, 'message': 'User not found'}), 404
 
         data = request.get_json()
         
@@ -95,37 +64,25 @@ def update_user_profile():
         
         db.session.commit()
 
-        return jsonify({
-            'success': True,
-            'message': 'Profile updated successfully'
-        })
+        return jsonify({'success': True,'message': 'Profile updated successfully'})
 
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error updating user profile: {e}")
-        return jsonify({
-            'success': False, 
-            'message': 'Server error'
-        }), 500
+        return jsonify({'success': False, 'message': 'Server error'}), 500
 
 @user_bp.route("/change-password", methods=["POST"])
 def change_password():
     """Change user password"""
     try:
         if not session.get("user_logged_in"):
-            return jsonify({
-                'success': False, 
-                'message': 'Not logged in'
-            }), 401
+            return jsonify({'success': False, 'message': 'Not logged in'}), 401
 
         user_id = session.get("user_id")
         user = User.query.get(user_id)
         
         if not user:
-            return jsonify({
-                'success': False, 
-                'message': 'User not found'
-            }), 404
+            return jsonify({'success': False, 'message': 'User not found'}), 404
 
         data = request.get_json()
         current_password = data.get('currentPassword')
@@ -134,50 +91,32 @@ def change_password():
 
         # Validate input
         if not all([current_password, new_password, confirm_password]):
-            return jsonify({
-                'success': False, 
-                'message': 'All fields are required'
-            }), 400
+            return jsonify({'success': False, 'message': 'All fields are required'}), 400
 
         if new_password != confirm_password:
-            return jsonify({
-                'success': False, 
-                'message': 'New passwords do not match'
-            }), 400
+            return jsonify({'success': False, 'message': 'New passwords do not match'}), 400
 
         # Check current password
         if not user.check_password(current_password):
-            return jsonify({
-                'success': False, 
-                'message': 'Current password is incorrect'
-            }), 400
+            return jsonify({'success': False, 'message': 'Current password is incorrect'}), 400
 
         # Set new password
         user.set_password(new_password)
         db.session.commit()
 
-        return jsonify({
-            'success': True,
-            'message': 'Password changed successfully'
-        })
+        return jsonify({'success': True,'message': 'Password changed successfully'})
 
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error changing password: {e}")
-        return jsonify({
-            'success': False, 
-            'message': 'Server error'
-        }), 500
+        return jsonify({'success': False, 'message': 'Server error'}), 500
 
 @user_bp.route("/stats", methods=["GET"])
 def get_user_stats():
     """Get user statistics for dashboard"""
     try:
         if not session.get("user_logged_in"):
-            return jsonify({
-                'success': False, 
-                'message': 'Not logged in'
-            }), 401
+            return jsonify({'success': False, 'message': 'Not logged in'}), 401
 
         user_id = session.get("user_id")
         
@@ -188,13 +127,8 @@ def get_user_stats():
             'member_since': None
         }
 
-        return jsonify({
-            'success': True,
-            'stats': stats
-        })
+        return jsonify({'success': True,'stats': stats})
 
     except Exception as e:
         current_app.logger.error(f"Error getting user stats: {e}")
-        return jsonify({
-            'success': False, 
-            'message': 'Server error'}), 500
+        return jsonify({'success': False, 'message': 'Server error'}), 500
