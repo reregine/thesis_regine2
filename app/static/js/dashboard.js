@@ -862,33 +862,44 @@ class UserDashboard {
     }
 
     async openDashboard() {
-        const modal = document.getElementById('dashboardModal');
-        if (!modal) {
-            console.error('Dashboard modal not found');
-            return;
-        }
-        
-        // Check if user is logged in first
-        const userLoaded = await this.getCurrentUser();
-        if (!userLoaded) {
-            return; // Don't open dashboard if user is not authenticated
-        }
-        
-        modal.innerHTML = `
-            <div class="dashboard-loading">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading dashboard...</p>
-            </div>
-        `;
-        
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
+        try {
+            // First check if user is logged in by calling your auth endpoint
+            const authCheck = await fetch('/auth/check');
+            const authResult = await authCheck.json();
+            
+            if (!authResult.authenticated) {
+                // User is not logged in, redirect to login page
+                window.location.href = '/login';
+                return;
+            }
+            
+            // User is authenticated, proceed with opening dashboard
+            const modal = document.getElementById('dashboardModal');
+            if (!modal) {
+                console.error('Dashboard modal not found');
+                return;
+            }
+            
+            modal.innerHTML = `
+                <div class="dashboard-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading dashboard...</p>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
 
-        // Load dashboard content
-        this.loadDashboardContent().then(() => {
+            // Load dashboard content
+            await this.loadDashboardContent();
             // Initialize dashboard functionality
-            this.init();
-        });
+            await this.init();
+            
+        } catch (error) {
+            console.error('Error opening dashboard:', error);
+            // If there's an error checking auth, redirect to login
+            window.location.href = '/login';
+        }
     }
 
     async loadDashboardContent() {
