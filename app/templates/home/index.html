@@ -17,6 +17,10 @@
       <div class="logo">
         <img src="{{ url_for('static', filename='images/agrilogo.png') }}" alt="ATBI logo" class="logo-img">
       </div>
+      <!--button for mobile menu -->
+      <button class="menu-toggle" aria-label="Menu">
+          <i class="fas fa-bars"></i>
+      </button>
       <nav class="nav-menu">
         <ul class="nav-list">
           <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>

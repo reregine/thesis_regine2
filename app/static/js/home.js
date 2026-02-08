@@ -1032,3 +1032,87 @@ class ScrollAnimations {
     document.head.appendChild(styleSheet);
   }
 }
+
+// Mobile Menu Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const menuToggle = document.querySelector('.menu-toggle');
+    const navMenu = document.querySelector('.nav-menu');
+    const body = document.body;
+    
+    // Create overlay element
+    const overlay = document.createElement('div');
+    overlay.className = 'menu-overlay';
+    document.body.appendChild(overlay);
+    
+    // Toggle menu function
+    function toggleMenu() {
+        menuToggle.classList.toggle('active');
+        navMenu.classList.toggle('active');
+        overlay.classList.toggle('active');
+        body.classList.toggle('menu-open');
+    }
+    
+    // Add click event to menu toggle
+    if (menuToggle) {
+        menuToggle.addEventListener('click', toggleMenu);
+    }
+    
+    // Close menu when clicking overlay
+    overlay.addEventListener('click', toggleMenu);
+    
+    // Close menu when clicking a nav link (on mobile)
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth <= 768) {
+                toggleMenu();
+            }
+        });
+    });
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+            // Close mobile menu on larger screens
+            menuToggle.classList.remove('active');
+            navMenu.classList.remove('active');
+            overlay.classList.remove('active');
+            body.classList.remove('menu-open');
+        }
+    });
+    
+    // Fix for iOS Safari 100vh issue
+    function setVH() {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    
+    setVH();
+    window.addEventListener('resize', setVH);
+    
+    // Fix for mobile carousel touch scrolling
+    const carouselTrack = document.querySelector('.carousel-track');
+    if (carouselTrack) {
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        
+        carouselTrack.addEventListener('touchstart', (e) => {
+            isDown = true;
+            startX = e.touches[0].pageX - carouselTrack.offsetLeft;
+            scrollLeft = carouselTrack.scrollLeft;
+        });
+        
+        carouselTrack.addEventListener('touchmove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.touches[0].pageX - carouselTrack.offsetLeft;
+            const walk = (x - startX) * 2;
+            carouselTrack.scrollLeft = scrollLeft - walk;
+        });
+        
+        carouselTrack.addEventListener('touchend', () => {
+            isDown = false;
+        });
+    }
+});
