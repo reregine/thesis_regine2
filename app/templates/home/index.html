@@ -17,10 +17,6 @@
       <div class="logo">
         <img src="{{ url_for('static', filename='images/agrilogo.png') }}" alt="ATBI logo" class="logo-img">
       </div>
-      <!--button for mobile menu -->
-      <button class="menu-toggle" aria-label="Menu">
-          <i class="fas fa-bars"></i>
-      </button>
       <nav class="nav-menu">
         <ul class="nav-list">
           <li><a href="{{ url_for('home.index') }}" class="nav-link">HOME</a></li>
@@ -439,9 +435,8 @@
     updateCartCountFromBackend();
     setInterval(updateCartCountFromBackend, 15000);
   </script>
-  <!-- Add after your existing scripts -->
   <script src="{{ url_for('static', filename='js/home.js') }}"></script>
-  <!-- Add this right after the carousel track in your index.html -->
+  <script src="{{ url_for('static', filename='js/scroll-nav.js') }}"></script>
   <script>
       console.log('Featured products data:', '{{ featured_products | tojson | safe }}');
   </script>
