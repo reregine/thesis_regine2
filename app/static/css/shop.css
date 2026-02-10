@@ -364,36 +364,6 @@
             border-color: #667eea;
         }
 
-.back-to-home {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 1rem 1.5rem;
-    border-radius: 50px;
-    text-decoration: none;
-    font-weight: 600;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-    transition: all 0.3s ease;
-    z-index: 1000;
-}
-
-.back-to-home:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-}
-
-/* Hide back-to-home button when cart modal is active */
-.cart-modal.active ~ .back-to-home,
-.cart-modal.active + .back-to-home,
-body.cart-modal-active .back-to-home {
-    display: none;
-    visibility: hidden;
-    opacity: 0;
-    pointer-events: none;
-}
-
         /* Responsive Design for Shop Page */
         @media (max-width: 768px) {
             .shop-title {
