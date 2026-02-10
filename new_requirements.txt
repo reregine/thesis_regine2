@@ -29,3 +29,43 @@ Known Products: Top 10 products per incubatee based on monthly customer reach
 
 to add a void need to add a retun on the complete order in the cart then add picture state the message why voided
 Then didto ma notify if voided sa kay admin kag dasun sa incubatee. Pakita picture dasun via the system to return the product
+
+-- Create void_products table
+CREATE TABLE void_products (
+    void_id SERIAL PRIMARY KEY,
+    reservation_id INTEGER NOT NULL REFERENCES reservations(reservation_id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id_no) ON DELETE CASCADE,
+    product_id INTEGER NOT NULL REFERENCES incubatee_products(product_id) ON DELETE CASCADE,
+    reason TEXT NOT NULL,
+    problem_description TEXT,
+    return_type VARCHAR(50) CHECK (return_type IN ('defective', 'wrong_item', 'damaged', 'not_as_described', 'other')),
+    image_path VARCHAR(500),
+    void_status VARCHAR(20) DEFAULT 'pending' CHECK (void_status IN ('pending', 'approved', 'rejected', 'refunded')),
+    requested_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    processed_at TIMESTAMPTZ,
+    processed_by INTEGER REFERENCES admin_profiles(admin_id),
+    admin_notes TEXT,
+    refund_amount NUMERIC(10, 2),
+    refund_method VARCHAR(50) CHECK (refund_method IN ('wallet', 'bank_transfer', 'cash')),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create index for faster queries
+CREATE INDEX idx_void_products_user_id ON void_products(user_id);
+CREATE INDEX idx_void_products_status ON void_products(void_status);
+CREATE INDEX idx_void_products_reservation_id ON void_products(reservation_id);
+
+-- Add trigger for updated_at
+CREATE OR REPLACE FUNCTION update_void_products_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_void_products_updated_at
+BEFORE UPDATE ON void_products
+FOR EACH ROW
+EXECUTE FUNCTION update_void_products_updated_at();

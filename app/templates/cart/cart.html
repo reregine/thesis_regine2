@@ -393,9 +393,35 @@
     background: #fff;
 }
 
+/* ===== STATUS TABS CONTAINER WITH SCROLLBAR ===== */
 .status-tabs-container {
     background: #f8fafc;
     border-bottom: 1px solid #e5e7eb;
+    overflow-x: auto; /* Add horizontal scrollbar */
+    overflow-y: hidden; /* Hide vertical scrollbar */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #10b981 #f1f1f1; /* Firefox */
+    position: relative; /* For scrollbar positioning */
+}
+
+/* Custom scrollbar for Webkit browsers (Chrome, Safari, Edge) */
+.status-tabs-container::-webkit-scrollbar {
+    height: 6px; /* Height of horizontal scrollbar */
+}
+
+.status-tabs-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.status-tabs-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-radius: 3px;
+}
+
+.status-tabs-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #059669, #047857);
 }
 
 .status-tabs {
@@ -405,9 +431,9 @@
 }
 
 .status-tab {
-    flex: 1;
+    flex: 0 0 auto; /* Don't grow, don't shrink, auto basis */
     text-align: center;
-    padding: 16px 0;
+    padding: 16px 24px; /* Increased horizontal padding */
     font-weight: 600;
     color: #6b7280;
     cursor: pointer;
@@ -415,8 +441,11 @@
     border-bottom: 3px solid transparent;
     position: relative;
     background: transparent;
+    white-space: nowrap; /* Prevent text wrapping */
+    min-width: 120px; /* Minimum width for each tab */
 }
 
+/* Hover and active states remain the same */
 .status-tab:hover {
     color: #059669;
     background: rgba(5, 150, 105, 0.05);
@@ -475,8 +504,76 @@
 .status-tab[data-tab="pending"] .tab-icon { content: "⏳"; }
 .status-tab[data-tab="approved"] .tab-icon { content: "✅"; }
 .status-tab[data-tab="completed"] .tab-icon { content: "📦"; }
+.status-tab[data-tab="void"] .tab-icon { content: "🔄"; color: #ef4444;}
 .status-tab[data-tab="rejected"] .tab-icon { content: "❌"; }
 
+.status-tab[data-tab="void"].active .tab-icon {
+    color: #dc2626; /* Darker red when active */
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+    .status-tab {
+        padding: 14px 20px; /* Slightly reduced padding on mobile */
+        min-width: 100px; /* Smaller minimum width on mobile */
+    }
+    
+    .tab-content {
+        gap: 6px;
+        font-size: 13px;
+    }
+    
+    .tab-icon {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .status-tab {
+        padding: 12px 16px;
+        min-width: 90px;
+    }
+    
+    .tab-text {
+        font-size: 12px;
+    }
+    
+    .tab-count {
+        font-size: 10px;
+        min-width: 16px;
+        height: 16px;
+    }
+}
+/* ===== SCROLLBAR VISIBILITY HINTS ===== */
+/* Add subtle gradient fade at edges to indicate scrollability */
+.status-tabs-container::before,
+.status-tabs-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.status-tabs-container::before {
+    left: 0;
+    background: linear-gradient(to right, #f8fafc, transparent);
+}
+
+.status-tabs-container::after {
+    right: 0;
+    background: linear-gradient(to left, #f8fafc, transparent);
+}
+
+/* Show gradient hints when scrollable */
+.status-tabs-container.scrollable::before,
+.status-tabs-container.scrollable::after {
+    opacity: 1;
+}
 /* Hover effects for better interactivity */
 .status-tab::before {
     content: '';
@@ -824,86 +921,131 @@
 .action-btn.secondary:hover {
     background: #e5e7eb;
 }
+/* ===== VOID/REFUND STYLES ===== */
+.void-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    color: white !important;
+    border: none !important;
+    padding: 6px 12px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3) !important;
+}
+
+.void-btn:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4) !important;
+}
+
+.void-btn:active {
+    transform: translateY(0) !important;
+}
+
+/* Void status badge colors */
+.status-void {
+    background: #fca5a5;
+    color: #7f1d1d;
+}
+
+/* Void tab icon color */
+.status-tab[data-tab="void"] .tab-icon {
+    color: #ef4444;
+}
+
+.status-tab[data-tab="void"].active .tab-icon {
+    color: #dc2626;
+}
 </style>
 
 <!-- ===== SHOPEE-STYLE CART SIDEBAR CONTENT ===== -->
-<div class="cart-sidebar active" id="cartSidebar">
-  <div class="cart-header">
-    <span>🛒 My Shopping Cart</span>
-    <button class="close-cart" id="closeCart">&times;</button>
-  </div>
-    <div class="reservation-notice">
-        <span class="icon">⏰</span>
-        <span>Reservations last for 3 days only. Pickup your reserved items within this period.</span>
+    <div class="cart-sidebar active" id="cartSidebar">
+    <div class="cart-header">
+        <span>🛒 My Shopping Cart</span>
+        <button class="close-cart" id="closeCart">&times;</button>
     </div>
-  <!-- 🛒 CART SECTION -->
-  <div class="cart-section">
-    <div class="cart-title">
-      <span>Cart Items</span>
-      <span id="cartCount" style="font-size:14px;color:var(--text-light);">0 items</span>
-    </div>
-
-    <!-- Container for dynamic cart items -->
-    <div class="cart-items" id="cartItems">
-      <p style="text-align:center;color:#999;">Loading your cart...</p>
-    </div>
-  </div>
-
-  <!-- CART FOOTER -->
-  <div class="cart-footer">
-    <div class="select-all">
-      <input type="checkbox" id="selectAll">
-      <label for="selectAll">Select All Items</label>
-    </div>
-    <div class="total" id="totalAmount">Total: ₱50</div>
-    <button class="reserve-btn" onclick="reserveSelectedItems()">Proceed to Reserve</button>
-  </div>
-
-  <!-- STATUS SECTION -->
-  <div class="status-section">
-    <div class="status-content" id="statusContent">
-      <!-- Status Tabs -->
-      <div class="status-tabs-container">
-          <div class="status-tabs">
-              <div class="status-tab active" data-tab="pending">
-                  <div class="tab-content">
-                      <span class="tab-icon">⏳</span>
-                      <span class="tab-text">Pending</span>
-                      <span class="tab-count">0</span>
-                  </div>
-              </div>
-              <div class="status-tab" data-tab="approved">
-                  <div class="tab-content">
-                      <span class="tab-icon">✅</span>
-                      <span class="tab-text">Approved</span>
-                      <span class="tab-count">0</span>
-                  </div>
-              </div>
-              <div class="status-tab" data-tab="completed">
-                  <div class="tab-content">
-                      <span class="tab-icon">📦</span>
-                      <span class="tab-text">Completed</span>
-                      <span class="tab-count">0</span>
-                  </div>
-              </div>
-              <div class="status-tab" data-tab="rejected">
-                  <div class="tab-content">
-                      <span class="tab-icon">❌</span>
-                      <span class="tab-text">Rejected</span>
-                      <span class="tab-count">0</span>
-                  </div>
-              </div>
-          </div>
-      </div>
-
-      <!-- Dynamic Content Area - This is where items will show -->
-      <div class="dynamic-content" id="dynamicContent">
-        <div class="empty-status">
-          <img src="https://cdn-icons-png.flaticon.com/512/4076/4076505.png" alt="No Reservations">
-          <p>No reservations yet</p>
-          <small>Your reservation history will appear here once you start reserving products.</small>
+        <div class="reservation-notice">
+            <span class="icon">⏰</span>
+            <span>Reservations last for 3 days only. Pickup your reserved items within this period.</span>
         </div>
-      </div>
+    <!-- 🛒 CART SECTION -->
+    <div class="cart-section">
+        <div class="cart-title">
+        <span>Cart Items</span>
+        <span id="cartCount" style="font-size:14px;color:var(--text-light);">0 items</span>
+        </div>
+
+        <!-- Container for dynamic cart items -->
+        <div class="cart-items" id="cartItems">
+        <p style="text-align:center;color:#999;">Loading your cart...</p>
+        </div>
     </div>
-  </div>
-</div>
+
+    <!-- CART FOOTER -->
+    <div class="cart-footer">
+        <div class="select-all">
+        <input type="checkbox" id="selectAll">
+        <label for="selectAll">Select All Items</label>
+        </div>
+        <div class="total" id="totalAmount">Total: ₱50</div>
+        <button class="reserve-btn" onclick="reserveSelectedItems()">Proceed to Reserve</button>
+    </div>
+
+    <!-- STATUS SECTION -->
+    <div class="status-section">
+        <div class="status-content" id="statusContent">
+        <!-- Status Tabs -->
+        <div class="status-tabs-container">
+            <div class="status-tabs">
+                <div class="status-tab active" data-tab="pending">
+                    <div class="tab-content">
+                        <span class="tab-icon">⏳</span>
+                        <span class="tab-text">Pending</span>
+                        <span class="tab-count">0</span>
+                    </div>
+                </div>
+                <div class="status-tab" data-tab="approved">
+                    <div class="tab-content">
+                        <span class="tab-icon">✅</span>
+                        <span class="tab-text">Approved</span>
+                        <span class="tab-count">0</span>
+                    </div>
+                </div>
+                <div class="status-tab" data-tab="completed">
+                    <div class="tab-content">
+                        <span class="tab-icon">📦</span>
+                        <span class="tab-text">Completed</span>
+                        <span class="tab-count">0</span>
+                    </div>
+                </div>
+                <div class="status-tab" data-tab="rejected">
+                    <div class="tab-content">
+                        <span class="tab-icon">❌</span>
+                        <span class="tab-text">Rejected</span>
+                        <span class="tab-count">0</span>
+                    </div>
+                </div>
+                <div class="status-tab" data-tab="void">
+                    <div class="tab-content">
+                        <span class="tab-icon">🔄</span>
+                        <span class="tab-text">Returns/Void</span>
+                        <span class="tab-count">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dynamic Content Area - This is where items will show -->
+        <div class="dynamic-content" id="dynamicContent">
+            <div class="empty-status">
+            <img src="https://cdn-icons-png.flaticon.com/512/4076/4076505.png" alt="No Reservations">
+            <p>No reservations yet</p>
+            <small>Your reservation history will appear here once you start reserving products.</small>
+            </div>
+        </div>
+        </div>
+    </div>
+    </div>

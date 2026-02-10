@@ -308,6 +308,18 @@ window.loadReservationsByStatus = async function(status, container, page = 1) {
                                     </button>
                                 </div>
                                 ` : ''}
+
+                                ${reservation.status === 'completed' ? `
+                                <div class="reservation-actions" style="margin-top: 12px;">
+                                    <button class="action-btn secondary" 
+                                            onclick="window.showVoidRequestModal(${reservation.reservation_id}, '${reservation.product_name.replace(/'/g, "\\'")}', ${reservation.quantity})"
+                                            style="padding: 6px 16px; border-radius: 8px; font-size: 13px; 
+                                                font-weight: 600; cursor: pointer; background: #f3f4f6; 
+                                                border: 1px solid #d1d5db; color: #dc2626; transition: all 0.3s;">
+                                        🔄 Request Return
+                                    </button>
+                                </div>
+                                ` : ''}
                             </div>
                             
                             ${reservation.rejected_reason ? `
@@ -599,7 +611,26 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
-
+document.addEventListener('DOMContentLoaded', function() {
+    const tabsContainer = document.querySelector('.status-tabs-container');
+    const tabs = document.querySelector('.status-tabs');
+    
+    function checkScrollable() {
+        if (tabsContainer && tabs) {
+            if (tabs.scrollWidth > tabsContainer.clientWidth) {
+                tabsContainer.classList.add('scrollable');
+            } else {
+                tabsContainer.classList.remove('scrollable');
+            }
+        }
+    }
+    
+    // Check on load
+    checkScrollable();
+    
+    // Check on window resize
+    window.addEventListener('resize', checkScrollable);
+});
 // ======================
 // Internal cart scripts - UPDATED WITH SMOOTH QUANTITY UPDATES
 // ======================
@@ -610,7 +641,7 @@ function attachCartScripts(container) {
     loadCartItems(container);
     // Status Tabs - Load reservation counts and set up click events
     window.initializeStatusTabs(container);
-
+    window.initializeVoidTab(container);
     // FIXED: Load cart items function - SINGLE DEFINITION
     async function loadCartItems(container) {
         const cartItemsContainer = container.querySelector("#cartItems");
@@ -1186,3 +1217,498 @@ window.reloadCart = async function() {
 
 // 🟢 Export functions for global access
 window.attachCartScripts = attachCartScripts;
+
+// 🟢 GLOBAL: Initialize void tab (add this near other tab initialization functions)
+window.initializeVoidTab = async function(container) {
+    const voidTab = container.querySelector('.status-tab[data-tab="void"]');
+    if (!voidTab) return;
+    
+    // Load void counts
+    await window.loadVoidCounts(container);
+    
+    // Set up click event
+    voidTab.addEventListener("click", async () => {
+        const tabs = container.querySelectorAll(".status-tab");
+        tabs.forEach((t) => t.classList.remove("active"));
+        voidTab.classList.add("active");
+        
+        await window.loadVoidRequests(container);
+    });
+};
+
+// 🟢 GLOBAL: Load void counts
+window.loadVoidCounts = async function(container) {
+    try {
+        const res = await fetch(`/void/count`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
+        const data = await res.json();
+        if (data.success) {
+            const counts = data.counts;
+            const voidTab = container.querySelector(`.status-tab[data-tab="void"]`);
+            if (voidTab) {
+                const badge = voidTab.querySelector('.tab-count');
+                if (badge) {
+                    const totalCount = Object.values(counts).reduce((a, b) => a + b, 0);
+                    badge.textContent = totalCount;
+                    badge.style.display = totalCount > 0 ? 'inline-flex' : 'none';
+                }
+            }
+            return counts;
+        }
+    } catch (err) {
+        console.error("❌ Error loading void counts:", err);
+        return { pending: 0, approved: 0, rejected: 0, refunded: 0 };
+    }
+};
+
+// 🟢 GLOBAL: Load void requests
+window.loadVoidRequests = async function(container, page = 1) {
+    const dynamicContent = container.querySelector("#dynamicContent");
+    if (!dynamicContent) return;
+    
+    try {
+        dynamicContent.innerHTML = `
+            <div style="text-align:center;padding:40px 20px;color:#666;">
+                <div style="font-size:32px;margin-bottom:12px;">📋</div>
+                <p>Loading void/return requests...</p>
+            </div>
+        `;
+        
+        const res = await fetch(`/void/user-requests`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            const requests = data.requests || [];
+            
+            if (requests.length === 0) {
+                dynamicContent.innerHTML = `
+                <div class="empty-status">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076505.png" alt="No void requests">
+                    <p>No void/return requests</p>
+                    <small>Your void and return requests will appear here.</small>
+                </div>`;
+            } else {
+                let requestsHTML = requests.map(req => {
+                    // Determine status color
+                    let statusColor = '#6b7280';
+                    let statusBg = '#f3f4f6';
+                    switch(req.void_status) {
+                        case 'pending':
+                            statusColor = '#d97706';
+                            statusBg = '#fef3c7';
+                            break;
+                        case 'approved':
+                            statusColor = '#059669';
+                            statusBg = '#d1fae5';
+                            break;
+                        case 'rejected':
+                            statusColor = '#dc2626';
+                            statusBg = '#fee2e2';
+                            break;
+                        case 'refunded':
+                            statusColor = '#2563eb';
+                            statusBg = '#dbeafe';
+                            break;
+                    }
+                    
+                    return `
+                    <div class="reservation-item" data-void-id="${req.void_id}">
+                        <div style="position: relative;">
+                            <img src="${req.product_image}" alt="${req.product_name}" 
+                                style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover; border: 2px solid #e5e7eb;">
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #1f2937; margin-bottom: 8px; font-size: 14px;">
+                                ${req.product_name}
+                            </div>
+                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">
+                                <div>Quantity: ${req.quantity}</div>
+                                <div>Requested: ${req.requested_at_display}</div>
+                                <div>Reason: ${req.return_type_display}</div>
+                            </div>
+                            
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <div class="status-badge" style="
+                                    display: inline-block; 
+                                    padding: 4px 12px; 
+                                    border-radius: 20px; 
+                                    font-size: 11px; 
+                                    font-weight: 600;
+                                    background: ${statusBg};
+                                    color: ${statusColor};
+                                ">
+                                    ${req.status_display}
+                                </div>
+                                
+                                ${req.void_status === 'pending' ? `
+                                <button class="cancel-void-btn" data-void-id="${req.void_id}" 
+                                    style="padding: 4px 12px; font-size: 11px; background: #f3f4f6; 
+                                           border: 1px solid #d1d5db; border-radius: 6px; 
+                                           color: #6b7280; cursor: pointer;">
+                                    Cancel Request
+                                </button>
+                                ` : ''}
+                            </div>
+                            
+                            ${req.reason ? `
+                            <div style="font-size: 12px; color: #4b5563; margin-top: 8px; padding: 8px; 
+                                        background: #f8fafc; border-radius: 6px; border-left: 3px solid #9ca3af;">
+                                <strong>Reason:</strong> ${req.reason}
+                            </div>
+                            ` : ''}
+                            
+                            ${req.problem_description ? `
+                            <div style="font-size: 12px; color: #4b5563; margin-top: 8px; padding: 8px; 
+                                        background: #f8fafc; border-radius: 6px;">
+                                <strong>Description:</strong> ${req.problem_description}
+                            </div>
+                            ` : ''}
+                            
+                            ${req.admin_notes ? `
+                            <div style="font-size: 12px; color: #7c2d12; margin-top: 8px; padding: 8px; 
+                                        background: #fffbeb; border-radius: 6px; border-left: 3px solid #f59e0b;">
+                                <strong>Admin Notes:</strong> ${req.admin_notes}
+                            </div>
+                            ` : ''}
+                            
+                            ${req.refund_amount ? `
+                            <div style="font-size: 12px; color: #065f46; margin-top: 8px; padding: 8px; 
+                                        background: #ecfdf5; border-radius: 6px; border-left: 3px solid #10b981;">
+                                <strong>Refund:</strong> ₱${req.refund_amount.toLocaleString()} 
+                                ${req.refund_method_display ? `via ${req.refund_method_display}` : ''}
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    `;
+                }).join("");
+                
+                dynamicContent.innerHTML = requestsHTML;
+                
+                // Attach cancel button events
+                const cancelBtns = dynamicContent.querySelectorAll('.cancel-void-btn');
+                cancelBtns.forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const voidId = e.target.dataset.voidId;
+                        await window.cancelVoidRequest(voidId);
+                    });
+                });
+            }
+        }
+    } catch (err) {
+        console.error("❌ Error loading void requests:", err);
+        dynamicContent.innerHTML = `
+            <div style="text-align:center;padding:40px 20px;color:#d32f2f;">
+                <div style="font-size:32px;margin-bottom:12px;">⚠️</div>
+                <p>Error loading void requests.</p>
+            </div>`;
+    }
+};
+
+// 🟢 GLOBAL: Cancel void request
+window.cancelVoidRequest = async function(voidId) {
+    const confirm = await window.showConfirmationDialog(
+        "Cancel Void Request",
+        "Are you sure you want to cancel this void request?",
+        "warning"
+    );
+    
+    if (!confirm) return;
+    
+    try {
+        const response = await fetch(`/void/${voidId}/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            window.notification.success("Void request cancelled successfully", 3000);
+            
+            // Refresh the void requests list
+            const container = document.querySelector('.cart-sidebar') || document.querySelector('#cartContent');
+            if (container) {
+                await window.loadVoidCounts(container);
+                await window.loadVoidRequests(container);
+            }
+        } else {
+            window.notification.error(data.message || "Failed to cancel void request", 3000);
+        }
+    } catch (error) {
+        console.error('Error cancelling void request:', error);
+        window.notification.error('Error cancelling void request', 3000);
+    }
+};
+
+// 🟢 GLOBAL: Request void modal (for completed items)
+window.showVoidRequestModal = async function(reservationId, productName, quantity) {
+    // Create modal HTML
+    const modalHTML = `
+    <div class="void-modal-overlay" style="
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5); display: flex; align-items: center;
+        justify-content: center; z-index: 10000; padding: 20px;">
+        <div class="void-modal" style="
+            background: white; border-radius: 16px; width: 100%;
+            max-width: 500px; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            
+            <!-- Header -->
+            <div style="padding: 20px; border-bottom: 1px solid #e5e7eb;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; color: #1f2937; font-size: 18px; font-weight: 700;">
+                        Request Return/Refund
+                    </h3>
+                    <button class="close-void-modal" style="
+                        background: none; border: none; font-size: 24px;
+                        cursor: pointer; color: #6b7280; padding: 4px;">
+                        ×
+                    </button>
+                </div>
+                <p style="margin: 8px 0 0; color: #6b7280; font-size: 14px;">
+                    ${productName} (Quantity: ${quantity})
+                </p>
+            </div>
+            
+            <!-- Form -->
+            <form id="voidRequestForm" style="padding: 20px;">
+                <input type="hidden" name="reservation_id" value="${reservationId}">
+                
+                <!-- Reason -->
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">
+                        Reason for Return *
+                    </label>
+                    <select name="return_type" required style="
+                        width: 100%; padding: 10px; border: 1px solid #d1d5db;
+                        border-radius: 8px; font-size: 14px; color: #1f2937;">
+                        <option value="">Select a reason</option>
+                        <option value="defective">Defective Product</option>
+                        <option value="wrong_item">Wrong Item Received</option>
+                        <option value="damaged">Damaged During Delivery</option>
+                        <option value="not_as_described">Not as Described</option>
+                        <option value="other">Other Reason</option>
+                    </select>
+                </div>
+                
+                <!-- Detailed Reason -->
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">
+                        Detailed Explanation *
+                    </label>
+                    <textarea name="reason" required placeholder="Please explain why you want to return this product..." 
+                        style="width: 100%; padding: 10px; border: 1px solid #d1d5db;
+                               border-radius: 8px; font-size: 14px; color: #1f2937;
+                               min-height: 100px; resize: vertical;"></textarea>
+                </div>
+                
+                <!-- Problem Description -->
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">
+                        Problem Description (Optional)
+                    </label>
+                    <textarea name="problem_description" placeholder="Describe the issue in detail..." 
+                        style="width: 100%; padding: 10px; border: 1px solid #d1d5db;
+                               border-radius: 8px; font-size: 14px; color: #1f2937;
+                               min-height: 80px; resize: vertical;"></textarea>
+                </div>
+                
+                <!-- Image Upload -->
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">
+                        Upload Image (Optional)
+                        <span style="font-size: 12px; color: #9ca3af; font-weight: normal;">
+                            Upload a photo showing the problem (max 5MB)
+                        </span>
+                    </label>
+                    <input type="file" name="void_image" accept="image/*"
+                        style="width: 100%; padding: 10px; border: 2px dashed #d1d5db;
+                               border-radius: 8px; font-size: 14px;">
+                    <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                        Supported formats: PNG, JPG, JPEG, GIF, WEBP
+                    </div>
+                </div>
+                
+                <!-- Notice -->
+                <div style="margin-bottom: 20px; padding: 12px; background: #fffbeb;
+                            border-radius: 8px; border-left: 4px solid #f59e0b;">
+                    <div style="display: flex; gap: 8px; align-items: flex-start;">
+                        <div style="font-size: 16px;">⚠️</div>
+                        <div>
+                            <div style="font-weight: 600; color: #92400e; margin-bottom: 4px;">
+                                Important Notice
+                            </div>
+                            <div style="font-size: 13px; color: #92400e;">
+                                • Refunds may take 3-7 business days to process.<br>
+                                • Keep the item in its original condition.<br>
+                                • Admin may contact you for additional information.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Buttons -->
+                <div style="display: flex; gap: 12px;">
+                    <button type="button" class="cancel-void-btn" style="
+                        flex: 1; padding: 12px; border: 1px solid #d1d5db;
+                        border-radius: 8px; background: white; color: #4b5563;
+                        font-weight: 600; cursor: pointer; font-size: 14px;">
+                        Cancel
+                    </button>
+                    <button type="submit" class="submit-void-btn" style="
+                        flex: 1; padding: 12px; border: none;
+                        border-radius: 8px; background: linear-gradient(135deg, #ef4444, #dc2626);
+                        color: white; font-weight: 700; cursor: pointer;
+                        font-size: 14px; transition: all 0.3s;">
+                        Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    `;
+    
+    // Add modal to body
+    const modalContainer = document.createElement('div');
+    modalContainer.innerHTML = modalHTML;
+    document.body.appendChild(modalContainer);
+    
+    const modal = modalContainer.querySelector('.void-modal-overlay');
+    
+    // Show modal with animation
+    setTimeout(() => {
+        modal.style.opacity = '1';
+        modal.querySelector('.void-modal').style.transform = 'scale(1)';
+    }, 10);
+    
+    // Close handlers
+    const closeModal = () => {
+        modal.style.opacity = '0';
+        modal.querySelector('.void-modal').style.transform = 'scale(0.9)';
+        setTimeout(() => {
+            modal.remove();
+        }, 300);
+    };
+    
+    modal.querySelector('.close-void-modal').addEventListener('click', closeModal);
+    modal.querySelector('.cancel-void-btn').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    
+    // Form submission
+    modal.querySelector('#voidRequestForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = form.querySelector('.submit-void-btn');
+        const originalText = submitBtn.textContent;
+        
+        submitBtn.textContent = 'Submitting...';
+        submitBtn.disabled = true;
+        
+        try {
+            const formData = new FormData(form);
+            
+            const response = await fetch('/void/request', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                window.notification.success("Void request submitted successfully!", 4000);
+                closeModal();
+                
+                // Refresh status section
+                if (window.refreshStatusSection) {
+                    await window.refreshStatusSection();
+                }
+            } else {
+                window.notification.error(data.message || "Failed to submit request", 4000);
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        } catch (error) {
+            console.error('Error submitting void request:', error);
+            window.notification.error('Error submitting request', 4000);
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+};
+
+// Helper function for confirmation dialog
+window.showConfirmationDialog = function(title, message, type = 'warning') {
+    return new Promise((resolve) => {
+        const dialogHTML = `
+        <div class="confirm-dialog-overlay" style="
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); display: flex; align-items: center;
+            justify-content: center; z-index: 10001;">
+            <div class="confirm-dialog" style="
+                background: white; border-radius: 16px; padding: 24px;
+                max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                transform: scale(0.9); transition: transform 0.3s;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 40px; margin-bottom: 12px;">
+                        ${type === 'warning' ? '⚠️' : type === 'error' ? '❌' : '✅'}
+                    </div>
+                    <h3 style="margin: 0 0 8px; color: #1f2937; font-size: 18px;">
+                        ${title}
+                    </h3>
+                    <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.5;">
+                        ${message}
+                    </p>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <button class="confirm-no" style="
+                        flex: 1; padding: 12px; border: 1px solid #d1d5db;
+                        border-radius: 8px; background: white; color: #4b5563;
+                        font-weight: 600; cursor: pointer;">
+                        No
+                    </button>
+                    <button class="confirm-yes" style="
+                        flex: 1; padding: 12px; border: none;
+                        border-radius: 8px; background: linear-gradient(135deg, #ef4444, #dc2626);
+                        color: white; font-weight: 700; cursor: pointer;">
+                        Yes
+                    </button>
+                </div>
+            </div>
+        </div>
+        `;
+        
+        const dialogContainer = document.createElement('div');
+        dialogContainer.innerHTML = dialogHTML;
+        document.body.appendChild(dialogContainer);
+        
+        const dialog = dialogContainer.querySelector('.confirm-dialog-overlay');
+        const dialogContent = dialogContainer.querySelector('.confirm-dialog');
+        
+        setTimeout(() => {
+            dialog.style.opacity = '1';
+            dialogContent.style.transform = 'scale(1)';
+        }, 10);
+        
+        const closeDialog = (confirmed) => {
+            dialog.style.opacity = '0';
+            dialogContent.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                dialog.remove();
+                resolve(confirmed);
+            }, 300);
+        };
+        
+        dialogContainer.querySelector('.confirm-no').addEventListener('click', () => closeDialog(false));
+        dialogContainer.querySelector('.confirm-yes').addEventListener('click', () => closeDialog(true));
+        
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) closeDialog(false);
+        });
+    });
+};

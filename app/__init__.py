@@ -8,6 +8,7 @@ from .routes.dashboard import dashboard_bp
 from .routes.report import report_bp
 from .routes import home, incubatee_showroom, layouts, shop, notification, login, admin, contact, about, user
 from .utils.auto_stock_notifier import get_auto_notifier
+from .routes.void_product import void_bp
 
 
 def create_app(config_class=Config):
@@ -34,6 +35,7 @@ def create_app(config_class=Config):
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(user.user_bp)
     app.register_blueprint(report_bp)
+    app.register_blueprint(void_bp)
     
     @app.context_processor
     def inject_user_data():

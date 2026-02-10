@@ -4,6 +4,7 @@ from .notification import Notification
 from .reservation import Reservation
 from .admin import Incubatee, IncubateeProduct
 from .user import User
+from .void_product import VoidProduct
 
 # Export models for easy access
 __all__ = [
@@ -11,4 +12,4 @@ __all__ = [
     "Notification",
     "User",
     "Incubatee",
-    "IncubateeProduct", "InventoryAlert", "InventoryHistory"]
+    "IncubateeProduct", "InventoryAlert", "InventoryHistory", "voidProduct"]
