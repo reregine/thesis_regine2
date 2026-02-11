@@ -456,7 +456,8 @@ function updateCharts(data) {
                         '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
                         '#8b5cf6', '#06b6d4', '#84cc16', '#f97316',
                         '#ec4899', '#6366f1'
-                    ]
+                    ],
+                    borderRadius: 17
                 }]
             },
             options: {
@@ -465,6 +466,10 @@ function updateCharts(data) {
                     legend: {
                         position: 'bottom'
                     }
+                },
+                cutout: '50%',  // Optional: creates the doughnut hole
+                layout: {
+                    padding: 20
                 }
             }
         });
@@ -480,7 +485,8 @@ function updateCharts(data) {
                 datasets: [{
                     label: 'Sales',
                     data: data.charts?.top_incubatees?.data || [],
-                    backgroundColor: '#10b981'
+                    backgroundColor: '#10b981',
+                    borderRadius: 17
                 }]
             },
             options: {

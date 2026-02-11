@@ -595,7 +595,7 @@ body {
 }
 
 .performance-rating.Average {
-    background: rgba(245, 158, 11, 0.2);
+    background: rgba(97, 65, 12, 0.2);
     color: var(--warning);
     border: 1px solid rgba(245, 158, 11, 0.3);
 }
