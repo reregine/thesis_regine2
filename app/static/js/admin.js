@@ -9,6 +9,7 @@ let currentButton = null;
 let currentSlide = 0;
 let totalSlides = 0;
 let slidesPerView = 3; // Number of thumbnails visible at once
+let voidSystemInitialized = false;
 
 const today = new Date();
 const formattedDate = today.toISOString().split('T')[0]; 
@@ -1553,22 +1554,29 @@ function initializeOrdersModal() {
     // Order status filter - WITH DEBOUNCE
     const orderStatusFilter = document.getElementById("orderStatusFilter");
     if (orderStatusFilter) {
-        let filterTimeout;
-        orderStatusFilter.addEventListener("change", function() {
-            // Clear previous timeout
-            if (filterTimeout) {
-                clearTimeout(filterTimeout);
-            }
+        // Remove existing listeners and add new one
+        const newFilter = orderStatusFilter.cloneNode(true);
+        orderStatusFilter.parentNode.replaceChild(newFilter, orderStatusFilter);
+        
+        newFilter.addEventListener("change", function() {
+            console.log('Filter changed to:', this.value);
             
-            // Set new timeout with debounce
-            filterTimeout = setTimeout(() => {
-                console.log('🔍 Filtering orders by:', this.value);
-                loadAllOrdersSmooth(this.value);
-            }, 500); // 500ms debounce
+            if (this.value === 'void') {
+                // Load void requests
+                if (window.VoidProductSystem) {
+                    if (!voidSystemInitialized) {
+                        window.VoidProductSystem.init();
+                        voidSystemInitialized = true;
+                    }
+                    window.VoidProductSystem.loadVoidRequests();
+                }
+            } else {
+                // Load regular orders
+                loadAllOrders(this.value);
+            }
         });
     }
-
-    console.log('✅ Orders modal initialized');
+    //console.log('✅ Orders modal initialized');
 }
 
 //new function to start the auto-cancellation checker
@@ -1612,98 +1620,6 @@ async function checkAndAutoCancelReservations() {
         }
     } catch (error) {
         console.error('Error in auto-rejection check:', error);
-    }
-}
-
-async function loadAllOrders(status = 'all') {
-    const ordersList = document.getElementById("orders-list");
-    if (!ordersList) {
-        console.log('Orders list element not found');
-        return;
-    }
-    
-    console.log('🔄 Loading orders...');
-    ordersList.innerHTML = '<tr><td colspan="9" class="empty-orders">Loading orders...</td></tr>';
-
-    try {
-        // Fetch reservations
-        const response = await fetch("/reservations/");
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log('📊 API Response:', data);
-        
-        // Handle the consistent JSON format
-        if (!data.success) {
-            throw new Error(data.message || 'Failed to load reservations');
-        }
-        
-        let reservations = data.reservations || [];
-        console.log(`✅ Loaded ${reservations.length} reservations`);
-
-        // Process pending reservations if any exist
-        const pendingReservations = reservations.filter(r => r.status === 'pending');
-        if (pendingReservations.length > 0) {
-            console.log(`🔄 Processing ${pendingReservations.length} pending reservations`);
-            
-            try {
-                const processResponse = await fetch("/reservations/process-pending", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                });
-                
-                if (processResponse.ok) {
-                    const processData = await processResponse.json();
-                    console.log('✅ Processing result:', processData);
-                    
-                    // Re-fetch after processing
-                    const refreshResponse = await fetch("/reservations/");
-                    if (refreshResponse.ok) {
-                        const refreshData = await refreshResponse.json();
-                        if (refreshData.success) {
-                            reservations = refreshData.reservations || [];
-                            console.log(`✅ Refreshed: ${reservations.length} reservations`);
-                        }
-                    }
-                }
-            } catch (processError) {
-                console.error('❌ Error processing pending reservations:', processError);
-                // Continue with original data
-            }
-        }
-
-        // Filter by status
-        let filteredReservations = reservations;
-        if (status !== 'all') {
-            filteredReservations = reservations.filter(r => r.status === status);
-            console.log(`🔍 Filtered to ${filteredReservations.length} ${status} reservations`);
-        }
-
-        // Display orders
-        displayOrders(filteredReservations);
-        
-        // Check for auto-cancellation
-        checkReservationsForAutoCancel(reservations);
-        
-    } catch (error) {
-        console.error('❌ Error loading orders:', error);
-        const ordersList = document.getElementById("orders-list");
-        if (ordersList) {
-            ordersList.innerHTML = `
-                <tr>
-                    <td colspan="9" class="empty-orders">
-                        <div style="color: #dc2626;">
-                            <strong>Error loading orders</strong><br>
-                            <small>${error.message}</small>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }
     }
 }
 
@@ -1856,16 +1772,26 @@ function completeReservation(reservationId, button) {
     }
 }
 
-// REMOVED: Fixed Sales Report Modal Initialization - No longer used
-
 // Update the auto-cancellation check to use the correct modal class
-async function loadAllOrders(status = 'all') {
+async function loadAllOrders(status = 'all', page = 1) {
     const ordersList = document.getElementById("orders-list");
-    if (!ordersList) {
-        console.log('Orders list element not found');
+    if (!ordersList) return;
+    
+    if (status === 'void') {
+        console.log('🔄 Loading void requests...');
+        
+        // Initialize void system once
+        if (window.VoidProductSystem && !voidSystemInitialized) {
+            window.VoidProductSystem.init();
+            voidSystemInitialized = true;
+        }
+        
+        // Load void requests
+        if (window.VoidProductSystem) {
+            await window.VoidProductSystem.loadVoidRequests('all', page);
+        }
         return;
     }
-    
     console.log('🔄 Loading orders...');
     ordersList.innerHTML = '<tr><td colspan="9" class="empty-orders">Loading orders...</td></tr>';
 
@@ -1984,12 +1910,6 @@ async function checkAndAutoCancelReservations() {
         console.error('Error in auto-rejection check:', error);
     }
 }
-
-// REMOVED: Generate Sales Report function - No longer used
-// REMOVED: Display Sales Report function - No longer used
-// REMOVED: Update Sales Summary function - No longer used
-// REMOVED: Reset Sales Summary function - No longer used
-// REMOVED: Export Sales Report to CSV function - No longer used
 
 // Date formatting utility function with time
 function formatDateToReadable(dateString) {

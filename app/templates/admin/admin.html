@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/orders-modal.css') }}">
   <title>Admin - Incubatee Management</title>
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/agrilogo.png') }}">
 </head>
@@ -49,10 +50,11 @@
         <label for="orderStatusFilter">Filter by Status:</label>
         <select id="orderStatusFilter" class="filter-select">
           <option value="all">All Orders</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="completed">Completed</option>
-          <option value="rejected">Rejected</option>
+          <option value="pending">⏳ Pending</option>
+          <option value="approved">✅ Approved</option>
+          <option value="completed">📦 Completed</option>
+          <option value="rejected">❌ Rejected</option>
+          <option value="void">🔄 Returns/Void</option> <!-- Added Void option -->
         </select>
       </div>
 
@@ -63,7 +65,7 @@
               <th>Order ID</th>
               <th>User ID</th>
               <th>Product</th>
-              <th>Quantity</th>
+              <th>Qty</th>
               <th>Price</th>
               <th>Total</th>
               <th>Status</th>
@@ -492,5 +494,33 @@
   <!-- Include the external JavaScript file -->
   <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
   <script src="{{ url_for('static', filename='js/lowStock.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/voidProduct.js') }}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize void product system
+        if (window.VoidProductSystem) {
+            window.VoidProductSystem.init();
+        }
+        
+        // Override orders filter to handle void option
+        const statusFilter = document.getElementById('orderStatusFilter');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', function() {
+                if (this.value === 'void') {
+                    // Hide any existing orders and show void requests
+                    document.querySelector('.orders-container').style.display = 'block';
+                    if (window.VoidProductSystem) {
+                        window.VoidProductSystem.loadVoidRequests();
+                    }
+                } else {
+                    // Load regular orders
+                    if (window.loadOrders) {
+                        window.loadOrders(this.value);
+                    }
+                }
+            });
+        }
+    });
+  </script>
 </body>
 </html>

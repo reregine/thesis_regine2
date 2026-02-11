@@ -438,8 +438,14 @@ window.initializeStatusTabs = async function(container) {
             tab.classList.add("active");
             const tabName = tab.dataset.tab;
             
-            // Load first page of reservations for this status
-            await window.loadReservationsByStatus(tabName, container, 1);
+            // 🟢 FIX: Handle void tab separately
+            if (tabName === 'void') {
+                // Load void requests from void blueprint
+                await window.loadVoidRequests(container);
+            } else {
+                // Load regular reservations from cart blueprint
+                await window.loadReservationsByStatus(tabName, container, 1);
+            }
         });
     });
     
@@ -454,11 +460,11 @@ window.initializeStatusTabs = async function(container) {
         pendingTab.classList.add("active");
         await window.loadReservationsByStatus("pending", container, 1);
     } else {
-        // Otherwise load the first tab (usually pending)
-        const firstTab = tabs[0];
-        if (firstTab) {
-            firstTab.classList.add("active");
-            const firstTabName = firstTab.dataset.tab;
+        // Otherwise load the first non-void tab (usually pending)
+        const firstNonVoidTab = Array.from(tabs).find(tab => tab.dataset.tab !== 'void');
+        if (firstNonVoidTab) {
+            firstNonVoidTab.classList.add("active");
+            const firstTabName = firstNonVoidTab.dataset.tab;
             await window.loadReservationsByStatus(firstTabName, container, 1);
         }
     }
@@ -1346,8 +1352,8 @@ window.loadVoidRequests = async function(container, page = 1) {
                                 ${req.void_status === 'pending' ? `
                                 <button class="cancel-void-btn" data-void-id="${req.void_id}" 
                                     style="padding: 4px 12px; font-size: 11px; background: #f3f4f6; 
-                                           border: 1px solid #d1d5db; border-radius: 6px; 
-                                           color: #6b7280; cursor: pointer;">
+                                        border: 1px solid #d1d5db; border-radius: 6px; 
+                                        color: #6b7280; cursor: pointer;">
                                     Cancel Request
                                 </button>
                                 ` : ''}
@@ -1370,7 +1376,7 @@ window.loadVoidRequests = async function(container, page = 1) {
                             ${req.admin_notes ? `
                             <div style="font-size: 12px; color: #7c2d12; margin-top: 8px; padding: 8px; 
                                         background: #fffbeb; border-radius: 6px; border-left: 3px solid #f59e0b;">
-                                <strong>Admin Notes:</strong> ${req.admin_notes}
+                                <strong>ATBI Notes:</strong> ${req.admin_notes}
                             </div>
                             ` : ''}
                             

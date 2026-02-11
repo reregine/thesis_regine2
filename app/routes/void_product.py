@@ -261,3 +261,225 @@ def get_void_counts():
     except Exception as e:
         current_app.logger.error(f"Error fetching void counts: {e}")
         return jsonify({"success": False, "message": "Server error"}), 500
+    
+@void_bp.route("/admin/all", methods=["GET"])
+def get_all_void_requests():
+    """Get all void requests for admin with pagination"""
+    try:
+        # Check if user is admin
+        if not session.get("admin_logged_in"):
+            return jsonify({"success": False, "message": "Admin not logged in"}), 401
+        
+        # Get pagination parameters
+        status = request.args.get("status", "all")
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get("per_page", 10, type=int)
+        
+        # Base query
+        query = db.session.query(
+            VoidProduct,
+            IncubateeProduct.name.label("product_name"),
+            IncubateeProduct.image_path,
+            IncubateeProduct.price_per_stocks,
+            Reservation.quantity,
+            Reservation.reservation_id
+        ).join(
+            IncubateeProduct, VoidProduct.product_id == IncubateeProduct.product_id
+        ).join(
+            Reservation, VoidProduct.reservation_id == Reservation.reservation_id
+        )
+        
+        # Filter by status
+        if status != 'all':
+            query = query.filter(VoidProduct.void_status == status)
+        
+        # Order by newest first
+        query = query.order_by(VoidProduct.requested_at.desc())
+        
+        # Paginate
+        paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+        void_requests = paginated.items
+        
+        requests_data = []
+        for void_request, product_name, product_image, price, quantity, reservation_id in void_requests:
+            # Format image path
+            if product_image:
+                if '\\' in product_image:
+                    filename = product_image.split('\\')[-1]
+                    image_url = f"/static/uploads/{filename}"
+                elif '/' in product_image:
+                    filename = product_image.split('/')[-1]
+                    image_url = f"/static/uploads/{filename}"
+                else:
+                    image_url = f"/static/uploads/{product_image}"
+            else:
+                image_url = "https://cdn-icons-png.flaticon.com/512/4076/4076505.png"
+            
+            requests_data.append({
+                "void_id": void_request.void_id,
+                "reservation_id": void_request.reservation_id,
+                "user_id": void_request.user_id,
+                "product_name": product_name,
+                "product_image": image_url,
+                "quantity": quantity,
+                "price": float(price) if price else 0,
+                "total": float(price) * quantity if price else 0,
+                "reason": void_request.reason,
+                "problem_description": void_request.problem_description,
+                "return_type": void_request.return_type,
+                "return_type_display": void_request.display_return_type,
+                "image_path": void_request.image_path,
+                "void_status": void_request.void_status,
+                "status_display": void_request.display_status,
+                "requested_at": void_request.requested_at.isoformat() if void_request.requested_at else None,
+                "requested_at_display": void_request.formatted_requested_at,
+                "processed_at": void_request.processed_at.isoformat() if void_request.processed_at else None,
+                "processed_at_display": void_request.formatted_processed_at,
+                "admin_notes": void_request.admin_notes,
+                "refund_amount": float(void_request.refund_amount) if void_request.refund_amount else None,
+                "refund_method": void_request.refund_method,
+                "refund_method_display": void_request.display_refund_method
+            })
+        
+        return jsonify({
+            "success": True,
+            "requests": requests_data,
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total": paginated.total,
+                "pages": paginated.pages,
+                "has_next": paginated.has_next,
+                "has_prev": paginated.has_prev
+            }
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching all void requests: {e}")
+        return jsonify({"success": False, "message": "Server error"}), 500
+
+@void_bp.route("/admin/<int:void_id>", methods=["GET"])
+def get_admin_void_request(void_id):
+    """Get void request details for admin"""
+    try:
+        # Check if user is admin
+        if not session.get("admin_logged_in"):
+            return jsonify({"success": False, "message": "Admin not logged in"}), 401
+        
+        void_request = VoidProduct.query.get(void_id)
+        
+        if not void_request:
+            return jsonify({"success": False, "message": "Void request not found"}), 404
+        
+        product = IncubateeProduct.query.get(void_request.product_id)
+        reservation = Reservation.query.get(void_request.reservation_id)
+        
+        # Format product image
+        product_image = None
+        if product and product.image_path:
+            if '\\' in product.image_path:
+                filename = product.image_path.split('\\')[-1]
+                product_image = f"/static/uploads/{filename}"
+            elif '/' in product.image_path:
+                filename = product.image_path.split('/')[-1]
+                product_image = f"/static/uploads/{filename}"
+            else:
+                product_image = f"/static/uploads/{product.image_path}"
+        
+        response_data = {
+            "void_id": void_request.void_id,
+            "reservation_id": void_request.reservation_id,
+            "user_id": void_request.user_id,
+            "product_name": product.name if product else "Unknown Product",
+            "product_image": product_image,
+            "quantity": reservation.quantity if reservation else 0,
+            "price": float(product.price_per_stocks) if product and product.price_per_stocks else 0,
+            "total": float(product.price_per_stocks) * reservation.quantity if product and product.price_per_stocks and reservation else 0,
+            "reason": void_request.reason,
+            "problem_description": void_request.problem_description,
+            "return_type": void_request.return_type,
+            "return_type_display": void_request.display_return_type,
+            "image_path": void_request.image_path,
+            "void_status": void_request.void_status,
+            "status_display": void_request.display_status,
+            "requested_at": void_request.requested_at.isoformat() if void_request.requested_at else None,
+            "requested_at_display": void_request.formatted_requested_at,
+            "processed_at": void_request.processed_at.isoformat() if void_request.processed_at else None,
+            "processed_at_display": void_request.formatted_processed_at,
+            "admin_notes": void_request.admin_notes,
+            "refund_amount": float(void_request.refund_amount) if void_request.refund_amount else None,
+            "refund_method": void_request.refund_method,
+            "refund_method_display": void_request.display_refund_method
+        }
+        
+        return jsonify({"success": True, "request": response_data})
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching admin void request: {e}")
+        return jsonify({"success": False, "message": "Server error"}), 500
+
+@void_bp.route("/admin/process", methods=["POST"])
+def process_void_request():
+    """Process void request (approve/reject)"""
+    try:
+        # Check if user is admin
+        if not session.get("admin_logged_in"):
+            return jsonify({"success": False, "message": "Admin not logged in"}), 401
+        
+        data = request.get_json()
+        void_id = data.get("void_id")
+        action = data.get("action")  # 'approve' or 'reject'
+        admin_notes = data.get("admin_notes", "")
+        refund_amount = data.get("refund_amount")
+        refund_method = data.get("refund_method")
+        
+        void_request = VoidProduct.query.get(void_id)
+        
+        if not void_request:
+            return jsonify({"success": False, "message": "Void request not found"}), 404
+        
+        if void_request.void_status != "pending":
+            return jsonify({"success": False, "message": "This request has already been processed"}), 400
+        
+        # Update void request
+        void_request.void_status = action if action == 'reject' else 'approved'
+        void_request.processed_at = datetime.utcnow()
+        void_request.admin_notes = admin_notes
+        
+        # If approved, set refund details
+        if action == 'approve':
+            void_request.refund_amount = refund_amount
+            void_request.refund_method = refund_method
+        
+        db.session.commit()
+        
+        return jsonify({
+            "success": True,
+            "message": f"Void request {action}ed successfully",
+            "void_id": void_request.void_id,
+            "status": void_request.void_status
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error processing void request: {e}")
+        db.session.rollback()
+        return jsonify({"success": False, "message": "Server error"}), 500
+
+@void_bp.route("/admin/counts", methods=["GET"])
+def get_admin_void_counts():
+    """Get counts of void requests by status for admin"""
+    try:
+        # Check if user is admin
+        if not session.get("admin_logged_in"):
+            return jsonify({"success": False, "message": "Admin not logged in"}), 401
+        
+        counts = {}
+        for status in ["pending", "approved", "rejected", "refunded"]:
+            count = VoidProduct.query.filter_by(void_status=status).count()
+            counts[status] = count
+        
+        return jsonify({"success": True, "counts": counts})
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching admin void counts: {e}")
+        return jsonify({"success": False, "message": "Server error"}), 500
